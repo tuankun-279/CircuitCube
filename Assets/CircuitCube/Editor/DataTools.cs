@@ -114,6 +114,27 @@ namespace CircuitCube.EditorTools
             foreach (var p in problems) Debug.LogWarning("[CircuitCube] " + p);
         }
 
+        /// <summary>The levels Level Lab published to the repo (content/ next to Assets, the files the game downloads).</summary>
+        public const string ContentFolder = "content";
+
+        [MenuItem(Menu + "Copy Published Content into the Build")]
+        public static void CopyContentMenu()
+        {
+            if (!Directory.Exists(ContentFolder)) { EditorUtility.DisplayDialog("Circuit Cube data", "No content/ folder: publish from Level Lab and pull the repo first.", "OK"); return; }
+            int n = CopyContent();
+            EditorUtility.DisplayDialog("Circuit Cube data", "Copied " + n + " files from content/ into " + DataFolder + ". The build now ships this publish; players still download newer ones.", "OK");
+        }
+
+        /// <summary>Replace the data shipped in the build with the repo's published content. Returns the file count.</summary>
+        public static int CopyContent()
+        {
+            var files = new Dictionary<string, string>();
+            foreach (var f in Directory.GetFiles(ContentFolder, "*.json", SearchOption.AllDirectories))
+                files[f.Substring(ContentFolder.Length + 1).Replace('\\', '/')] = File.ReadAllText(f);
+            WriteAll(files, true);
+            return files.Count;
+        }
+
         static void WriteAll(Dictionary<string, string> files, bool replace)
         {
             if (replace && Directory.Exists(DataFolder))

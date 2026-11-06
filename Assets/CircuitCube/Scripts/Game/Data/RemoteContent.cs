@@ -17,7 +17,11 @@ namespace CircuitCube.Game
     {
         public static bool Busy { get; private set; }
 
-        /// <param name="baseUrl">CDN root holding manifest.json, groups/, orders/, levels/, shapes/.</param>
+        /// <param name="baseUrl">
+        /// Where manifest.json is read (the repo's content folder on raw.githubusercontent.com, so a new publish shows within
+        /// minutes). The manifest's <c>cdn</c> then names the immutable copy of that publish (a content-v&lt;n&gt; tag on
+        /// jsDelivr) for groups/, orders/, levels/ and shapes/.
+        /// </param>
         /// <param name="clearedOf">Positions cleared per group index (from the save).</param>
         public static IEnumerator Sync(string baseUrl, Func<int, int> clearedOf, Action done)
         {
@@ -31,6 +35,7 @@ namespace CircuitCube.Game
             if (ok)
             {
                 var m = JsonUtility.FromJson<ManifestData>(File.ReadAllText(Path.Combine(root, "manifest.json")));
+                if (m != null && !string.IsNullOrEmpty(m.cdn)) baseUrl = m.cdn.TrimEnd('/') + "/";
                 foreach (var g in m.groups) yield return Fetch(baseUrl, "groups/" + g.id + ".json", root, null);
                 GameData.Reload();
 
@@ -59,7 +64,10 @@ namespace CircuitCube.Game
                         if (serial <= 0) continue;
                         string rel = GameData.LevelPath(gd.id, serial);
                         keep.Add(Path.GetFileName(rel));
-                        if (!File.Exists(Path.Combine(root, rel)) && !GameData.Has(rel)) yield return Fetch(baseUrl, rel, root, null);
+                        // fetch when missing, or when the order chunk says the level was edited since the copy we have
+                        int want = GameData.RevAt(gi, p);
+                        var have = GameData.Has(rel) ? GameData.ReadJson<LevelData>(rel) : null;
+                        if (have == null || (want > 0 && have.rev != want)) yield return Fetch(baseUrl, rel, root, null);
                         var lv = ReadCached<LevelData>(root, rel);
                         if (lv != null && lv.shape != null && lv.shape.StartsWith("voxel-"))
                         {

@@ -1,0 +1,17 @@
+{
+  "blurb": "A new shape every level, mixed from all the others.",
+  "chunkSize": 100,
+  "chunks": [
+    {
+      "count": 10,
+      "index": 0,
+      "version": 1
+    }
+  ],
+  "enable": true,
+  "endless": true,
+  "icon": "megamix",
+  "id": "megamix",
+  "levelCount": 10,
+  "name": "Megamix"
+}

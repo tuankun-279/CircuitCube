@@ -164,8 +164,10 @@ table.bt th{color:var(--muted);font-weight:600}
   </div>
   <button class="btn" id="btnImport" type="button" title="Import a zip exported from Unity (Tools/Circuit Cube/Data/Export Data Zip)">Import zip</button>
   <input id="zipInput" type="file" accept=".zip,application/zip" hidden>
-  <button class="btn primary" id="btnExport" type="button" title="Export a zip in the CDN layout to import into Unity">Export zip</button>
+  <button class="btn" id="btnExport" type="button" title="Download a zip in the CDN layout (a backup, or to import into Unity)">Export zip</button>
+  <button class="btn primary" id="btnPublish" type="button" title="Send every saved level to the game: commits content/ to GitHub, players download it on their next start">Publish to game</button>
 </div>
+<div class="top" style="margin-top:-6px"><span class="dbs" id="pubStatus"></span></div>
 
 <div class="app" id="viewDesign">
   <!-- LEFT: groups + levels -->
@@ -219,9 +221,11 @@ table.bt th{color:var(--muted);font-weight:600}
       <div class="grid2">
         <label class="f" for="pType">Preset
           <select id="pType">
-            <option value="cube">Cube</option><option value="cross">Cross</option><option value="tower">Tower</option>
+            <optgroup label="Blocks"><option value="cube">Cube</option><option value="cross">Cross</option><option value="tower">Tower</option>
             <option value="ell">Ell (L shape)</option><option value="pyramid">Stepped pyramid</option><option value="ball">Ball</option>
-            <option value="bar">Thanh</option><option value="slab">Slab</option><option value="tetra">Tetra (triangle tiles)</option><option value="dodeca" disabled>Dodeca 12 faces, pentagon tiles (coming soon)</option>
+            <option value="bar">Bar</option><option value="slab">Slab</option></optgroup>
+            <optgroup label="Polygon tiles"><option value="tetra">Tetra (triangles)</option><option value="octa">Octa (triangles)</option>
+            <option value="geo">Sphere (pentagons + hexagons)</option><option value="dodeca">Dodeca (Kilominx / Megaminx)</option></optgroup>
           </select></label>
         <div id="pParams" class="grid2"></div>
       </div>
@@ -399,26 +403,88 @@ function buildTopology(unitBlocks){
   return {cells,links,blocks:list,count:cells.length};
 }
 const portsAt=(topo,i)=>topo.cells[i].ports||4;
-// PolyShapes.Tetrahedron(n) + PolyTopology, same tile order and ports as Unity. Units: board units (square tile = 2).
-function tetraTopology(n){
-  const edge=n*2.6,s=edge/(2*Math.SQRT2),A=[s,s,s],B=[s,-s,-s],C=[-s,s,-s],D=[-s,-s,s];
-  const faces=[[A,B,C],[A,D,B],[A,C,D],[B,D,C]],polys=[],ids=[];
-  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],nrm=a=>{const l=Math.hypot(a[0],a[1],a[2]);return l>1e-6?mul(a,1/l):a};
-  faces.forEach((F,f)=>{let [p0,p1,p2]=F;if(dot(cross(sub(p1,p0),sub(p2,p0)),add(add(p0,p1),p2))<0){const t=p1;p1=p2;p2=t}
-    const e1=mul(sub(p1,p0),1/n),e2=mul(sub(p2,p0),1/n),G=(i,j)=>add(add(p0,mul(e1,i)),mul(e2,j));
-    for(let i=0;i<n;i++)for(let j=0;i+j<n;j++){polys.push([G(i,j),G(i+1,j),G(i,j+1)]);ids.push(f);
-      if(i+j<n-1){polys.push([G(i+1,j),G(i+1,j+1),G(i,j+1)]);ids.push(f)}}});
-  const cells=[],links=[],owner=new Map();let r=0;
-  const Q=v=>Math.round(v*64),ek=(a,b)=>{const m=mul(add(a,b),0.5);return Q(m[0])+","+Q(m[1])+","+Q(m[2])};
-  polys.forEach((P,i)=>{let c=[0,0,0];P.forEach(v=>{c=add(c,v);r=Math.max(r,Math.hypot(v[0],v[1],v[2]))});c=mul(c,1/P.length);
-    const N=nrm(cross(sub(P[1],P[0]),sub(P[2],P[0]))),A0=nrm(sub(mul(add(P[0],P[1]),0.5),c));
-    cells.push({ports:P.length,C:c,N,A:A0,verts:P,face:ids[i],poly:true});links.push(P.map(()=>({cell:-1,back:-1})))});
-  polys.forEach((P,i)=>P.forEach((v,p)=>{const k=ek(v,P[(p+1)%P.length]);const o=owner.get(k);
-    if(o){links[i][p]={cell:o[0],back:o[1]};links[o[0]][o[1]]={cell:i,back:p}}else owner.set(k,[i,p])}));
-  return {cells,links,blocks:[],count:cells.length,poly:true,radius:r};
-}
-const isPolyType=t=>t==="tetra";
-function topoOf(shape,blocks){return shape&&isPolyType(shape.type)?tetraTopology(shape.params.n):buildTopology(blocks)}
+/* POLY-BEGIN */
+// PolyShapes.cs + PolyTopology, step for step, so tile order, corner order and links match the game exactly.
+// Shapes: tetra-n, octa-n, dodeca-2 (Kilominx), dodeca-3 (Megaminx), geo-1 (soccer ball), geo-2..4 (Goldberg GP(f,0)).
+// Units: board units (a square tile is 2 wide). A cell: {ports, C, N, A, verts, face, shape, poly:true}.
+const POLY=(()=>{
+  const PHI=(1+Math.sqrt(5))/2,TRI_SIDE=2.6,TILE_INR=1.08,MEGA_CENTRE=0.42;
+  const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],mul=(a,s)=>[a[0]*s,a[1]*s,a[2]*s];
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const len=a=>Math.sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]),withLen=(a,l)=>mul(a,l/len(a)),lerp=(a,b,t)=>add(a,mul(sub(b,a),t));
+  const centre=p=>{let c=[0,0,0];p.forEach(v=>c=add(c,v));return mul(c,1/p.length)};
+  const inradius=p=>{const c=centre(p);let best=Infinity;for(let k=0;k<p.length;k++)best=Math.min(best,len(sub(mul(add(p[k],p[(k+1)%p.length]),0.5),c)));return best};
+  function Builder(){
+    const polys=[],faces=[],shapes=[];
+    return {polys,
+      add(poly,face,shape){const c=centre(poly);let n=[0,0,0];for(let i=0;i<poly.length;i++)n=add(n,cross(poly[i],poly[(i+1)%poly.length]));
+        if(dot(n,c)<0)poly.reverse();polys.push(poly);faces.push(face);shapes.push(shape)},
+      scaleTo(t){let sum=0;polys.forEach(p=>sum+=inradius(p));const s=t/(sum/polys.length);for(const p of polys)for(let k=0;k<p.length;k++)p[k]=mul(p[k],s)},
+      build(){return topology(polys,faces,shapes)}};
+  }
+  function topology(polys,faces,shapes){
+    const cells=[],links=[],owner=new Map();let r=0;
+    const ek=(a,b)=>{const m=mul(add(a,b),0.5);return Math.round(m[0]*64)+","+Math.round(m[1]*64)+","+Math.round(m[2]*64)};
+    polys.forEach((P,i)=>{const k=P.length;let c=[0,0,0];P.forEach(v=>{c=add(c,v);r=Math.max(r,len(v))});c=mul(c,1/k);
+      let n=[0,0,0];for(let p=0;p<k;p++)n=add(n,cross(P[p],P[(p+1)%k]));n=mul(n,1/len(n));
+      const m0=sub(mul(add(P[0],P[1]),0.5),c),ax=sub(m0,mul(n,dot(m0,n))),A=mul(ax,1/len(ax));
+      cells.push({ports:k,C:c,N:n,A,verts:P,face:faces[i],shape:shapes[i],poly:true});links.push(P.map(()=>({cell:-1,back:-1})))});
+    polys.forEach((P,i)=>P.forEach((v,p)=>{const key=ek(v,P[(p+1)%P.length]),o=owner.get(key);
+      if(o){links[i][p]={cell:o[0],back:o[1]};links[o[0]][o[1]]={cell:i,back:p}}else owner.set(key,[i,p])}));
+    return {cells,links,blocks:[],count:cells.length,poly:true,radius:r};
+  }
+  function icosa(){
+    const v=[];for(const a of [-1,1])for(const b of [-1,1])v.push([0,a,b*PHI],[a,b*PHI,0],[b*PHI,0,a]);
+    const faces=[],edge=(i,j)=>Math.abs(len(sub(v[i],v[j]))-2)<1e-6;
+    for(let i=0;i<12;i++)for(let j=i+1;j<12;j++)for(let k=j+1;k<12;k++)if(edge(i,j)&&edge(j,k)&&edge(i,k))faces.push([i,j,k]);
+    return {v,faces};
+  }
+  function around(pts,axis){
+    const a=mul(axis,1/len(axis)),r=Math.abs(a[1])<0.9?[0,1,0]:[1,0,0];let u=cross(r,a);u=mul(u,1/len(u));const w=cross(a,u);
+    return pts.map(p=>({p,k:Math.atan2(dot(p,w),dot(p,u))})).sort((x,y)=>x.k-y.k).map(x=>x.p);
+  }
+  function dodecaFaces(){
+    const {v,faces}=icosa(),cen=faces.map(f=>mul(add(add(v[f[0]],v[f[1]]),v[f[2]]),1/3));
+    return v.map((vert,i)=>{const pts=[];faces.forEach((f,k)=>{if(f.includes(i))pts.push(cen[k])});return around(pts,vert)});
+  }
+  function triangles(faces,n){
+    const b=Builder();
+    faces.forEach((F,f)=>{let [p0,p1,p2]=F;if(dot(cross(sub(p1,p0),sub(p2,p0)),add(add(p0,p1),p2))<0){const t=p1;p1=p2;p2=t}
+      const e1=mul(sub(p1,p0),1/n),e2=mul(sub(p2,p0),1/n),G=(i,j)=>add(add(p0,mul(e1,i)),mul(e2,j));
+      for(let i=0;i<n;i++)for(let j=0;i+j<n;j++){b.add([G(i,j),G(i+1,j),G(i,j+1)],f,"Triangle");if(i+j<n-1)b.add([G(i+1,j),G(i+1,j+1),G(i,j+1)],f,"Triangle")}});
+    return b.build();
+  }
+  function tetra(n){const s=n*TRI_SIDE/(2*Math.sqrt(2)),A=[s,s,s],B=[s,-s,-s],C=[-s,s,-s],D=[-s,-s,s];return triangles([[A,B,C],[A,D,B],[A,C,D],[B,D,C]],n)}
+  function octa(n){const d=n*TRI_SIDE/Math.sqrt(2),f=[];for(const x of [1,-1])for(const y of [1,-1])for(const z of [1,-1])f.push([[x*d,0,0],[0,y*d,0],[0,0,z*d]]);return triangles(f,n)}
+  function kilominx(){const b=Builder();dodecaFaces().forEach((p,f)=>{const c=centre(p);for(let k=0;k<5;k++){const cur=p[k],next=p[(k+1)%5],prev=p[(k+4)%5];
+    b.add([cur,lerp(cur,next,0.5),c,lerp(cur,prev,0.5)],f,"Kite")}});b.scaleTo(TILE_INR);return b.build()}
+  function megaminx(){const b=Builder();dodecaFaces().forEach((p,f)=>{const c=centre(p),inner=p.map(q=>lerp(c,q,MEGA_CENTRE));b.add(inner.slice(),f,"Pentagon");
+    for(let k=0;k<5;k++){const cur=p[k],next=p[(k+1)%5],prev=p[(k+4)%5],a=lerp(cur,next,1/3),bb=lerp(cur,next,2/3),bp=lerp(prev,cur,2/3);
+      b.add([a,bb,inner[(k+1)%5],inner[k]],f,"MegaEdge");b.add([cur,a,inner[k],bp],f,"MegaCorner")}});b.scaleTo(TILE_INR);return b.build()}
+  function soccer(){const {v,faces}=icosa(),b=Builder();let id=0;
+    v.forEach((vi,i)=>{const pts=[];v.forEach((vj,j)=>{if(i!==j&&Math.abs(len(sub(vi,vj))-2)<1e-6)pts.push(lerp(vi,vj,1/3))});b.add(around(pts,vi),id++,"Pentagon")});
+    faces.forEach(f=>{const A=v[f[0]],B=v[f[1]],C=v[f[2]];
+      b.add(around([lerp(A,B,1/3),lerp(A,B,2/3),lerp(B,C,1/3),lerp(B,C,2/3),lerp(C,A,1/3),lerp(C,A,2/3)],add(add(A,B),C)),id++,"Hexagon")});
+    b.scaleTo(TILE_INR);return b.build()}
+  function goldberg(f){
+    if(f<2)return soccer();const {v,faces}=icosa(),R=len(v[0]),corners=new Map(),order=[];
+    const key=q=>Math.round(q[0]*1e4)+","+Math.round(q[1]*1e4)+","+Math.round(q[2]*1e4);
+    for(const t of faces){const A=v[t[0]],B=v[t[1]],C=v[t[2]];
+      const P=(i,j)=>withLen(add(add(A,mul(sub(B,A),i/f)),mul(sub(C,A),j/f)),R);
+      const tri=(a,b,c)=>{const cen=withLen(mul(add(add(a,b),c),1/3),R);for(const q of [a,b,c]){const k=key(q);let e=corners.get(k);if(!e){e={p:q,around:[]};corners.set(k,e);order.push(k)}e.around.push(cen)}};
+      for(let i=0;i<f;i++)for(let j=0;i+j<f;j++){tri(P(i,j),P(i+1,j),P(i,j+1));if(i+j<f-1)tri(P(i+1,j),P(i+1,j+1),P(i,j+1))}}
+    const b=Builder();let id=0;for(const k of order){const e=corners.get(k);b.add(around(e.around,e.p),id++,e.around.length===5?"Pentagon":"Hexagon")}
+    b.scaleTo(TILE_INR);return b.build();
+  }
+  function build(type,n){
+    if(type==="tetra")return tetra(n);if(type==="octa")return octa(n);
+    if(type==="dodeca")return n===3?megaminx():kilominx();if(type==="geo")return goldberg(n);return null;
+  }
+  return {build,tetra,octa,kilominx,megaminx,soccer,goldberg};
+})();
+/* POLY-END */
+const POLY_TYPES=["tetra","octa","dodeca","geo"],isPolyType=t=>POLY_TYPES.includes(t);
+function topoOf(shape,blocks){return shape&&isPolyType(shape.type)?POLY.build(shape.type,shape.params.n):buildTopology(blocks)}
 function components(topo,B,useSol){
   const n=topo.count,comp=new Array(n).fill(-1),sets=[];
   for(let c=0;c<n;c++){if(comp[c]>=0)continue;const id=sets.length;let set=0;comp[c]=id;const st=[c];
@@ -509,9 +575,9 @@ function fillGenerate(topo,B0,colorsWanted,seed,minPar,scramble){
 // ShapeLibrary presets in unit coords (before B() and Center)
 const PRESETS={
   cube:{params:[["n","Edge",3,1,8]],build:p=>{const o=[];for(let x=0;x<p.n;x++)for(let y=0;y<p.n;y++)for(let z=0;z<p.n;z++)o.push([x,y,z]);return o},id:p=>"cube-"+p.n},
-  cross:{params:[["arm","Tay",1,1,4],["thick","Thick",1,1,3]],build:p=>{const s=new Set(),o=[];const A=(x,y,z)=>{const k=x+","+y+","+z;if(!s.has(k)){s.add(k);o.push([x,y,z])}};
+  cross:{params:[["arm","Arm",1,1,4],["thick","Thick",1,1,3]],build:p=>{const s=new Set(),o=[];const A=(x,y,z)=>{const k=x+","+y+","+z;if(!s.has(k)){s.add(k);o.push([x,y,z])}};
     for(let a=-p.arm;a<p.arm+p.thick;a++)for(let b=0;b<p.thick;b++)for(let c=0;c<p.thick;c++){A(a,b,c);A(b,a,c);A(b,c,a)}return o},id:p=>"cross-"+p.arm+p.thick},
-  tower:{params:[["w","Wide",2,1,5],["h","Cao",4,2,8]],build:p=>{const o=[];for(let x=0;x<p.w+2;x++)for(let z=0;z<p.w+2;z++)o.push([x,0,z]);
+  tower:{params:[["w","Wide",2,1,5],["h","Height",4,2,8]],build:p=>{const o=[];for(let x=0;x<p.w+2;x++)for(let z=0;z<p.w+2;z++)o.push([x,0,z]);
     for(let y=1;y<p.h;y++)for(let x=1;x<=p.w;x++)for(let z=1;z<=p.w;z++)o.push([x,y,z]);return o},id:p=>"tower-"+p.w+p.h},
   ell:{params:[["len","Long",4,2,8],["thick","Thick",2,1,3]],build:p=>{const s=new Set(),o=[];const A=(x,y,z)=>{const k=x+","+y+","+z;if(!s.has(k)){s.add(k);o.push([x,y,z])}};
     for(let a=0;a<p.len;a++)for(let b=0;b<p.thick;b++)for(let c=0;c<p.thick;c++){A(a,b,c);A(b,a,c)}return o},id:p=>"ell-"+p.len+p.thick},
@@ -519,10 +585,13 @@ const PRESETS={
   ball:{params:[["r","Radius",2,1,4,0.5]],build:p=>{const o=[],R=Math.floor(p.r)+1;for(let x=-R;x<=R;x++)for(let y=-R;y<=R;y++)for(let z=-R;z<=R;z++)if(x*x+y*y+z*z<=p.r*p.r)o.push([x,y,z]);return o},id:p=>"ball-"+Math.round(p.r*10)},
   bar:{params:[["len","Long",4,2,10]],build:p=>{const o=[];for(let i=0;i<p.len;i++)o.push([i,0,0]);return o},id:p=>"bar-"+p.len},
   slab:{params:[["w","Wide",3,1,8],["d","Deep",3,1,8]],build:p=>{const o=[];for(let x=0;x<p.w;x++)for(let z=0;z<p.d;z++)o.push([x,0,z]);return o},id:p=>"slab-"+p.w+p.d},
-  tetra:{params:[["n","Divisions per edge",3,2,8]],build:()=>[],id:p=>"tetra-"+p.n,poly:true}
+  tetra:{params:[["n","Triangles per edge",3,2,8]],build:()=>[],id:p=>"tetra-"+p.n,poly:true},
+  octa:{params:[["n","Triangles per edge",3,2,6]],build:()=>[],id:p=>"octa-"+p.n,poly:true},
+  dodeca:{params:[["n","2 Kilominx (60) · 3 Megaminx (132)",2,2,3]],build:()=>[],id:p=>"dodeca-"+p.n,poly:true},
+  geo:{params:[["n","1 soccer (32) · 2-4 Goldberg (42/92/162)",2,1,4]],build:()=>[],id:p=>"geo-"+p.n,poly:true}
 };
-// ---- format v2: one string, 3 characters per tile: [wire mask base32][kind+colour][rotation] ----
-const B32="0123456789abcdefghijklmnopqrstuv",SRC_CH={1:"r",2:"b",4:"y"},SRC_VAL={r:1,b:2,y:4};
+// ---- one string, 3 characters per tile: [wire mask base64][kind+colour][rotation] (base64's first 32 = old base32) ----
+const B32="0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_",SRC_CH={1:"r",2:"b",4:"y"},SRC_VAL={r:1,b:2,y:4};
 function encodeTiles(B){let s="";for(let i=0;i<B.sol.length;i++){s+=B32[B.sol[i]]+(B.kind[i]===1?SRC_CH[B.color[i]]:B.kind[i]===2?String(B.color[i]):".")+String(B.start[i])}return s}
 function decodeTiles(str){const n=str.length/3,B={sol:[],kind:[],color:[],start:[],locked:[]};
   for(let i=0;i<n;i++){const a=str[3*i],b=str[3*i+1],c=str[3*i+2];B.sol.push(B32.indexOf(a));
@@ -531,7 +600,7 @@ function decodeTiles(str){const n=str.length/3,B={sol:[],kind:[],color:[],start:
 const diffOf=(par,tiles,g)=>tiles?+Math.min(1,0.75*par/(tiles*1.2)+0.08*Math.max(0,g-1)).toFixed(2):0;
 function parseShapeId(id){const m=/^([a-z]+)-(\d+)$/.exec(String(id).trim());if(!m||!PRESETS[m[1]])return null;const t=m[1],d=m[2],p={};
   const two=()=>d.length>=2?[+d.slice(0,-1),+d.slice(-1)]:null;
-  if(t==="cube"||t==="tetra")p.n=+d;else if(t==="pyramid")p.base=+d;else if(t==="bar")p.len=+d;else if(t==="ball")p.r=+d/10;
+  if(t==="cube"||isPolyType(t))p.n=+d;else if(t==="pyramid")p.base=+d;else if(t==="bar")p.len=+d;else if(t==="ball")p.r=+d/10;
   else{const x=two();if(!x)return null;if(t==="cross"){p.arm=x[0];p.thick=x[1]}else if(t==="tower"){p.w=x[0];p.h=x[1]}else if(t==="ell"){p.len=x[0];p.thick=x[1]}else if(t==="slab"){p.w=x[0];p.d=x[1]}}
   return {id:PRESETS[t].id(p),type:t,params:p,blocks:PRESETS[t].build(p)}}
 const COLOR_HEX={0:0x5B6584,1:0xFF4D6D,2:0x3DA9FF,4:0xFFE14D,3:0xC77DFF,5:0xFF9A3D,6:0x3DFFA2,7:0xF4F7FF};
@@ -610,7 +679,9 @@ function draw(){
   const B=S.board,T=S.topo,useSol=S.mode==="board"&&$("#showSol").checked;
   const {comp,sets}=components(T,B,useSol);
   for(let i=0;i<T.count;i++){
-    const c=T.cells[i],P=c.ports||4,K=KIND[P]||KIND[4],F=cellFrame(c),g=new THREE.Group();
+    const c=T.cells[i],P=c.ports||4,F=cellFrame(c),g=new THREE.Group();
+    if(c.poly){drawPolyCell(c,i,g,F,showTiles,B,useSol,comp,sets);continue}
+    const K=KIND[P]||KIND[4];
     const n=vec(F.n),u=vec(F.u),v=new THREE.Vector3().crossVectors(n,u);
     g.setRotationFromMatrix(new THREE.Matrix4().makeBasis(u,v,n));
     g.position.set(F.pos[0]+F.n[0]*0.006,F.pos[1]+F.n[1]*0.006,F.pos[2]+F.n[2]*0.006);
@@ -636,6 +707,41 @@ function draw(){
     root.add(g);
   }
 }
+// Polygon tiles (tetra, octa, dodeca, balls): the real outline, and wire arms from the centre to each side's middle,
+// as the game draws them.
+function cellLocal(c){
+  if(c._loc)return c._loc;const u=c.A,v=cross(c.N,c.A),L=p=>{const d=sub(p,c.C);return [dot3(d,u)*0.5,dot3(d,v)*0.5]};
+  const corners=c.verts.map(L),mids=c.verts.map((p,k)=>L(mul(add(p,c.verts[(k+1)%c.ports]),0.5)));
+  const inr=Math.min(...mids.map(m=>Math.hypot(m[0],m[1])));
+  return c._loc={corners,mids,inr,sc:Math.max(0.55,Math.min(1.1,inr/0.5))};
+}
+const dot3=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+function fanGeo(pts,shrink){const g=new THREE.BufferGeometry(),v=[];
+  for(let k=0;k<pts.length;k++){const a=pts[k],b=pts[(k+1)%pts.length];v.push(0,0,0,a[0]*shrink,a[1]*shrink,0,b[0]*shrink,b[1]*shrink,0)}
+  g.setAttribute("position",new THREE.Float32BufferAttribute(v,3));g.computeVertexNormals();return g}
+function drawPolyCell(c,i,g,F,showTiles,B,useSol,comp,sets){
+  const n=vec(F.n),u=vec(F.u),v=new THREE.Vector3().crossVectors(n,u),loc=cellLocal(c),P=c.ports;
+  g.setRotationFromMatrix(new THREE.Matrix4().makeBasis(u,v,n));
+  g.position.set(F.pos[0]+F.n[0]*0.006,F.pos[1]+F.n[1]*0.006,F.pos[2]+F.n[2]*0.006);
+  const base=new THREE.Mesh(fanGeo(loc.corners,1),showTiles?MAT.block:MAT.blockShape);base.position.z=-0.004;g.add(base);
+  const tile=new THREE.Mesh(fanGeo(loc.corners,0.9),MAT.tile[c.face%6]);tile.userData.tile=i;g.add(tile);if(showTiles)pickables.push(tile);
+  if(!showTiles){root.add(g);return}
+  const m=useSol?B.sol[i]:rotN(B.sol[i],B.start[i],P),lit=sets[comp[i]];
+  const wc=COLOR_HEX[lit]!==undefined&&lit?COLOR_HEX[lit]:0x5B6584,wmat=basic(wc);wmat._own=true;const sc=loc.sc;
+  for(let k=0;k<P;k++)if(m&(1<<k)){const [mx,my]=loc.mids[k],L=Math.hypot(mx,my),th=Math.atan2(my,mx);
+    const sg=new THREE.Mesh(new THREE.PlaneGeometry(0.15,L),wmat);sg.position.set(mx/2,my/2,0.004);sg.rotation.z=th-Math.PI/2;g.add(sg);
+    if(lit){const cr=new THREE.Mesh(new THREE.PlaneGeometry(0.05,L),basic(0xFFFFFF));cr.material._own=true;cr.material.transparent=true;cr.material.opacity=0.85;cr.position.set(mx/2,my/2,0.006);cr.rotation.z=sg.rotation.z;g.add(cr)}}
+  if(m){const d=new THREE.Mesh(GEO.dot,wmat);d.position.z=0.005;g.add(d)}
+  if(B.kind[i]===1){const col=COLOR_HEX[B.color[i]];const h=new THREE.Mesh(GEO.halo,basic(col));h.material._own=true;h.material.transparent=true;h.material.opacity=0.22;h.position.z=0.003;h.scale.setScalar(sc);g.add(h);
+    const d=new THREE.Mesh(new THREE.PlaneGeometry(0.26*sc,0.26*sc),basic(col));d.material._own=true;d.rotation.z=Math.PI/4;d.position.z=0.008;g.add(d);
+    const w=new THREE.Mesh(new THREE.PlaneGeometry(0.08,0.08),basic(0xFFFFFF));w.material._own=true;w.rotation.z=Math.PI/4;w.position.z=0.009;g.add(w)}
+  if(B.kind[i]===2){const col=COLOR_HEX[B.color[i]];const on=sets[comp[i]]===B.color[i];
+    if(on){const h=new THREE.Mesh(GEO.halo,basic(col));h.material._own=true;h.material.transparent=true;h.material.opacity=0.3;h.position.z=0.003;h.scale.setScalar(sc);g.add(h)}
+    const r=new THREE.Mesh(GEO.ring,basic(col));r.material._own=true;r.position.z=0.008;r.scale.setScalar(sc);g.add(r);
+    const d=new THREE.Mesh(GEO.disc,basic(on?0xFFFFFF:0x06070D));d.material._own=true;d.position.z=0.009;d.scale.setScalar(sc);g.add(d)}
+  if(S.mode==="board"&&S.pathPrev===i){const sel=new THREE.Mesh(fanGeo(loc.corners,0.9),MAT.sel);sel.position.z=0.012;g.add(sel)}
+  root.add(g);
+}
 function fit(){
   if(!S.topo&&!S.blocks.length)return;let r=1;
   if(S.topo&&S.topo.poly)r=S.topo.radius/2+0.5;else centerDoubled(S.blocks).forEach(b=>{r=Math.max(r,Math.hypot(b[0],b[1],b[2])/2+0.9)});
@@ -656,7 +762,7 @@ renderer.domElement.addEventListener("pointerup",e=>{
 });
 function onPick(hit,e){
   if(S.mode==="shape"){
-    if(!hit||S.shapeTool==="orbit")return;if(S.topo&&S.topo.poly)return toast("Triangle shapes are set by parameters; blocks cannot be added or removed.");const i=hit.object.userData.block;if(i===undefined)return;
+    if(!hit||S.shapeTool==="orbit")return;if(S.topo&&S.topo.poly)return toast("Polygon shapes (tetra, octa, dodeca, balls) are set by their size; blocks cannot be added or removed.");const i=hit.object.userData.block;if(i===undefined)return;
     const base=S.blocks[i];
     if(S.shapeTool==="del"||e.shiftKey){if(S.blocks.length<=1)return toast("A shape needs at least one block.");setBlocks(S.blocks.filter((_,j)=>j!==i),null,false)}
     else{const n=hit.face.normal;const nb=[base[0]+Math.round(n.x),base[1]+Math.round(n.y),base[2]+Math.round(n.z)];setBlocks(S.blocks.concat([nb]),null,false)}
@@ -689,7 +795,7 @@ function renderParams(){
 function readPreset(){const t=$("#pType").value,p=PRESETS[t],params={};p.params.forEach(([k,,v,mn,mx])=>{let x=+$("#pp_"+k).value;if(!isFinite(x))x=v;params[k]=Math.min(mx,Math.max(mn,x))});return {t,p,params}}
 $("#pType").onchange=renderParams;
 $("#btnPlace").onclick=()=>{const {t,p,params}=readPreset();setBlocks(p.build(params),{id:p.id(params),type:t,params},true);fit()};
-$("#btnMerge").onclick=()=>{const {p,params}=readPreset();if(p.poly||isPolyType(S.shape.type))return toast("Triangle tiles cannot be merged with square blocks.");const o=[+$("#offX").value||0,+$("#offY").value||0,+$("#offZ").value||0];
+$("#btnMerge").onclick=()=>{const {p,params}=readPreset();if(p.poly||isPolyType(S.shape.type))return toast("Polygon shapes cannot be merged with blocks.");const o=[+$("#offX").value||0,+$("#offY").value||0,+$("#offZ").value||0];
   setBlocks(S.blocks.concat(p.build(params).map(b=>add(b,o))),null,false);fit()};
 $("#btnUndoShape").onclick=()=>{const h=S.history.pop();if(!h)return toast("Nothing left to undo.");S.blocks=h.blocks;S.shape=h.shape;S.pristine=h.pristine;rebuildTopo(true)};
 $("#btnMegamix").onclick=()=>{setBlocks(megamixBlocks(Rng((Math.random()*2**32)>>>0)),null,false);fit()};
@@ -700,7 +806,7 @@ document.querySelectorAll("#shapeTools .tool").forEach(b=>b.onclick=()=>{S.shape
 // so the same number feels alike on a cube, a tetrahedron or (later) a dodecahedron.
 const DIFF_NAME=["","Very easy","Very easy","Easy","Easy","Medium","Medium","Hard","Hard","Very hard","Very hard"];
 function diffParams(d,topo){
-  const t=(Math.max(1,Math.min(10,d))-1)/9,n=topo?topo.count:0,P=topo?portsAt(topo,0):4;
+  const t=(Math.max(1,Math.min(10,d))-1)/9,n=topo?topo.count:0,P=topo&&n?topo.cells.reduce((a,c)=>a+(c.ports||4),0)/n:4;
   const colors=Math.max(1,Math.min(3,1+Math.round(t*2.2)+(n<30&&t>0.5?-1:0)));
   const scramble=+(0.3+0.5*t).toFixed(2);
   const minPar=Math.max(3,Math.round(n*scramble*(P/2)*(0.4+0.3*t)));
@@ -810,7 +916,8 @@ function compactJSON(o){return JSON.stringify(o,null,2).replace(/\[\n\s+((?:"[^"
 function refreshShape(){
   if(typeof renderDiff==="function")try{renderDiff();if(BSHAPES.some(r=>r.v==="current"))renderBatchShapes()}catch(_){}
   $("#kBlocks").textContent=S.blocks.length;$("#kTiles").textContent=S.topo?S.topo.count:0;$("#kShapeId").textContent=S.shape.id;
-  const m=[];if(S.topo&&S.topo.poly)m.push(["",`Tetra: ${S.topo.count} triangle tiles (${S.shape.params.n}×${S.shape.params.n} per face), each turns 3 ways.`]);else if(S.pristine)m.push(["",`Preset ${S.shape.type}: saved in the catalog as "${S.shape.id}".`]);else m.push(["",`Merged shape: saved as type "voxel" with a block list, id "${S.shape.id}".`]);
+  const m=[];if(S.topo&&S.topo.poly){const k={};S.topo.cells.forEach(c=>k[c.shape]=(k[c.shape]||0)+1);
+    m.push(["",`${SHAPE_LABEL[S.shape.type]||S.shape.type} "${S.shape.id}": ${S.topo.count} tiles (${Object.entries(k).map(([a,b])=>b+" "+TILE_LABEL[a]).join(", ")}). A tap turns a tile one side on.`])}else if(S.pristine)m.push(["",`Preset ${S.shape.type}: saved in the catalog as "${S.shape.id}".`]);else m.push(["",`Merged shape: saved as type "voxel" with a block list, id "${S.shape.id}".`]);
   if(S.topo&&S.topo.count>220)m.push(["w","More than 220 tiles: the level will be very long on a phone."]);
   $("#shapeMsgs").innerHTML=m.map(([c,t])=>`<li class="${c}">${esc(t)}</li>`).join("");
 }
@@ -955,10 +1062,12 @@ $("#ngSave").onclick=async()=>{
 /* ---- batch generation along a difficulty curve ---- */
 let BATCH=[];
 const lerp=(a,b,t)=>a+(b-a)*t;
-const SHAPE_LABEL={cube:"Cube",cross:"Cross",tower:"Tower",ell:"Ell (L shape)",pyramid:"Stepped pyramid",ball:"Ball",bar:"Thanh",slab:"Slab",tetra:"Tetra (triangle tiles)"};
-// Shape menu for batches. New polyhedra (dodeca…) slot in here with a topology builder; "soon" entries show disabled.
+const SHAPE_LABEL={cube:"Cube",cross:"Cross",tower:"Tower",ell:"Ell (L shape)",pyramid:"Stepped pyramid",ball:"Ball of blocks",bar:"Bar",slab:"Slab",
+  tetra:"Tetra (triangles)",octa:"Octa (triangles)",dodeca:"Dodeca (Kilominx / Megaminx)",geo:"Sphere (pentagons + hexagons)"};
+const TILE_LABEL={Triangle:"triangles",Square:"squares",Pentagon:"pentagons",Hexagon:"hexagons",Kite:"kites",MegaCorner:"corner pieces",MegaEdge:"edge pieces"};
+// Shape menu for batches.
 const BATCH_MENU=[{v:"current",label:"Shape being built"}].concat(Object.keys(PRESETS).map(k=>({v:k,label:SHAPE_LABEL[k]||k})),
-  [{v:"megamix",label:"Megamix (random blocks each level)"},{v:"dodeca",label:"Dodeca 12 pentagon faces (coming soon)",soon:true}]);
+  [{v:"megamix",label:"Megamix (random blocks each level)"}]);
 let BSHAPES=[{v:"current",params:{}}];
 function renderBatchShapes(){
   $("#bShapeRows").innerHTML=BSHAPES.map((r,i)=>{const pr=PRESETS[r.v];
@@ -1195,7 +1304,7 @@ $("#cBtnCheck").onclick=async()=>{
     }
     const ne=issues.filter(i=>i.sev==="err").length,nw=issues.length-ne;
     $("#cCheckStats").innerHTML=`<div class="c-stat"><span>Group</span><b>${ids.length}</b></div><div class="c-stat"><span>Levels in order / in data</span><b>${nOrd} / ${nLv}</b></div><div class="c-stat"><span>Saved shapes</span><b>${shapeRows.length}</b></div><div class="c-stat"><span>Errors · warnings</span><b style="color:var(${ne?"--bad":nw?"--warn":"--ok"})">${ne} · ${nw}</b></div>`;
-    $("#cCheckList").innerHTML=issues.length?issues.map((it,i)=>`<div class="c-issue"><span class="c-sev ${it.sev}">${it.sev==="err"?"error":"warning"}</span><span><b class="mono">${esc(it.where)}</b> ${esc(it.msg)}</span>${it.link?`<button class="btn sm" type="button" data-issue="${i}">Open</button>`:"<span></span>"}</div>`).join(""):`<div class="empty" style="color:var(--ok)">No errors. The data is ready to export to Unity.</div>`;
+    $("#cCheckList").innerHTML=issues.length?issues.map((it,i)=>`<div class="c-issue"><span class="c-sev ${it.sev}">${it.sev==="err"?"error":"warning"}</span><span><b class="mono">${esc(it.where)}</b> ${esc(it.msg)}</span>${it.link?`<button class="btn sm" type="button" data-issue="${i}">Open</button>`:"<span></span>"}</div>`).join(""):`<div class="empty" style="color:var(--ok)">No errors. The data is ready to publish.</div>`;
     $("#cCheckList").onclick=e=>{const b=e.target.closest("[data-issue]");if(b){const [g,sn]=issues[+b.dataset.issue].link;openGroup(g,sn)}};
     $("#cCheckInfo").textContent="Checked at "+new Date().toLocaleTimeString();
   }catch(e){$("#cCheckInfo").textContent="Check stopped: "+(e.message||e.code)}finally{btn.disabled=false}
@@ -1257,6 +1366,7 @@ async function connect(){
   try{const u=await claude.use("user");if(u&&u.can){const c=await u.can("data.write");if(c===false)canWrite=false}}catch(_){}
   let first=true;
   const status=()=>{if(MANIFEST)setStatus(`Data v${MANIFEST.schema||1}: <b>${groups().length}</b> groups · shapesVersion <b>${MANIFEST.shapesVersion}</b>${canWrite?"":" · view only"}`)};
+  db.doc("meta/publish").onSnapshot(s=>{PUB=s.exists?s.data():null;renderPublish()},()=>{});
   db.collection("groups").onSnapshot(q=>{GROUPS={};q.docs.forEach(d=>GROUPS[d.id]=d.data());renderGroups();status();cfgOnData()},()=>{});
   db.doc("meta/manifest").onSnapshot(s=>{got=true;clearTimeout(timer);
     if(!s.exists){MANIFEST=null;setStatus('The data store is empty. <button class="btn sm" id="btnInit" type="button">Create starter data</button>');
@@ -1266,6 +1376,47 @@ async function connect(){
     if(!S.level.rev&&S.group&&!$("#lvId").value.startsWith(S.group+"-"))$("#lvId").value=idOf(S.group,nextSerial());
   },e=>setStatus("Lost the data connection ("+e.code+")."));
 }
+/* ================= publish to the game ================= */
+// "Publish to game" starts the scheduled task "Circuit Cube: publish Level Lab levels" through the Claude Code Remote
+// connector. That run reads this database, writes content/ in the GitHub repo (Tools/LevelLab/publish.py checks every
+// level first), tags it content-v<N> and reports back in meta/publish. The game reads content/manifest.json from
+// GitHub on start and downloads new or edited levels from the tagged copy on jsDelivr.
+const PUBLISH_TASK="trig_0127qMBCKjep5zwUofXnjp8e",REPO_URL="https://github.com/tuankun-279/CircuitCube";
+let PUB=null,pubBusy=false;
+function ago(iso){if(!iso)return "";const s=(Date.now()-Date.parse(iso))/1000;return s<90?"just now":s<5400?Math.round(s/60)+" min ago":s<129600?Math.round(s/3600)+" h ago":new Date(iso).toLocaleDateString()}
+function renderPublish(){
+  const el=$("#pubStatus"),p=PUB;let h="";
+  if(!p)h="Not published from Level Lab yet.";
+  else if(p.state==="requested")h=`Publish requested ${ago(p.requestedAt)}: waiting for the task to start (about a minute).`;
+  else if(p.state==="running")h=`Publishing… started ${ago(p.startedAt)}.`;
+  else if(p.state==="done")h=`Published <b>v${esc(p.version)}</b> ${ago(p.finishedAt)} · ${esc(p.levels)} levels · <a href="${REPO_URL}/commit/${esc(p.commit)}" target="_blank" rel="noopener">commit ${esc(String(p.commit||"").slice(0,7))}</a>. Players get it on their next start.`;
+  else if(p.state==="no-change")h=`Nothing new to publish (checked ${ago(p.finishedAt)}).`;
+  else if(p.state==="failed")h=`<span style="color:var(--bad)">Publish stopped ${ago(p.finishedAt)}:</span> ${(p.problems||[]).slice(0,4).map(esc).join(" · ")}${(p.problems||[]).length>4?` · and ${p.problems.length-4} more (see Check)`:""}`;
+  el.innerHTML=h;$("#btnPublish").disabled=pubBusy||(p&&(p.state==="requested"||p.state==="running")&&Date.now()-Date.parse(p.requestedAt||p.startedAt)<15*60e3);
+}
+$("#btnPublish").onclick=async()=>{
+  if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");
+  if(gDirty&&gDirty())return toast("Save or discard the group changes first.");
+  const mcp=await claude.use("mcp").catch(()=>null);
+  if(!mcp)return toast("Publishing runs through your Claude Code connector: open Level Lab on claude.ai, signed in as its owner.");
+  pubBusy=true;renderPublish();
+  try{
+    await DB.doc("meta/publish").set({state:"requested",requestedAt:new Date().toISOString()});
+    await mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:PUBLISH_TASK,text:"Requested from Level Lab."});
+    toast("Publishing started. The status line updates when it is done (usually 2-4 minutes).");
+  }catch(e){
+    const c=e&&e.code;
+    const msg=c==="server_not_connected"?"The Claude Code connector is not connected to your account.":
+      c==="needs_reauth"?"The Claude Code connector needs you to sign in again (claude.ai settings, Connectors).":
+      c==="approval_required"||c==="not_granted"||c==="consent_required"?"Publishing needs your approval to use the Claude Code connector; press Publish again and allow it.":
+      c==="blocked_by_policy"?"Your organization does not allow this page to use the Claude Code connector.":
+      c==="tool_error"?"The publish task could not start: "+((e.message||"").slice(0,160)):
+      "The publish request may or may not have started ("+(c||"error")+"). Watch the status line before pressing again.";
+    toast(msg);if(c!=="server_unavailable"&&c!=="upstream_error")try{await DB.doc("meta/publish").set(Object.assign({},PUB||{},{state:"failed",finishedAt:new Date().toISOString(),problems:[msg]}))}catch(_){}
+  }finally{pubBusy=false;renderPublish()}
+};
+setInterval(renderPublish,30000);
+
 /* ================= boot ================= */
 renderParams();renderColors();swatch();renderBatchShapes();
 setBlocks(PRESETS.cube.build({n:3}),{id:"cube-3",type:"cube",params:{n:3}},true);S.history=[];

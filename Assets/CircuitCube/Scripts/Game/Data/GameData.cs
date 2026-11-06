@@ -121,6 +121,17 @@ namespace CircuitCube.Game
             return c != null && i < c.levels.Count ? c.levels[i] : 0;
         }
 
+        /// <summary>Revision the order chunk lists for the level at a position, 0 if it lists none.</summary>
+        public static int RevAt(int g, int position)
+        {
+            if (Legacy || position < 1) return 0;
+            var gd = Group(g);
+            if (position > gd.levelCount) return 0;
+            var c = Chunk(g, (position - 1) / gd.chunkSize);
+            int i = (position - 1) % gd.chunkSize;
+            return c != null && c.revs != null && i < c.revs.Count ? c.revs[i] : 0;
+        }
+
         // ---------------- levels ----------------
 
         static VoxelShapeFile Voxel(string id)

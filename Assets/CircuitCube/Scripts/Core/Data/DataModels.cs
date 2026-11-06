@@ -37,6 +37,10 @@ namespace CircuitCube.Core
         public int shapesVersion = 1;
         public GameRules rules = new GameRules();
         public List<GroupRef> groups = new List<GroupRef>();
+        /// <summary>Publish number from Level Lab (content-v&lt;n&gt; tag in the repo).</summary>
+        public int contentVersion;
+        /// <summary>Where the files of this publish are served (an immutable tag on jsDelivr); empty = next to the manifest.</summary>
+        public string cdn = "";
     }
 
     [Serializable] public class ChunkInfo
@@ -58,6 +62,8 @@ namespace CircuitCube.Core
         public string group;
         public int chunk, version;
         public List<int> levels = new List<int>();
+        /// <summary>Revision of each level in <see cref="levels"/> (same order); a newer one is downloaded again.</summary>
+        public List<int> revs = new List<int>();
     }
 
     [Serializable] public class GenInfo

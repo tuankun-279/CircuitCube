@@ -1,0 +1,17 @@
+{
+  "blurb": "Eight triangle faces meeting four at a corner.",
+  "chunkSize": 100,
+  "chunks": [
+    {
+      "count": 10,
+      "index": 0,
+      "version": 1
+    }
+  ],
+  "enable": true,
+  "endless": false,
+  "icon": "octa",
+  "id": "octa",
+  "levelCount": 10,
+  "name": "Octa"
+}
