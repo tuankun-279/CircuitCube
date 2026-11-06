@@ -1379,8 +1379,8 @@ async function connect(){
 /* ================= publish to the game ================= */
 // "Publish to game" starts the scheduled task "Circuit Cube: publish Level Lab levels" through the Claude Code Remote
 // connector. That run reads this database, writes content/ in the GitHub repo (Tools/LevelLab/publish.py checks every
-// level first), tags it content-v<N> and reports back in meta/publish. The game reads content/manifest.json from
-// GitHub on start and downloads new or edited levels from the tagged copy on jsDelivr.
+// level first), pins the commit in the manifest and reports back in meta/publish. The game reads content/manifest.json
+// from GitHub on start and downloads new or edited levels from that commit on jsDelivr.
 const PUBLISH_TASK="trig_0127qMBCKjep5zwUofXnjp8e",REPO_URL="https://github.com/tuankun-279/CircuitCube";
 let PUB=null,pubBusy=false;
 function ago(iso){if(!iso)return "";const s=(Date.now()-Date.parse(iso))/1000;return s<90?"just now":s<5400?Math.round(s/60)+" min ago":s<129600?Math.round(s/3600)+" h ago":new Date(iso).toLocaleDateString()}

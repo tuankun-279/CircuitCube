@@ -1,14 +1,17 @@
 """Turn a dump of the Level Lab database into the content/ folder the game downloads, and check it.
 
 usage: python3 publish.py <dump dir> <repo root> [--version N]
+       python3 publish.py --pin <commit sha> <repo root>
 
 <dump dir> holds one JSON file per database document, as the ArtifactData tool saves them with out_dir:
   meta/manifest.json, groups/<id>.json, orders/<group>-<k>.json, levels/<group>-<serial>.json, shapes/<id>.json
 <repo root>/content/ is replaced with the same layout as Level Lab's "Export zip":
   manifest.json, groups/<id>.json, orders/<group>/<k>.json, levels/<group>/<serial4>.json, shapes.json,
   shapes/voxel/<id>.json
-The manifest gets contentVersion = the previous one + 1 (or --version) and cdn = the jsDelivr address of the
-content-v<N> tag, which the publishing session creates on the commit. Order chunks get the revision of each level
+The manifest gets contentVersion = the previous one + 1 (or --version). Publishing is two commits: the first holds
+the new content/; then --pin writes that commit's jsDelivr address (immutable, cached for good) into
+content/manifest.json as "cdn", and a second commit carries only that. The game reads the manifest from main on
+raw.githubusercontent.com and everything else from the pinned commit. Order chunks get the revision of each level
 (revs), so players re-download edited levels.
 
 Every level is checked: its shape exists, its tile string fits the shape (3 characters per tile, valid characters),
@@ -166,7 +169,20 @@ def tile_count(sid, shapes):
 
 # ---------------------------------------------------------------- publish
 
+def pin(sha, repo):
+    path = os.path.join(repo, "content", "manifest.json")
+    with open(path) as fh:
+        m = json.load(fh)
+    m["cdn"] = "https://cdn.jsdelivr.net/gh/%s@%s/content/" % (REPO, sha)
+    with open(path, "w") as fh:
+        json.dump(m, fh, indent=2)
+    print(json.dumps({"contentVersion": m.get("contentVersion"), "cdn": m["cdn"]}))
+
+
 def main():
+    if sys.argv[1] == "--pin":
+        pin(sys.argv[2], sys.argv[3])
+        return
     dump, repo = sys.argv[1], sys.argv[2]
     forced = int(sys.argv[sys.argv.index("--version") + 1]) if "--version" in sys.argv else None
     meta = load_dir(os.path.join(dump, "meta")).get("manifest")
@@ -194,7 +210,7 @@ def main():
         "rules": dict(RULES, **(meta.get("rules") or {})),
         "groups": [{"id": g["id"], "unlock": g.get("unlock") or {"group": "", "cleared": 0}} for g in meta.get("groups", [])],
         "contentVersion": version,
-        "cdn": "https://cdn.jsdelivr.net/gh/%s@content-v%d/content/" % (REPO, version),
+        "cdn": "",
     }
     files["manifest.json"] = manifest
     total = 0
