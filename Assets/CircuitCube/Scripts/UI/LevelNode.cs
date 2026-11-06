@@ -16,7 +16,10 @@ namespace CircuitCube.UI
         public Sprite OpenSprite, DoneSprite, LockedSprite;
         public Color OpenText = new Color(0.12f, 0.14f, 0.25f), LockedText = new Color(0.6f, 0.64f, 0.71f);
 
-        public void Set(int level, bool open, int stars, Action onPick)
+        public void Set(int level, bool open, int stars, Action onPick) => Set(level, open, stars, onPick, open && stars == 0);
+
+        /// <param name="current">The next level to play; highlighted like the mockup's level 12.</param>
+        public void Set(int level, bool open, int stars, Action onPick, bool current)
         {
             Number.text = level.ToString();
             Number.color = open ? OpenText : LockedText;
@@ -24,8 +27,6 @@ namespace CircuitCube.UI
             var th = Themes.Current;
             if (th != null)
             {
-                // the next level to play is highlighted, like the mockup's level 12
-                bool current = open && stars == 0;
                 Background.color = th.Get(!open ? UiRole.NodeLocked : current ? UiRole.NodeCurrent : UiRole.NodeOpen);
                 Number.color = th.Get(!open ? UiRole.TextMuted : current ? UiRole.OnPrimary : UiRole.OnNode);
             }

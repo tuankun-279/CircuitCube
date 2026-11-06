@@ -37,6 +37,7 @@ namespace CircuitCube.EditorTools
             AddCoreLayers(dark);
             NodeLayers();
             StyleUI();
+            UiV2Builder.Build();
             WireScene(dark, light);
             AppIcon();
             AssetDatabase.SaveAssets();
@@ -440,7 +441,7 @@ namespace CircuitCube.EditorTools
                 Txt(r, "Levels/Subtitle", UiRole.TextMuted);
                 // HUD
                 Round(r, "Hud/Back", "icon_back");
-                Round(r, "Hud/Restart", "icon_restart");
+                Button(r, "Hud/Restart", false, "icon_restart");
                 Round(r, "Hud/Hint", "icon_hint");
                 Img(r, "Hud/Hint/Count", S("ui_circle"), UiRole.Accent);
                 Txt(r, "Hud/Hint/Count/Value", UiRole.OnPrimary);
@@ -450,12 +451,11 @@ namespace CircuitCube.EditorTools
                 // pop-ups
                 Img(r, "Dim", null, UiRole.Overlay);
                 Img(r, "ResultCard/Panel", S("ui_card"), UiRole.Card, true);
-                Img(r, "ResultCard/Panel/Badge", null, UiRole.Transparent);
-                Txt(r, "ResultCard/Panel/Badge/Title", UiRole.Text);
                 Txt(r, "ResultCard/Panel/Body", UiRole.TextMuted);
                 Button(r, "ResultCard/Panel/Next", true, "icon_next");
                 Button(r, "ResultCard/Panel/Replay", false, "icon_restart");
-                Button(r, "ResultCard/Panel/Levels", false, "icon_levels");
+                Button(r, "ResultCard/Panel/" + (r.Find("ResultCard/Panel/Home") != null ? "Home" : "Levels"), false,
+                    r.Find("ResultCard/Panel/Home") != null ? "icon_home" : "icon_levels");
                 Img(r, "TipCard/Panel", S("ui_card"), UiRole.Card, true);
                 Txt(r, "TipCard/Panel/Title", UiRole.Text);
                 Txt(r, "TipCard/Panel/Body", UiRole.TextMuted);

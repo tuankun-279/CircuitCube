@@ -8,11 +8,13 @@ namespace CircuitCube.UI
     /// </summary>
     public sealed class UIRoot : MonoBehaviour
     {
+        public SplashScreen Splash;
         public HomeScreen Home;
         public ShapesScreen Shapes;
         public LevelsScreen Levels;
         public HudScreen Hud;
         public GameObject Dim;        // shown under any open card
-        public Card Result, Tip;
+        public Card Result, Tip, Unlock;
+        public SettingsCard Settings;
     }
 }

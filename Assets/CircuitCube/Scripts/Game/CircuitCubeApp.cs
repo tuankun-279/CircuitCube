@@ -46,6 +46,8 @@ namespace CircuitCube.Game
         int _moves, _hintsLeft, _hintsUsed;
         bool _busy, _cheat;
         System.Action _tipClosed;
+        readonly Stack<int> _undo = new Stack<int>();   // tiles the player turned, newest first
+        int _unlockedGroup = -1;                       // a shape the last win unlocked, offered after the result card
 
         // Input
         bool _pressed, _dragging, _overUi;
@@ -65,23 +67,50 @@ namespace CircuitCube.Game
             var home = UI.Home;
             home.PlayButton.onClick.AddListener(() => StartLevel(CubeSave.CurrentGroup, CubeSave.Unlocked(CubeSave.CurrentGroup)));
             home.ShapesButton.onClick.AddListener(ShowShapes);
+            home.LevelsButton.onClick.AddListener(() => ShowLevels(CubeSave.CurrentGroup));
+            home.SettingsButton.onClick.AddListener(() => OpenSettings(false));
             UI.Shapes.BackButton.onClick.AddListener(Back);
             UI.Levels.BackButton.onClick.AddListener(Back);
-            UI.Hud.BackButton.onClick.AddListener(Back);
-            UI.Hud.RestartButton.onClick.AddListener(() => { if (_state == State.Playing && !_busy) StartLevel(_group, _level.Number); });
-            UI.Hud.HintButton.onClick.AddListener(UseHint);
+            var hud = UI.Hud;
+            hud.BackButton.onClick.AddListener(() => { if (_state == State.Playing && !_busy && !CardOpen) OpenSettings(true); });
+            hud.RestartButton.onClick.AddListener(() => { if (_state == State.Playing && !_busy && !CardOpen) StartLevel(_group, _level.Number); });
+            hud.HintButton.onClick.AddListener(UseHint);
+            hud.UndoButton.onClick.AddListener(Undo);
+            hud.HelpButton.onClick.AddListener(() => { if (_state == State.Playing && !CardOpen) ShowHowTo(); });
 
             var r = UI.Result;
             r.Primary.onClick.AddListener(NextLevel);
             r.SecondaryA.onClick.AddListener(() => StartLevel(_group, _level.Number));
-            r.SecondaryB.onClick.AddListener(() => ShowLevels(_group));
+            r.SecondaryB.onClick.AddListener(ShowHome);
             UI.Tip.Primary.onClick.AddListener(CloseTip);
+
+            var u = UI.Unlock;
+            u.Primary.onClick.AddListener(() =>
+            {
+                int g = _unlockedGroup;
+                _unlockedGroup = -1;
+                CubeSave.MarkSeenShape(g);   // the card already introduced it
+                StartLevel(g, 1);
+            });
+            u.SecondaryA.onClick.AddListener(() => { _unlockedGroup = -1; NextLevel(); });
+
+            var st = UI.Settings;
+            st.Close.onClick.AddListener(CloseSettings);
+            st.Resume.onClick.AddListener(CloseSettings);
+            st.Restart.onClick.AddListener(() => { CloseSettings(); StartLevel(_group, _level.Number); });
+            st.Home.onClick.AddListener(() => { CloseSettings(); SaveInProgress(); ShowHome(); });
+            st.ThemePicked += SetTheme;
         }
 
         void Start()
         {
+            HideAll();
+            UI.Splash.Show();
+            UI.Splash.SetProgress(0f);
+            UI.Splash.Status.text = "Loading levels...  ·  v" + Application.version;
             GameData.Reload();
-            ShowHome();
+            // the data loads in one go; the bar just gives the logo a moment on screen
+            _tw.Run(0.9f, p => UI.Splash.SetProgress(Tweener.Ease(p)), () => { if (UI.Splash.gameObject.activeSelf) ShowHome(); });
             if (!string.IsNullOrEmpty(ContentBaseUrl))
                 StartCoroutine(RemoteContent.Sync(ContentBaseUrl, CubeSave.Beaten, () => { if (_state != State.Playing && _state != State.Won) DebugRefresh(); }));
         }
@@ -123,7 +152,7 @@ namespace CircuitCube.Game
 
         void HideAll()
         {
-            UI.Home.Hide(); UI.Shapes.Hide(); UI.Levels.Hide(); UI.Hud.Hide();
+            UI.Splash.Hide(); UI.Home.Hide(); UI.Shapes.Hide(); UI.Levels.Hide(); UI.Hud.Hide();
             CloseCards();
         }
 
@@ -131,10 +160,32 @@ namespace CircuitCube.Game
         {
             UI.Result.gameObject.SetActive(false);
             UI.Tip.gameObject.SetActive(false);
+            UI.Unlock.gameObject.SetActive(false);
+            UI.Settings.gameObject.SetActive(false);
             UI.Dim.SetActive(false);
         }
 
-        bool CardOpen => UI.Result.gameObject.activeSelf || UI.Tip.gameObject.activeSelf;
+        bool CardOpen => UI.Result.gameObject.activeSelf || UI.Tip.gameObject.activeSelf
+                         || UI.Unlock.gameObject.activeSelf || UI.Settings.gameObject.activeSelf;
+
+        void OpenSettings(bool paused)
+        {
+            UI.Dim.SetActive(true);
+            UI.Settings.Open(paused);
+        }
+
+        void CloseSettings()
+        {
+            UI.Settings.gameObject.SetActive(false);
+            if (!UI.Result.gameObject.activeSelf && !UI.Tip.gameObject.activeSelf) UI.Dim.SetActive(false);
+        }
+
+        /// <summary>The shape icon of a group in the current theme (from the ShapeCard prefab's icon lists).</summary>
+        Sprite GroupIcon(int g)
+        {
+            var info = GameData.Group(g);
+            return UI.Shapes.CardPrefab.IconFor(string.IsNullOrEmpty(info.icon) ? info.id : info.icon);
+        }
 
         void ShowHome()
         {
@@ -154,10 +205,17 @@ namespace CircuitCube.Game
 
             var h = UI.Home;
             h.Show();
-            h.PlayLabel.text = "Play  ·  Level " + CubeSave.Unlocked(g);
-            h.GroupLabel.text = GameData.Group(g).name;
-            int stars = CubeSave.TotalStars;
-            h.StarsLabel.text = stars > 0 ? stars + " stars collected" : "";
+            var info = GameData.Group(g);
+            int total = Mathf.Max(1, info.levelCount);
+            int next = CubeSave.Unlocked(g);
+            h.PlayLabel.text = "Play";
+            h.GroupLabel.text = info.name;
+            h.StarsLabel.text = CubeSave.TotalStars.ToString();
+            h.GroupName.text = info.name;
+            h.GroupProgress.text = info.endless ? "Level " + next : "Level " + Mathf.Min(next, total) + " / " + total;
+            h.GroupFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(CubeSave.Beaten(g) / (float)total), h.GroupFill.anchorMax.y);
+            var icon = GroupIcon(g);
+            if (icon != null) h.GroupIcon.sprite = icon;
         }
 
         void ShowShapes()
@@ -166,6 +224,7 @@ namespace CircuitCube.Game
             HideAll();
             var s = UI.Shapes;
             s.Show();
+            s.StarsLabel.text = CubeSave.TotalStars.ToString();
             for (int i = s.List.childCount - 1; i >= 0; i--) Destroy(s.List.GetChild(i).gameObject);
             for (int g = 0; g < GameData.GroupCount; g++)
             {
@@ -204,14 +263,19 @@ namespace CircuitCube.Game
             lv.Title.text = info.name;
             int unlocked = CubeSave.Unlocked(group);
             int total = Mathf.Max(1, info.levelCount);
-            lv.Subtitle.text = info.endless ? (unlocked - 1) + " beaten" : Mathf.Min(unlocked - 1, total) + " / " + total + " beaten";
+            lv.Subtitle.text = info.blurb;   // hidden in the V2 layout; kept for older prefabs
+            lv.StarsLabel.text = CubeSave.TotalStars.ToString();
+            int beaten = CubeSave.Beaten(group), groupStars = 0;
+            for (int l = 1; l <= beaten; l++) groupStars += CubeSave.Stars(group, l);
+            lv.ProgressValue.text = (info.endless ? beaten.ToString() : Mathf.Min(beaten, total) + " / " + total) + "  ·  " + groupStars + (groupStars == 1 ? " star" : " stars");
+            lv.ProgressFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(beaten / (float)total), lv.ProgressFill.anchorMax.y);
             for (int i = lv.Grid.childCount - 1; i >= 0; i--) Destroy(lv.Grid.GetChild(i).gameObject);
             int count = info.endless ? Mathf.Max(total, ((unlocked + 11) / 4 + 1) * 4) : total;
             for (int l = 1; l <= count; l++)
             {
                 int level = l;
                 var node = Instantiate(lv.NodePrefab, lv.Grid);
-                node.Set(l, l <= unlocked, CubeSave.Stars(group, l), () => StartLevel(group, level));
+                node.Set(l, l <= unlocked, CubeSave.Stars(group, l), () => StartLevel(group, level), l == unlocked);
             }
             // Scroll so the next level to play is in view.
             Canvas.ForceUpdateCanvases();
@@ -221,10 +285,11 @@ namespace CircuitCube.Game
 
         void Back()
         {
-            if (CardOpen && _state == State.Playing) { CloseTip(); return; }
+            if (UI.Settings.gameObject.activeSelf) { CloseSettings(); return; }
+            if (UI.Tip.gameObject.activeSelf) { CloseTip(); return; }
             switch (_state)
             {
-                case State.Playing: SaveInProgress(); ShowLevels(_group); break;
+                case State.Playing: if (!_busy) OpenSettings(true); break;
                 case State.Won: ShowLevels(_group); break;
                 case State.Levels: ShowShapes(); break;
                 case State.Shapes: ShowHome(); break;
@@ -234,6 +299,21 @@ namespace CircuitCube.Game
 
         void NextLevel()
         {
+            if (_unlockedGroup >= 0)
+            {
+                // offer the new shape first; "Later" comes back here with the offer cleared
+                UI.Result.gameObject.SetActive(false);
+                var u = UI.Unlock;
+                var ng = GameData.Group(_unlockedGroup);
+                u.Caption.text = "NEW SHAPE UNLOCKED";
+                u.Title.text = ng.name;
+                u.Body.text = ng.blurb;
+                var icon = GroupIcon(_unlockedGroup);
+                if (icon != null) u.Art.sprite = icon;
+                UI.Dim.SetActive(true);
+                u.Open();
+                return;
+            }
             var info = GameData.Group(_group);
             if (!info.endless && _level.Number >= info.levelCount)
             {
@@ -274,6 +354,8 @@ namespace CircuitCube.Game
             _moves = 0;
             _hintsUsed = 0;
             _hintsLeft = HintsPerLevel;
+            _undo.Clear();
+            _unlockedGroup = -1;
             if (!cheat) RestoreInProgress();
             _busy = false;
             _state = State.Playing;
@@ -284,7 +366,7 @@ namespace CircuitCube.Game
 
             var hud = UI.Hud;
             hud.Show();
-            hud.Title.text = GameData.Group(group).name + "  ·  " + number;
+            hud.Title.text = GameData.Group(group).name.ToUpperInvariant() + "  " + number;
             hud.Tip.text = (group == 0 && number <= 3) || !CubeSave.SeenHowTo ? "Drag to turn the shape  ·  Tap a tile to rotate it" : "";
             for (int i = hud.Legend.childCount - 1; i >= 0; i--) Destroy(hud.Legend.GetChild(i).gameObject);
             var seen = new HashSet<int>();
@@ -292,6 +374,15 @@ namespace CircuitCube.Game
             {
                 if (!seen.Add(c)) continue;
                 Instantiate(hud.ChipPrefab, hud.Legend).Set(CubeColors.Energy(c), CubeColors.EnergyName(c));
+            }
+            // one dot per lamp, copied from the template dot in the prefab
+            for (int i = hud.LampDots.childCount - 1; i >= 0; i--)
+                if (hud.LampDots.GetChild(i) != hud.DotTemplate.transform) Destroy(hud.LampDots.GetChild(i).gameObject);
+            hud.DotTemplate.gameObject.SetActive(false);
+            for (int i = 0; i < _board.TotalLamps; i++)
+            {
+                var dot = Instantiate(hud.DotTemplate, hud.LampDots);
+                dot.gameObject.SetActive(true);
             }
             UpdateHud();
 
@@ -363,9 +454,20 @@ namespace CircuitCube.Game
         void UpdateHud()
         {
             var hud = UI.Hud;
-            hud.Status.text = "Lamps " + _board.LitLamps + "/" + _board.TotalLamps + "  ·  Moves " + _moves;
+            hud.Status.text = "MOVES " + _moves + "  ·  PAR " + _level.Par;
             hud.HintCount.text = _hintsLeft.ToString();
             hud.HintButton.interactable = _hintsLeft > 0;
+            hud.UndoButton.interactable = _undo.Count > 0;
+            hud.LampsLabel.text = _board.LitLamps + " / " + _board.TotalLamps + " lamps lit";
+            int n = 0;
+            for (int i = 0; i < hud.LampDots.childCount; i++)
+            {
+                var dot = hud.LampDots.GetChild(i);
+                if (dot == hud.DotTemplate.transform || !dot.gameObject.activeSelf) continue;
+                var role = dot.GetComponent<ThemeRole>();
+                if (role != null) { role.Role = n < _board.LitLamps ? UiRole.Accent : UiRole.Track; role.Apply(); }
+                n++;
+            }
         }
 
         void TapTile(int index)
@@ -375,12 +477,36 @@ namespace CircuitCube.Game
             if (tile.Locked) return;
             tile.Rot++;
             _moves++;
+            _undo.Push(index);
             if (_moves == 4 && !CubeSave.SeenHowTo) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = ""; }
             _board.AnimateRotation(index, 1);
             bool solved = _board.Refresh();
             UpdateHud();
             if (solved) Win();
         }
+
+        /// <summary>Turn the last tile the player turned back one step. Takes the move back too.</summary>
+        void Undo()
+        {
+            if (_state != State.Playing || _busy || CardOpen) return;
+            while (_undo.Count > 0)
+            {
+                int index = _undo.Pop();
+                var tile = _level.Tiles[index];
+                if (tile.Locked) continue;              // a hint fixed this tile since
+                tile.Rot += tile.Ports - 1;             // one step back, kept non-negative
+                _moves = Mathf.Max(0, _moves - 1);
+                _board.AnimateRotation(index, -1);
+                _board.Refresh();
+                break;
+            }
+            UpdateHud();
+        }
+
+        void ShowHowTo() => ShowTip("How to play",
+            "Drag to turn the shape. Tap a tile to rotate it.\n\nConnect every lamp to a power source of its colour. "
+            + "When two sources share a wire their colours mix: Red + Blue = Purple, Red + Yellow = Orange, Blue + Yellow = Green.\n\n"
+            + "Solve it in the fewest moves (par) for three stars.", "Got it", null);
 
         void UseHint()
         {
@@ -425,21 +551,29 @@ namespace CircuitCube.Game
             int newGroup = -1;
             for (int g = 0; g < wasOpen.Length && newGroup < 0; g++) if (!wasOpen[g] && CubeSave.GroupOpen(g)) newGroup = g;
             bool unlocksNext = newGroup >= 0;
+            _unlockedGroup = newGroup;
             _board.Celebrate();
+#if UNITY_ANDROID || UNITY_IOS
+            if (CubeSave.Settings.vibration) Handheld.Vibrate();
+#endif
             var tr = _board.transform;
             Quaternion from = tr.rotation;
             _tw.Run(1.1f, p => tr.rotation = Quaternion.AngleAxis(360f * p, Vector3.up) * from, () =>
             {
                 _busy = false;
                 var r = UI.Result;
-                r.Title.text = "Level complete!";
-                string line = _moves + " moves  ·  fewest possible " + _level.Par;
-                line += "\nScore " + points + " / " + GameData.Rules.parScore + (points >= GameData.Rules.parScore ? "  ·  Expert!" : "");
-                if (_hintsUsed > 0) line += "\nHints used: " + _hintsUsed + " (−" + GameData.Rules.hintPenalty + " each)";
+                r.Caption.text = GameData.Group(_group).name.ToUpperInvariant() + "  ·  LEVEL " + _level.Number;
+                r.Title.text = "Level complete";
+                r.Stats[0].text = _moves.ToString();
+                r.Stats[1].text = _level.Par.ToString();
+                r.Stats[2].text = _board.LitLamps + "/" + _board.TotalLamps;
+                r.Badge.SetActive(points >= GameData.Rules.parScore);
+                string line = "Score " + points + " / " + GameData.Rules.parScore;
+                if (_hintsUsed > 0) line += "  ·  " + _hintsUsed + (_hintsUsed == 1 ? " hint" : " hints") + " (−" + GameData.Rules.hintPenalty + " each)";
                 if (unlocksNext) line += "\nNew shape unlocked: " + GameData.Group(newGroup).name + "!";
                 r.Body.text = line;
                 r.Stars.SetPoints(points);
-                r.PrimaryLabel.text = unlocksNext ? "Play " + GameData.Group(newGroup).name : "Next level";
+                r.PrimaryLabel.text = "Next level";
                 UI.Dim.SetActive(true);
                 r.Open();
             }, tr);
@@ -549,6 +683,11 @@ namespace CircuitCube.Game
             ApplyTheme(mode);
             if (_state == State.Shapes) ShowShapes();
             else if (_state == State.Levels) ShowLevels(_group);
+            else if (_state == State.Home)
+            {
+                var icon = GroupIcon(CubeSave.CurrentGroup);   // shape icons differ per theme
+                if (icon != null) UI.Home.GroupIcon.sprite = icon;
+            }
         }
 
         public string ThemeMode => CubeSave.Settings.theme;
