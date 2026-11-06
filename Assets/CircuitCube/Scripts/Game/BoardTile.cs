@@ -4,9 +4,10 @@ using UnityEngine;
 namespace CircuitCube.Game
 {
     /// <summary>
-    /// One tile of the board. Lives on the Tile prefab (Assets/CircuitCube/Prefabs/Board/Tile.prefab): every visual
-    /// is an image layer set up in the editor, and every animation is a clip on the prefab's Animation components.
-    /// Code only picks which wire layer shows, turns the wire, tints layers with energy colours and plays clips.
+    /// The design source of a tile (Assets/CircuitCube/Prefabs/Board/Tile.prefab and TriTile.prefab): every layer is
+    /// an image set up in the editor and every animation is a clip on the prefab. The game no longer instantiates
+    /// it; Tools/Circuit Cube/Board/Build Board Look reads the layers and clips into BoardLook, which the instanced
+    /// board renderer (CubeBoardView) draws from. The methods below still work for previewing the prefab on its own.
     /// </summary>
     public sealed class BoardTile : MonoBehaviour
     {

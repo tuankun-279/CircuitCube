@@ -58,18 +58,29 @@ namespace CircuitCube.Core
         public void Components(bool useSol, int[] comp, out int[] sets)
         {
             int n = Tiles.Length;
+            var all = new int[n];
+            int count = Components(useSol, comp, all, new int[n]);
+            sets = new int[count];
+            System.Array.Copy(all, sets, count);
+        }
+
+        /// <summary>
+        /// Same flood fill without allocating: <paramref name="sets"/> and <paramref name="stack"/> need room for one
+        /// entry per tile. Returns the number of groups written to <paramref name="sets"/>.
+        /// </summary>
+        public int Components(bool useSol, int[] comp, int[] sets, int[] stack)
+        {
+            int n = Tiles.Length, groups = 0;
             for (int i = 0; i < n; i++) comp[i] = -1;
-            var list = new System.Collections.Generic.List<int>();
-            var stack = new System.Collections.Generic.Stack<int>();
             for (int c = 0; c < n; c++)
             {
                 if (comp[c] >= 0) continue;
-                int id = list.Count, set = 0;
+                int id = groups, set = 0, top = 0;
                 comp[c] = id;
-                stack.Push(c);
-                while (stack.Count > 0)
+                stack[top++] = c;
+                while (top > 0)
                 {
-                    int x = stack.Pop();
+                    int x = stack[--top];
                     CubeTile tx = Tiles[x];
                     if (tx.Kind == TileKind.Source) set |= tx.Color;
                     int mx = useSol ? tx.Sol : tx.Current;
@@ -82,12 +93,12 @@ namespace CircuitCube.Core
                         int mj = useSol ? Tiles[j].Sol : Tiles[j].Current;
                         if (((mj >> link.Back) & 1) == 0) continue;
                         comp[j] = id;
-                        stack.Push(j);
+                        stack[top++] = j;
                     }
                 }
-                list.Add(set);
+                sets[groups++] = set;
             }
-            sets = list.ToArray();
+            return groups;
         }
 
         public bool IsSolved(bool useSol)

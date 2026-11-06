@@ -48,13 +48,25 @@ Tools > Circuit Cube: Open Game Scene, Reset Saved Progress, Unlock All Shapes (
 ## Rendering
 
 The project's default renderer is the URP Universal Renderer (`Assets/Settings/UniversalRenderer.asset`) so shapes
-with hollows draw with a depth buffer. Tile bases are opaque; the other layers are transparent with a render-queue
-order set in their materials.
+with hollows draw with a depth buffer.
+
+The board has no GameObject per tile. `CubeBoardView` draws every layer of every tile (face, wire image, core, lamp
+and source parts, hint pin, burst) with GPU instancing (`Graphics.RenderMeshInstanced` and the
+`Shaders/BoardSprite.shader`), one draw call per layer image: about 20 draw calls for the biggest shapes instead of
+150–360, and nothing allocated per frame. Taps are picked with a ray against the tile planes, without colliders.
+
+Tiles are still designed on `Prefabs/Board/Tile.prefab` and `TriTile.prefab` (layers, sizes, animation clips). After
+changing them run Tools > Circuit Cube > Board > Build Board Look, which writes `Themes/BoardLook.asset` (offsets,
+sizes and the clips as curves) and links it to the scene. Textures and colours come from the theme skins.
+
+`PerfProbe.Measure(frames)` (development) averages draw calls, batches, SetPass calls and GC bytes per frame.
 
 ## Tests
 
 Window > General > Test Runner > EditMode > CircuitCube.Tests: links point back on every shape, all 500 group levels
-are solvable and start scrambled, same level gives the same board, colour mixing, rotation.
+are solvable and start scrambled, same level gives the same board, colour mixing, rotation. `BoardPerfTests`: the
+biggest cube, tetra, sphere and megamix boards stay within 30 draw calls, and drawing and 100 tile turns allocate
+no garbage.
 
 ## Not done yet
 

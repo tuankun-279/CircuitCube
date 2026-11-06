@@ -1257,8 +1257,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Cam: {fileID: 810245367}
   UI: {fileID: 168312118}
-  TilePrefab: {fileID: 2001398556406632312, guid: 3a1079d2ccd1efe4f879b6d639340230, type: 3}
-  TriTilePrefab: {fileID: 925633969100071100, guid: d0b742bb9e4610e4594d8c28cb975856, type: 3}
+  Look: {fileID: 11400000, guid: f67ecc9d16dfe944ebaa59f8b2169812, type: 2}
   DarkTheme: {fileID: 11400000, guid: e946788ca491350448e8683cd2919623, type: 2}
   LightTheme: {fileID: 11400000, guid: d2c70864f4077e746ae516c09a3fdc86, type: 2}
   ContentBaseUrl: 

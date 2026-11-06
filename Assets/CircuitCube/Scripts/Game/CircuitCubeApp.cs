@@ -21,9 +21,9 @@ namespace CircuitCube.Game
         [Header("Scene")]
         public Camera Cam;
         public UIRoot UI;
-        [Header("Prefabs")]
-        public BoardTile TilePrefab;
-        public BoardTile TriTilePrefab;
+        [Header("Board")]
+        [Tooltip("Themes/BoardLook.asset, built from the Tile prefabs (Tools/Circuit Cube/Board/Build Board Look).")]
+        public BoardLook Look;
 
         [Header("Look")]
         [Tooltip("Themes/Theme_Dark.asset")] public GameTheme DarkTheme;
@@ -225,7 +225,7 @@ namespace CircuitCube.Game
             var s = UI.Shapes;
             s.Show();
             s.StarsLabel.text = CubeSave.TotalStars.ToString();
-            for (int i = s.List.childCount - 1; i >= 0; i--) Destroy(s.List.GetChild(i).gameObject);
+            int next = 0;
             for (int g = 0; g < GameData.GroupCount; g++)
             {
                 var info = GameData.Group(g);
@@ -235,12 +235,42 @@ namespace CircuitCube.Game
                 int pre = GameData.IndexOf(rule.group);
                 string hint = rule.IsNone || pre < 0 ? "" : "Beat level " + rule.cleared + " of " + GameData.Group(pre).name;
                 int total = Mathf.Max(1, info.levelCount);
-                var card = Instantiate(s.CardPrefab, s.List);
+                var card = Slot(s.List, s.CardPrefab, ref next);
                 string iconId = string.IsNullOrEmpty(info.icon) ? info.id : info.icon;
                 if (card.IconFor(iconId) != null) card.Set(iconId, info.name, info.blurb, open, info.endless ? CubeSave.Beaten(g) : Mathf.Min(CubeSave.Beaten(g), total),
                     total, info.endless, hint, () => ShowLevels(group));
                 else card.Set(IconIndex(g), info.name, info.blurb, open, info.endless ? CubeSave.Beaten(g) : Mathf.Min(CubeSave.Beaten(g), total),
                     total, info.endless, hint, () => ShowLevels(group));
+            }
+            HideRest(s.List, next);
+        }
+
+        /// <summary>
+        /// The next child of a list to fill, reusing the ones made for an earlier screen before making a new copy, so
+        /// opening a screen again does not rebuild it. <paramref name="skip"/> is a template child to leave alone.
+        /// </summary>
+        static T Slot<T>(Transform parent, T prefab, ref int next, Transform skip = null) where T : Component
+        {
+            while (next < parent.childCount)
+            {
+                var c = parent.GetChild(next++);
+                if (c == skip) continue;
+                c.gameObject.SetActive(true);
+                return c.GetComponent<T>();
+            }
+            var made = Instantiate(prefab, parent);
+            made.gameObject.SetActive(true);
+            next = parent.childCount;
+            return made;
+        }
+
+        /// <summary>Hide the list children left over after <paramref name="next"/>.</summary>
+        static void HideRest(Transform parent, int next, Transform skip = null)
+        {
+            for (int i = next; i < parent.childCount; i++)
+            {
+                var c = parent.GetChild(i);
+                if (c != skip) c.gameObject.SetActive(false);
             }
         }
 
@@ -269,14 +299,15 @@ namespace CircuitCube.Game
             for (int l = 1; l <= beaten; l++) groupStars += CubeSave.Stars(group, l);
             lv.ProgressValue.text = (info.endless ? beaten.ToString() : Mathf.Min(beaten, total) + " / " + total) + "  ·  " + groupStars + (groupStars == 1 ? " star" : " stars");
             lv.ProgressFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(beaten / (float)total), lv.ProgressFill.anchorMax.y);
-            for (int i = lv.Grid.childCount - 1; i >= 0; i--) Destroy(lv.Grid.GetChild(i).gameObject);
+            int next = 0;
             int count = info.endless ? Mathf.Max(total, ((unlocked + 11) / 4 + 1) * 4) : total;
             for (int l = 1; l <= count; l++)
             {
                 int level = l;
-                var node = Instantiate(lv.NodePrefab, lv.Grid);
+                var node = Slot(lv.Grid, lv.NodePrefab, ref next);
                 node.Set(l, l <= unlocked, CubeSave.Stars(group, l), () => StartLevel(group, level), l == unlocked);
             }
+            HideRest(lv.Grid, next);
             // Scroll so the next level to play is in view.
             Canvas.ForceUpdateCanvases();
             if (lv.Scroll != null)
@@ -356,6 +387,7 @@ namespace CircuitCube.Game
             _hintsLeft = HintsPerLevel;
             _undo.Clear();
             _unlockedGroup = -1;
+            _shownMoves = _shownPar = _shownLit = _shownTotal = _shownHints = -1;
             if (!cheat) RestoreInProgress();
             _busy = false;
             _state = State.Playing;
@@ -368,22 +400,20 @@ namespace CircuitCube.Game
             hud.Show();
             hud.Title.text = GameData.Group(group).name.ToUpperInvariant() + "  " + number;
             hud.Tip.text = (group == 0 && number <= 3) || !CubeSave.SeenHowTo ? "Drag to turn the shape  ·  Tap a tile to rotate it" : "";
-            for (int i = hud.Legend.childCount - 1; i >= 0; i--) Destroy(hud.Legend.GetChild(i).gameObject);
+            int chips = 0;
             var seen = new HashSet<int>();
             foreach (int c in _level.Colors)
             {
                 if (!seen.Add(c)) continue;
-                Instantiate(hud.ChipPrefab, hud.Legend).Set(CubeColors.Energy(c), CubeColors.EnergyName(c));
+                Slot(hud.Legend, hud.ChipPrefab, ref chips).Set(CubeColors.Energy(c), CubeColors.EnergyName(c));
             }
+            HideRest(hud.Legend, chips);
             // one dot per lamp, copied from the template dot in the prefab
-            for (int i = hud.LampDots.childCount - 1; i >= 0; i--)
-                if (hud.LampDots.GetChild(i) != hud.DotTemplate.transform) Destroy(hud.LampDots.GetChild(i).gameObject);
+            var template = hud.DotTemplate.transform;
             hud.DotTemplate.gameObject.SetActive(false);
-            for (int i = 0; i < _board.TotalLamps; i++)
-            {
-                var dot = Instantiate(hud.DotTemplate, hud.LampDots);
-                dot.gameObject.SetActive(true);
-            }
+            int dots = 0;
+            for (int i = 0; i < _board.TotalLamps; i++) Slot(hud.LampDots, hud.DotTemplate, ref dots, template);
+            HideRest(hud.LampDots, dots, template);
             UpdateHud();
 
             if (!CubeSave.SeenShape(group))
@@ -432,7 +462,7 @@ namespace CircuitCube.Game
             if (_board != null) Destroy(_board.gameObject);
             var go = new GameObject("Board");
             _board = go.AddComponent<CubeBoardView>();
-            _board.Build(level, new[] { null, null, null, TriTilePrefab, TilePrefab, null }, Cam, _tw, interactive);
+            _board.Build(level, Look, Cam, interactive);
             FitCamera(_board.Radius, share, interactive);
         }
 
@@ -451,21 +481,42 @@ namespace CircuitCube.Game
 
         // ---------------- Play ----------------
 
+        int _shownMoves = -1, _shownPar = -1, _shownLit = -1, _shownTotal = -1, _shownHints = -1;
+
+        /// <summary>Numbers as text without allocating for the values a level actually shows.</summary>
+        static readonly string[] Numbers = BuildNumbers(1000);
+        static string[] BuildNumbers(int n) { var a = new string[n]; for (int i = 0; i < n; i++) a[i] = i.ToString(); return a; }
+        static string Num(int v) => v >= 0 && v < Numbers.Length ? Numbers[v] : v.ToString();
+
+        /// <summary>Only texts whose numbers changed are rebuilt, so a tap costs at most two short strings.</summary>
         void UpdateHud()
         {
             var hud = UI.Hud;
-            hud.Status.text = "MOVES " + _moves + "  ·  PAR " + _level.Par;
-            hud.HintCount.text = _hintsLeft.ToString();
+            if (_moves != _shownMoves || _level.Par != _shownPar)
+            {
+                _shownMoves = _moves;
+                _shownPar = _level.Par;
+                hud.Status.text = string.Concat("MOVES ", Num(_moves), "  ·  PAR ", Num(_level.Par));
+            }
+            if (_hintsLeft != _shownHints)
+            {
+                _shownHints = _hintsLeft;
+                hud.HintCount.text = Num(_hintsLeft);
+            }
             hud.HintButton.interactable = _hintsLeft > 0;
             hud.UndoButton.interactable = _undo.Count > 0;
-            hud.LampsLabel.text = _board.LitLamps + " / " + _board.TotalLamps + " lamps lit";
+            int lit = _board.LitLamps, total = _board.TotalLamps;
+            if (lit == _shownLit && total == _shownTotal) return;
+            _shownLit = lit;
+            _shownTotal = total;
+            hud.LampsLabel.text = string.Concat(Num(lit), " / ", Num(total), " lamps lit");
             int n = 0;
             for (int i = 0; i < hud.LampDots.childCount; i++)
             {
                 var dot = hud.LampDots.GetChild(i);
                 if (dot == hud.DotTemplate.transform || !dot.gameObject.activeSelf) continue;
                 var role = dot.GetComponent<ThemeRole>();
-                if (role != null) { role.Role = n < _board.LitLamps ? UiRole.Accent : UiRole.Track; role.Apply(); }
+                if (role != null) { role.Role = n < lit ? UiRole.Accent : UiRole.Track; role.Apply(); }
                 n++;
             }
         }
@@ -644,12 +695,8 @@ namespace CircuitCube.Game
         void TryTap(Vector2 screenPos)
         {
             if (_state != State.Playing || _board == null) return;
-            var ray = Cam.ScreenPointToRay(screenPos);
-            if (Physics.Raycast(ray, out var hit, 500f))
-            {
-                var t = hit.collider.GetComponent<BoardTile>();
-                if (t != null) TapTile(_board.TileAt(hit.point, t.Index));
-            }
+            int index = _board.Pick(Cam.ScreenPointToRay(screenPos));
+            if (index >= 0) TapTile(index);
         }
 
         bool PointerOverUi(Vector2 pos)
