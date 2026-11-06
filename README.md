@@ -23,5 +23,5 @@ See `Assets/CircuitCube/README.md` for the data format and editor menus.
 ## Getting started
 
 1. Open the folder with Unity Hub (Unity 6000.0.76f1).
-2. Open `Assets/CircuitCube/Scenes/` main scene and press Play.
+2. Open `Assets/CircuitCube/Scenes/CircuitCube.unity` and press Play.
 3. Debug keys: F1 debug menu, F2 toggle dark/light theme.
