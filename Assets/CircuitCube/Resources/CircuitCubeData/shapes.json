@@ -1,47 +1,51 @@
 {
-    "version": 1,
-    "cube": [
-        {
-            "id": "cube-2",
-            "n": 2
-        },
-        {
-            "id": "cube-3",
-            "n": 3
-        }
-    ],
-    "tetra": [
-        {
-            "id": "tetra-3",
-            "n": 3
-        }
-    ],
-    "octa": [
-        {
-            "id": "octa-2",
-            "n": 2
-        }
-    ],
-    "dodeca": [
-        {
-            "id": "dodeca-2",
-            "n": 2
-        }
-    ],
-    "geo": [
-        {
-            "id": "geo-1",
-            "n": 1
-        }
-    ],
-    "ball": [],
-    "cross": [
-        {
-            "id": "cross-11",
-            "arm": 1,
-            "thick": 1
-        }
-    ],
-    "tower": [],
-    "ell": []
+  "version": 3,
+  "cross": [
+    {
+      "id": "cross-11",
+      "arm": 1,
+      "thick": 1
+    }
+  ],
+  "cube": [
+    {
+      "id": "cube-2",
+      "n": 2
+    },
+    {
+      "id": "cube-3",
+      "n": 3
+    }
+  ],
+  "dodeca": [
+    {
+      "id": "dodeca-2",
+      "n": 2
+    }
+  ],
+  "geo": [
+    {
+      "id": "geo-1",
+      "n": 1
+    }
+  ],
+  "octa": [
+    {
+      "id": "octa-2",
+      "n": 2
+    }
+  ],
+  "slab": [
+    {
+      "id": "slab-33",
+      "w": 3,
+      "d": 3
+    }
+  ],
+  "tetra": [
+    {
+      "id": "tetra-3",
+      "n": 3
+    }
+  ]
 }

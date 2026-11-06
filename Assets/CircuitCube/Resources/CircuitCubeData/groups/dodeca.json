@@ -1,17 +1,17 @@
 {
-    "id": "dodeca",
-    "name": "Dodeca",
-    "blurb": "Twelve pentagon faces, cut like a Kilominx, then a Megaminx.",
-    "icon": "dodeca",
-    "endless": false,
-    "enable": true,
-    "levelCount": 10,
-    "chunkSize": 100,
-    "chunks": [
-        {
-            "index": 0,
-            "version": 1,
-            "count": 10
-        }
-    ]
+  "blurb": "Twelve pentagon faces, cut like a Kilominx, then a Megaminx.",
+  "chunkSize": 100,
+  "chunks": [
+    {
+      "count": 10,
+      "index": 0,
+      "version": 1
+    }
+  ],
+  "enable": true,
+  "endless": false,
+  "icon": "dodeca",
+  "id": "dodeca",
+  "levelCount": 10,
+  "name": "Dodeca"
 }

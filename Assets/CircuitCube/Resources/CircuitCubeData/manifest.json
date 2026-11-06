@@ -1,65 +1,67 @@
 {
-    "schema": 3,
-    "minApp": "1.0.0",
-    "shapesVersion": 1,
-    "rules": {
-        "windowBack": 10,
-        "windowAhead": 10,
-        "hintsPerLevel": 3,
-        "hintPenalty": 1,
-        "minScore": 3,
-        "parScore": 6,
-        "overParScore": 5
+  "schema": 3,
+  "minApp": "1.0.0",
+  "shapesVersion": 3,
+  "rules": {
+    "windowBack": 10,
+    "windowAhead": 10,
+    "hintsPerLevel": 3,
+    "hintPenalty": 1,
+    "minScore": 3,
+    "parScore": 6,
+    "overParScore": 5
+  },
+  "groups": [
+    {
+      "id": "cube",
+      "unlock": {
+        "group": "",
+        "cleared": 0
+      }
     },
-    "groups": [
-        {
-            "id": "cube",
-            "unlock": {
-                "group": "",
-                "cleared": 0
-            }
-        },
-        {
-            "id": "tetra",
-            "unlock": {
-                "group": "cube",
-                "cleared": 10
-            }
-        },
-        {
-            "id": "octa",
-            "unlock": {
-                "group": "tetra",
-                "cleared": 10
-            }
-        },
-        {
-            "id": "sphere",
-            "unlock": {
-                "group": "octa",
-                "cleared": 10
-            }
-        },
-        {
-            "id": "cross",
-            "unlock": {
-                "group": "sphere",
-                "cleared": 10
-            }
-        },
-        {
-            "id": "dodeca",
-            "unlock": {
-                "group": "cross",
-                "cleared": 10
-            }
-        },
-        {
-            "id": "megamix",
-            "unlock": {
-                "group": "dodeca",
-                "cleared": 10
-            }
-        }
-    ]
+    {
+      "id": "tetra",
+      "unlock": {
+        "cleared": 10,
+        "group": "cube"
+      }
+    },
+    {
+      "id": "octa",
+      "unlock": {
+        "cleared": 10,
+        "group": "tetra"
+      }
+    },
+    {
+      "id": "sphere",
+      "unlock": {
+        "cleared": 10,
+        "group": "octa"
+      }
+    },
+    {
+      "id": "cross",
+      "unlock": {
+        "cleared": 10,
+        "group": "sphere"
+      }
+    },
+    {
+      "id": "dodeca",
+      "unlock": {
+        "cleared": 10,
+        "group": "cross"
+      }
+    },
+    {
+      "id": "megamix",
+      "unlock": {
+        "cleared": 10,
+        "group": "dodeca"
+      }
+    }
+  ],
+  "contentVersion": 1,
+  "cdn": "https://cdn.jsdelivr.net/gh/tuankun-279/CircuitCube@b317e3967aeb87e4d7ad11658727c323397982ba/content/"
 }

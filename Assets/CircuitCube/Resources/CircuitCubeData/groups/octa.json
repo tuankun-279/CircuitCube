@@ -1,17 +1,17 @@
 {
-    "id": "octa",
-    "name": "Octa",
-    "blurb": "Eight triangle faces meeting four at a corner.",
-    "icon": "octa",
-    "endless": false,
-    "enable": true,
-    "levelCount": 10,
-    "chunkSize": 100,
-    "chunks": [
-        {
-            "index": 0,
-            "version": 1,
-            "count": 10
-        }
-    ]
+  "blurb": "Eight triangle faces meeting four at a corner.",
+  "chunkSize": 100,
+  "chunks": [
+    {
+      "count": 10,
+      "index": 0,
+      "version": 1
+    }
+  ],
+  "enable": true,
+  "endless": false,
+  "icon": "octa",
+  "id": "octa",
+  "levelCount": 10,
+  "name": "Octa"
 }

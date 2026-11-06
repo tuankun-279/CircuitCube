@@ -340,11 +340,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6331393312836675770, guid: 7922a3b3e259bfb4abd0568c40ea18cb, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 6989649824615126955, guid: 7922a3b3e259bfb4abd0568c40ea18cb, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 26
       objectReference: {fileID: 0}
     - target: {fileID: 7970388047788653546, guid: 7922a3b3e259bfb4abd0568c40ea18cb, type: 3}
       propertyPath: m_AdditionalShaderChannelsFlag
@@ -1264,7 +1264,7 @@ MonoBehaviour:
   Look: {fileID: 11400000, guid: f67ecc9d16dfe944ebaa59f8b2169812, type: 2}
   DarkTheme: {fileID: 11400000, guid: e946788ca491350448e8683cd2919623, type: 2}
   LightTheme: {fileID: 11400000, guid: d2c70864f4077e746ae516c09a3fdc86, type: 2}
-  ContentBaseUrl: 
+  ContentBaseUrl: https://raw.githubusercontent.com/tuankun-279/CircuitCube/main/content/
   PlayScreenShare: 0.72
   HomeScreenShare: 0.55
 --- !u!4 &1578646853

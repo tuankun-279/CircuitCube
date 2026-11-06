@@ -1,17 +1,17 @@
 {
-    "id": "cube",
-    "name": "Cube",
-    "blurb": "Six faces, wires wrap over every edge.",
-    "icon": "cube",
-    "endless": false,
-    "enable": true,
-    "levelCount": 10,
-    "chunkSize": 100,
-    "chunks": [
-        {
-            "index": 0,
-            "version": 1,
-            "count": 10
-        }
-    ]
+  "blurb": "Six faces, wires wrap over every edge.",
+  "chunkSize": 100,
+  "chunks": [
+    {
+      "count": 10,
+      "index": 0,
+      "version": 1
+    }
+  ],
+  "enable": true,
+  "endless": false,
+  "icon": "cube",
+  "id": "cube",
+  "levelCount": 10,
+  "name": "Cube"
 }
