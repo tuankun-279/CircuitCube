@@ -1,0 +1,676 @@
+fileFormatVersion: 2
+guid: cf13de732a4ef4143bb168f36cd3046a
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 3165017789247369657
+    second: Board_Dark_0
+  - first:
+      213: -2302079322872546170
+    second: Board_Dark_1
+  - first:
+      213: 2607955807576339771
+    second: Board_Dark_2
+  - first:
+      213: -1591062158465401327
+    second: Board_Dark_3
+  - first:
+      213: -7644013719585807038
+    second: Board_Dark_4
+  - first:
+      213: -8423890896727742205
+    second: Board_Dark_5
+  - first:
+      213: -6785837530610881649
+    second: Board_Dark_6
+  - first:
+      213: -1761639143169475522
+    second: Board_Dark_7
+  - first:
+      213: 1723537569944953326
+    second: Board_Dark_8
+  - first:
+      213: 8690193966419351353
+    second: Board_Dark_9
+  - first:
+      213: 732317047821375264
+    second: Board_Dark_10
+  - first:
+      213: -910751987373819660
+    second: Board_Dark_11
+  - first:
+      213: 1359023407343658494
+    second: Board_Dark_12
+  - first:
+      213: 1800728430167607628
+    second: Board_Dark_13
+  - first:
+      213: -640194570285270441
+    second: Board_Dark_14
+  - first:
+      213: 4729298380127079017
+    second: Board_Dark_15
+  - first:
+      213: -3118737761535743752
+    second: Board_Dark_16
+  - first:
+      213: -1368788874694818941
+    second: Board_Dark_17
+  - first:
+      213: 6415278109648822299
+    second: Board_Dark_18
+  - first:
+      213: -7046973012262800843
+    second: Board_Dark_19
+  - first:
+      213: 4190340389265203041
+    second: Board_Dark_20
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 1
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 2
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 0
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 4096
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Board_Dark_0
+      rect:
+        serializedVersion: 2
+        x: 93
+        y: 2813
+        width: 102
+        height: 103
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b1b1eb09e66ceb20800000000000000
+      internalID: 3165017789247369657
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_1
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 2719
+        width: 256
+        height: 289
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 68cf8638d0f5d00e0800000000000000
+      internalID: -2302079322872546170
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_2
+      rect:
+        serializedVersion: 2
+        x: 206
+        y: 2382
+        width: 195
+        height: 133
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b35318c4df1513420800000000000000
+      internalID: 2607955807576339771
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_3
+      rect:
+        serializedVersion: 2
+        x: 543
+        y: 2225
+        width: 403
+        height: 446
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11e7a1d85696be9e0800000000000000
+      internalID: -1591062158465401327
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_4
+      rect:
+        serializedVersion: 2
+        x: 1154
+        y: 2243
+        width: 155
+        height: 155
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 24520e195020be590800000000000000
+      internalID: -7644013719585807038
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_5
+      rect:
+        serializedVersion: 2
+        x: 1438
+        y: 2240
+        width: 163
+        height: 160
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 30965e17cd3581b80800000000000000
+      internalID: -8423890896727742205
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_6
+      rect:
+        serializedVersion: 2
+        x: 1743
+        y: 2253
+        width: 129
+        height: 134
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f8bac6408bcd3d1a0800000000000000
+      internalID: -6785837530610881649
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_7
+      rect:
+        serializedVersion: 2
+        x: 2301
+        y: 2239
+        width: 165
+        height: 162
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e3cb5f868866d87e0800000000000000
+      internalID: -1761639143169475522
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_8
+      rect:
+        serializedVersion: 2
+        x: 2048
+        y: 2272
+        width: 96
+        height: 96
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ee1eb95c94c3be710800000000000000
+      internalID: 1723537569944953326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_9
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 1631
+        width: 545
+        height: 372
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9371badae55c99870800000000000000
+      internalID: 8690193966419351353
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_10
+      rect:
+        serializedVersion: 2
+        x: 717
+        y: 1631
+        width: 916
+        height: 372
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0271b5a9976b92a00800000000000000
+      internalID: 732317047821375264
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_11
+      rect:
+        serializedVersion: 2
+        x: 1805
+        y: 1805
+        width: 372
+        height: 198
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4f83a1294eb5c53f0800000000000000
+      internalID: -910751987373819660
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_12
+      rect:
+        serializedVersion: 2
+        x: 259
+        y: 1087
+        width: 830
+        height: 286
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ef5e82ca6983cd210800000000000000
+      internalID: 1359023407343658494
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_13
+      rect:
+        serializedVersion: 2
+        x: 1087
+        y: 543
+        width: 1090
+        height: 546
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c49461177f87df810800000000000000
+      internalID: 1800728430167607628
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_14
+      rect:
+        serializedVersion: 2
+        x: 1347
+        y: 1087
+        width: 830
+        height: 546
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 75a33032e629d17f0800000000000000
+      internalID: -640194570285270441
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_15
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 701
+        width: 201
+        height: 231
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 96a0e40e1d7d1a140800000000000000
+      internalID: 4729298380127079017
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_16
+      rect:
+        serializedVersion: 2
+        x: 744
+        y: 807
+        width: 201
+        height: 125
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8f8a018978408b4d0800000000000000
+      internalID: -3118737761535743752
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_17
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 545
+        height: 545
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3830f4745c5110de0800000000000000
+      internalID: -1368788874694818941
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_18
+      rect:
+        serializedVersion: 2
+        x: 695
+        y: 206
+        width: 250
+        height: 211
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b1025fc7375a70950800000000000000
+      internalID: 6415278109648822299
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_19
+      rect:
+        serializedVersion: 2
+        x: 1239
+        y: 128
+        width: 250
+        height: 289
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 532bf4eb16f143e90800000000000000
+      internalID: -7046973012262800843
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Board_Dark_20
+      rect:
+        serializedVersion: 2
+        x: 1895
+        y: 263
+        width: 138
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 16fdf16f164172a30800000000000000
+      internalID: 4190340389265203041
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Board_Dark_0: 3165017789247369657
+      Board_Dark_1: -2302079322872546170
+      Board_Dark_10: 732317047821375264
+      Board_Dark_11: -910751987373819660
+      Board_Dark_12: 1359023407343658494
+      Board_Dark_13: 1800728430167607628
+      Board_Dark_14: -640194570285270441
+      Board_Dark_15: 4729298380127079017
+      Board_Dark_16: -3118737761535743752
+      Board_Dark_17: -1368788874694818941
+      Board_Dark_18: 6415278109648822299
+      Board_Dark_19: -7046973012262800843
+      Board_Dark_2: 2607955807576339771
+      Board_Dark_20: 4190340389265203041
+      Board_Dark_3: -1591062158465401327
+      Board_Dark_4: -7644013719585807038
+      Board_Dark_5: -8423890896727742205
+      Board_Dark_6: -6785837530610881649
+      Board_Dark_7: -1761639143169475522
+      Board_Dark_8: 1723537569944953326
+      Board_Dark_9: 8690193966419351353
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

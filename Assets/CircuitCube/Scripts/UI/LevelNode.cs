@@ -2,6 +2,7 @@ using System;
 using CircuitCube.Game;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace CircuitCube.UI
 {
@@ -9,7 +10,7 @@ namespace CircuitCube.UI
     public sealed class LevelNode : MonoBehaviour
     {
         public Image Background;
-        public Text Number;
+        public TMP_Text Number;
         public StarRow Stars;
         public GameObject LockIcon;
         public Button Button;

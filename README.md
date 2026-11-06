@@ -12,7 +12,7 @@ A 3D circuit puzzle for mobile: rotate the tiles on a cube (and other shapes) so
 | `Assets/CircuitCube/Scripts` | Game code (`Core` = puzzle logic, `Game` = board, data, save, theme, `UI`) |
 | `Assets/CircuitCube/Editor` | Editor setup tools (`Tools/Circuit Cube/...` menus) |
 | `Assets/CircuitCube/Resources/CircuitCubeData` | Level data v3 (manifest, groups, levels, shapes) |
-| `Assets/CircuitCube/Art/V2` | Current art set (dark and light board skins, UI, icons) |
+| `Assets/CircuitCube/Art` | Art: `Board/{Dark,Light,Shared}`, `UI/{Common,Icons,Shapes,Brand,Mascot,Backgrounds}`, `Fonts`, `Atlases`, `Materials/Board` (layout in `Editor/ArtPaths.cs`) |
 | `Assets/CircuitCube/Themes` | `Theme_Dark` / `Theme_Light` assets |
 | `Assets/CircuitCube/Tests` | Edit-mode tests |
 | `Tools/LevelLab/index.html` | Web level editor (CRUD for level data, batch generation, import/export zip) |

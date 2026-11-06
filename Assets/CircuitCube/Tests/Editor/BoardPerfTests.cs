@@ -9,12 +9,12 @@ using Is = UnityEngine.TestTools.Constraints.Is;
 namespace CircuitCube.Tests
 {
     /// <summary>
-    /// Guards the performance goals of the instanced board: a big shape stays within 30 draw calls, and drawing,
-    /// refreshing and turning tiles allocate no garbage.
+    /// Guards the performance goals of the instanced board: with the theme's board atlas a big shape draws in at most
+    /// 12 calls (one per layer), and drawing, refreshing and turning tiles allocate no garbage.
     /// </summary>
     public class BoardPerfTests
     {
-        const int MaxDrawCalls = 30;
+        const int MaxDrawCalls = 12;
         GameObject _camGo, _boardGo;
         GameTheme _oldTheme;
 

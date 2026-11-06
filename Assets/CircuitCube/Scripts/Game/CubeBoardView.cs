@@ -24,6 +24,7 @@ namespace CircuitCube.Game
             public Material Mat;
             public Matrix4x4[] M;
             public Vector4[] C;
+            public Vector4[] UV;
             public int N;
             public MaterialPropertyBlock Props;
         }
@@ -48,13 +49,16 @@ namespace CircuitCube.Game
         Camera _cam;
         TileState[] _t;
         Group[,] _groupOf;                  // [tile, layer]
+        Vector4[,] _uvOf;                   // [tile, layer]: where the layer's image sits in its texture
         readonly List<Group> _groups = new List<Group>();
-        readonly Dictionary<long, Group> _groupByKey = new Dictionary<long, Group>();
+        readonly Dictionary<(int queue, int tex, int clip), Group> _groupByKey = new Dictionary<(int, int, int), Group>();
         int[] _comp, _sets, _stack;
         bool _interactive;
 
-        static readonly Dictionary<long, Material> Materials = new Dictionary<long, Material>();
+        static readonly Dictionary<(int queue, int tex, int clip), Material> Materials = new Dictionary<(int, int, int), Material>();
         static readonly int ColorId = Shader.PropertyToID("_Color");
+        static readonly int UvRectId = Shader.PropertyToID("_UVRect");
+        static readonly Vector4 FullUv = new Vector4(1f, 1f, 0f, 0f);
         static readonly int SrcBlendId = Shader.PropertyToID("_SrcBlend");
         static readonly int DstBlendId = Shader.PropertyToID("_DstBlend");
         static readonly int ZWriteId = Shader.PropertyToID("_ZWrite");
@@ -90,6 +94,7 @@ namespace CircuitCube.Game
             _stack = new int[n];
             _t = new TileState[n];
             _groupOf = new Group[n, LayerCount];
+            _uvOf = new Vector4[n, LayerCount];
             for (int i = 0; i < n; i++)
             {
                 var cell = level.Topo.Cells[i];
@@ -140,17 +145,17 @@ namespace CircuitCube.Game
                 var tile = _level.Tiles[i];
                 for (int l = 0; l < LayerCount; l++) _groupOf[i, l] = null;
                 if (skin == null) continue;
-                Bind(i, Lyr.Base, Tex(skin.Base), Cutoff(skin.Base));
-                if (s.Pick < skin.Wires.Length) Bind(i, Lyr.Wire, Tex(skin.Wires[s.Pick]));
-                if (s.Pick < skin.WireCores.Length) Bind(i, Lyr.Core, Tex(skin.WireCores[s.Pick]));
+                Bind(i, Lyr.Base, skin.Base, skin.ClipBase ? 0.5f : 0f);
+                if (s.Pick < skin.Wires.Length) Bind(i, Lyr.Wire, skin.Wires[s.Pick]);
+                if (s.Pick < skin.WireCores.Length) Bind(i, Lyr.Core, skin.WireCores[s.Pick]);
                 Color c = CubeColors.Energy(tile.Color);
                 if (s.Kind == TileKind.Lamp)
                 {
-                    Bind(i, Lyr.Halo, Tex(skin.LampHalo));
-                    Bind(i, Lyr.Ring, Tex(skin.LampRing));
-                    Bind(i, Lyr.CoreOff, Tex(skin.LampOff));
-                    Bind(i, Lyr.CoreOn, Tex(skin.LampOn));
-                    Bind(i, Lyr.Burst, Tex(skin.LampRing));   // the light-up shockwave is the lamp ring, expanding
+                    Bind(i, Lyr.Halo, skin.LampHalo);
+                    Bind(i, Lyr.Ring, skin.LampRing);
+                    Bind(i, Lyr.CoreOff, skin.LampOff);
+                    Bind(i, Lyr.CoreOn, skin.LampOn);
+                    Bind(i, Lyr.Burst, skin.LampRing);   // the light-up shockwave is the lamp ring, expanding
                     s.RingColor = Lin(c);
                     s.CoreOnColor = Lin(tintCore ? c : Color.white);
                     s.HaloColor = Lin(new Color(c.r, c.g, c.b, halo));
@@ -158,33 +163,36 @@ namespace CircuitCube.Game
                 }
                 else if (s.Kind == TileKind.Source)
                 {
-                    Bind(i, Lyr.SourceHalo, Tex(skin.SourceHalo));
-                    Bind(i, Lyr.SourceOutline, Tex(skin.SourceOutline));
-                    Bind(i, Lyr.SourceCenter, Tex(skin.SourceCenter));
+                    Bind(i, Lyr.SourceHalo, skin.SourceHalo);
+                    Bind(i, Lyr.SourceOutline, skin.SourceOutline);
+                    Bind(i, Lyr.SourceCenter, skin.SourceCenter);
                     s.OutlineColor = Lin(c);
                     s.SourceHaloColor = Lin(theme != null ? new Color(c.r, c.g, c.b, halo) : c);
                 }
-                Bind(i, Lyr.Hint, _look.HintTexture);
+                if (_look.HintTexture != null) Bind(i, Lyr.Hint, _look.HintTexture.name);
             }
             Refresh(false);
             Draw();
         }
 
-        static Texture Tex(Material m) => m != null ? m.mainTexture : null;
-
-        /// <summary>The alpha cut of an alpha-clipped skin material (the triangle face), or 0.</summary>
-        static float Cutoff(Material m) =>
-            m != null && m.HasProperty("_AlphaClip") && m.GetFloat("_AlphaClip") > 0.5f && m.HasProperty("_Cutoff") ? m.GetFloat("_Cutoff") : 0f;
-
-        void Bind(int tile, Lyr layer, Texture tex, float cutoff = 0f)
+        /// <summary>Put a tile layer in the draw group of its image (one group per layer and texture).</summary>
+        void Bind(int tile, Lyr layer, string image, float cutoff = 0f)
         {
-            if (tex == null) return;
+            // every image of a theme sits in its board atlas, so all images of a layer share one draw call
+            var theme = Themes.Current;
+            if (theme == null || !theme.AtlasUv(image, out var uv))
+            {
+                if (!string.IsNullOrEmpty(image)) Debug.LogWarning("[CircuitCube] Board image not in the atlas: " + image + " (Tools/Circuit Cube/Build Atlases)");
+                return;
+            }
+            Texture tex = theme.BoardAtlas;
+            _uvOf[tile, (int)layer] = uv;
             int q = Queue[(int)layer];
-            long key = ((long)q << 32) ^ (uint)tex.GetInstanceID();
+            var key = (q, tex.GetInstanceID(), cutoff > 0f ? 1 : 0);
             if (!_groupByKey.TryGetValue(key, out var g))
             {
                 int cap = _t.Length;
-                g = new Group { Mat = MaterialFor(tex, q, cutoff), M = new Matrix4x4[cap], C = new Vector4[cap], Props = new MaterialPropertyBlock() };
+                g = new Group { Mat = MaterialFor(tex, q, cutoff), M = new Matrix4x4[cap], C = new Vector4[cap], UV = new Vector4[cap], Props = new MaterialPropertyBlock() };
                 _groupByKey.Add(key, g);
                 _groups.Add(g);
             }
@@ -193,7 +201,7 @@ namespace CircuitCube.Game
 
         Material MaterialFor(Texture tex, int queue, float cutoff)
         {
-            long key = ((long)queue << 32) ^ (uint)tex.GetInstanceID();
+            var key = (queue, tex.GetInstanceID(), cutoff > 0f ? 1 : 0);
             if (Materials.TryGetValue(key, out var m) && m != null) return m;
             bool opaque = queue < 2500;
             m = new Material(_look.Shader) { name = "Board_" + tex.name, mainTexture = tex, renderQueue = queue, enableInstancing = true };
@@ -384,6 +392,7 @@ namespace CircuitCube.Game
                 if (g.N == 0) continue;
                 calls++;
                 g.Props.SetVectorArray(ColorId, g.C);
+                g.Props.SetVectorArray(UvRectId, g.UV);
                 var rp = new RenderParams(g.Mat)
                 {
                     worldBounds = bounds,
@@ -404,6 +413,7 @@ namespace CircuitCube.Game
             float size = l.Size * scale;
             g.M[g.N] = tileWorld * Matrix4x4.TRS(l.Offset, Quaternion.Euler(0f, 0f, angle + l.Angle), new Vector3(l.Mirror ? -size : size, size, 1f));
             g.C[g.N] = color;
+            g.UV[g.N] = _uvOf[tile, (int)layer];
             g.N++;
         }
     }

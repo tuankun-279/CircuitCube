@@ -110,25 +110,6 @@ namespace CircuitCube.Game
             if (_core != null) _core.gameObject.SetActive(powered);
         }
 
-        /// <summary>Swap every layer to the theme's materials (shared materials, so tiles still batch).</summary>
-        public void ApplySkin(GameTheme theme)
-        {
-            if (theme == null) return;
-            _theme = theme;
-            var s = theme.SkinFor(Ports);
-            Use(Base, s.Base);
-            for (int i = 0; i < Wires.Length; i++)
-            {
-                if (i < s.Wires.Length) Use(Wires[i], s.Wires[i]);
-                if (WireCores != null && i < WireCores.Length && i < s.WireCores.Length) Use(WireCores[i], s.WireCores[i]);
-            }
-            Use(LampGlow, s.LampHalo); Use(LampSocket, s.LampRing); Use(LampBulbOff, s.LampOff); Use(LampBulbOn, s.LampOn);
-            Use(SourceRing, s.SourceHalo); Use(SourceDisc, s.SourceOutline); Use(SourceMark, s.SourceCenter);
-            Use(Burst, s.LampRing);   // the light-up shockwave is the lamp ring, expanding
-        }
-
-        static void Use(Renderer r, Material m) { if (r != null && m != null) r.sharedMaterial = m; }
-
         public void SetBaseColor(Color c) => Tint(Base, c);
 
         /// <summary>Lamp on or off. Plays LampOn then the LampLit loop when it turns on.</summary>

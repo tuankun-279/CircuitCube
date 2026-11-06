@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace CircuitCube.UI
 {
@@ -8,13 +9,13 @@ namespace CircuitCube.UI
         [Tooltip("Top-left button; opens the pause card.")]
         public Button BackButton;
         public Button RestartButton, HintButton, HelpButton, UndoButton;
-        public Text Title, Status, Tip, HintCount;
+        public TMP_Text Title, Status, Tip, HintCount;
         public RectTransform Legend;
         public LegendChip ChipPrefab;
         [Header("Lamp progress")]
         public RectTransform LampDots;
         [Tooltip("Inactive template dot inside LampDots; copies are made for each lamp.")]
         public Image DotTemplate;
-        public Text LampsLabel;
+        public TMP_Text LampsLabel;
     }
 }

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using CircuitCube.Game;
 using CircuitCube.UI;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -10,15 +11,13 @@ using UnityEngine.UI;
 namespace CircuitCube.EditorTools
 {
     /// <summary>
-    /// Puts the V2 art (Assets/CircuitCube/Art/V2, cut from the ChatGPT sheets in ArtRef) into the game:
+    /// Puts the V2 art (Assets/CircuitCube/Art, see ArtPaths; cut from the ChatGPT sheets in ArtRef) into the game:
     /// import settings, per-theme board materials, the two Theme assets, a white core layer on every wire of the tile
     /// prefabs, V2 sprites and theme roles on the UI prefabs, the theme fields of the scene's app, and the app icon.
     /// Safe to run again.
     /// </summary>
     public static class ArtV2Setup
     {
-        const string V2 = "Assets/CircuitCube/Art/V2";
-        const string OldMats = "Assets/CircuitCube/Art/Materials";
         const string ThemeDir = "Assets/CircuitCube/Themes";
         const string Prefabs = "Assets/CircuitCube/Prefabs";
 
@@ -26,7 +25,6 @@ namespace CircuitCube.EditorTools
         static readonly string[] TriWires = { "tri_wire_end", "tri_wire_bend", "tri_wire_fork" };
         static readonly string[] IconIds = { "cube", "tetra", "octa", "cylinder", "dodeca", "sphere", "megamix", "cross" };
         static readonly string[] IconFiles = { "shape_cube", "shape_tetra", "shape_octa", "shape_cylinder", "shape_dodeca", "shape_sphere", "shape_megamix", "shape_megamix" };
-        static readonly string[] NineSlice = { "ui_button", "ui_card", "ui_pill", "ui_square", "ui_bar", "ui_card_shadow" };
 
         [MenuItem("Tools/Circuit Cube/Art V2/Apply Art V2")]
         public static void ApplyAll()
@@ -40,82 +38,34 @@ namespace CircuitCube.EditorTools
             UiV2Builder.Build();
             WireScene(dark, light);
             AppIcon();
+            BoardLookBuilder.Build();
+            AtlasBuilder.BuildAll();
             AssetDatabase.SaveAssets();
             Debug.Log("[CircuitCube] Art V2 applied. F2 in play mode switches dark / light.");
         }
 
         // ------------------------------------------------------------------ textures
-        public static void ImportSettings()
-        {
-            foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { V2 }))
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                var ti = (TextureImporter)AssetImporter.GetAtPath(path);
-                if (ti == null) continue;
-                bool ui = path.Contains("/UI/");
-                ti.alphaIsTransparency = true;
-                ti.wrapMode = TextureWrapMode.Clamp;
-                ti.sRGBTexture = true;
-                if (ui)
-                {
-                    ti.textureType = TextureImporterType.Sprite;
-                    ti.spriteImportMode = SpriteImportMode.Single;
-                    ti.mipmapEnabled = false;
-                    ti.maxTextureSize = path.Contains("/Backgrounds/") ? 2048 : Path.GetFileNameWithoutExtension(path) == "app_icon" ? 1024 : 512;
-                    string name = Path.GetFileNameWithoutExtension(path);
-                    if (System.Array.IndexOf(NineSlice, name) >= 0)
-                    {
-                        float b = Border(path);
-                        ti.spriteBorder = new Vector4(b, b, b, b);
-                    }
-                }
-                else
-                {
-                    ti.textureType = TextureImporterType.Default;
-                    ti.mipmapEnabled = true;
-                    ti.maxTextureSize = 512;
-                }
-                ti.SaveAndReimport();
-            }
-        }
-
-        /// <summary>Corner radius of a rounded shape: where its top edge becomes opaque, plus a little.</summary>
-        static float Border(string path)
-        {
-            var tex = new Texture2D(2, 2);
-            tex.LoadImage(File.ReadAllBytes(path));
-            int w = tex.width, h = tex.height;
-            int y = h - 1 - Mathf.Max(1, h / 64);
-            int first = 0;
-            for (int x = 0; x < w / 2; x++) if (tex.GetPixel(x, y).a > 0.5f) { first = x; break; }
-            // the radius ends where the top edge is straight: walk inwards from the first opaque pixel on the top row
-            int r = first;
-            for (int yy = h - 1; yy > h / 2; yy--)
-            {
-                int fx = 0;
-                for (int x = 0; x < w / 2; x++) if (tex.GetPixel(x, yy).a > 0.5f) { fx = x; break; }
-                if (fx <= 1) { r = Mathf.Max(r, h - 1 - yy); break; }
-            }
-            Object.DestroyImmediate(tex);
-            float max = Mathf.Min(w, h) * 0.5f - 1f;
-            return Mathf.Min(max, r + 4f);
-        }
+        /// <summary>Import settings live in UIAssetImporter; this applies them again to every art texture.</summary>
+        public static void ImportSettings() => UIAssetImporter.Reapply();
 
         // ------------------------------------------------------------------ theme assets
-        static Material Mat(string folder, string name, string template, string texPath)
+        /// <summary>
+        /// A board skin material. The instanced board renderer only reads its texture (and the alpha cut of the
+        /// triangle face), so a plain URP Unlit material is enough; an existing one keeps its settings.
+        /// </summary>
+        static Material Mat(string folder, string name, bool clip, string texPath)
         {
-            string dir = V2 + "/Materials/" + folder;
+            string dir = ArtPaths.BoardMaterials + "/" + folder;
             Directory.CreateDirectory(dir);
             string path = dir + "/M2_" + name + ".mat";
-            var tmpl = AssetDatabase.LoadAssetAtPath<Material>(OldMats + "/" + template + ".mat");
             var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (m == null)
             {
-                m = tmpl != null ? new Material(tmpl) : new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+                m = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
                 AssetDatabase.CreateAsset(m, path);
             }
-            else if (tmpl != null) m.CopyPropertiesFromMaterial(tmpl);
+            if (clip) { m.SetFloat("_AlphaClip", 1f); m.SetFloat("_Cutoff", 0.5f); m.EnableKeyword("_ALPHATEST_ON"); }
             if (tex != null) { m.SetTexture("_BaseMap", tex); m.mainTexture = tex; }
             m.SetColor("_BaseColor", Color.white);
             EditorUtility.SetDirty(m);
@@ -133,30 +83,13 @@ namespace CircuitCube.EditorTools
             var t = AssetDatabase.LoadAssetAtPath<GameTheme>(path);
             if (t == null) { t = ScriptableObject.CreateInstance<GameTheme>(); AssetDatabase.CreateAsset(t, path); }
             t.Dark = dark;
-            string b = V2 + "/Board/" + folder + "/";
+            string b = ArtPaths.Board + "/" + folder + "/";
 
-            BoardSkin Skin(string baseName, string baseTmpl, string[] wires, string wireTmpl)
-            {
-                var s = new BoardSkin();
-                s.Base = Mat(folder, baseName, baseTmpl, b + baseName + ".png");
-                s.Wires = new Material[wires.Length];
-                s.WireCores = new Material[wires.Length];
-                for (int i = 0; i < wires.Length; i++)
-                {
-                    s.Wires[i] = Mat(folder, wires[i], wireTmpl, b + wires[i] + ".png");
-                    s.WireCores[i] = Mat(folder, wires[i] + "_core", wireTmpl, b + wires[i] + "_core.png");
-                }
-                s.LampHalo = Mat(folder, "glow_halo", "M_lamp_glow", b + "glow_halo.png");
-                s.LampRing = Mat(folder, "lamp_ring", "M_lamp_socket", b + "lamp_ring.png");
-                s.LampOff = Mat(folder, "lamp_core_off", "M_lamp_bulb_off", b + "lamp_core_off.png");
-                s.LampOn = Mat(folder, "lamp_core_on", "M_lamp_bulb_on", b + "lamp_core_on.png");
-                s.SourceHalo = Mat(folder, "source_halo", "M_source_ring", b + "glow_halo.png");
-                s.SourceOutline = Mat(folder, "source_outline", "M_source_disc", b + "source_outline.png");
-                s.SourceCenter = Mat(folder, "source_center", "M_source_mark", b + "source_center.png");
-                return s;
-            }
-            t.Square = Skin("board_tile", "M_board_tile", SquareWires, "M_wire_end");
-            t.Triangle = Skin("board_tri", "M_board_tri", TriWires, "M_tri_wire_end");
+            t.Square = Skin("board_tile", false, SquareWires);
+            t.Triangle = Skin("board_tri", true, TriWires);
+            // materials only for previewing the Tile prefabs in the editor; the game draws from the board atlas
+            foreach (var skin in new[] { t.Square, t.Triangle })
+                foreach (var image in Images(skin)) Mat(folder, image, image == skin.Base && skin.ClipBase, b + image + ".png");
 
             if (dark)
             {
@@ -207,6 +140,43 @@ namespace CircuitCube.EditorTools
         }
 
         // ------------------------------------------------------------------ board prefabs
+        /// <summary>The image names of one tile shape (files in Art/Board/&lt;theme&gt;).</summary>
+        static BoardSkin Skin(string baseName, bool clipBase, string[] wires)
+        {
+            var s = new BoardSkin { Base = baseName, ClipBase = clipBase, Wires = new string[wires.Length], WireCores = new string[wires.Length] };
+            for (int i = 0; i < wires.Length; i++) { s.Wires[i] = wires[i]; s.WireCores[i] = wires[i] + "_core"; }
+            s.LampHalo = "glow_halo"; s.LampRing = "lamp_ring"; s.LampOff = "lamp_core_off"; s.LampOn = "lamp_core_on";
+            s.SourceHalo = "glow_halo"; s.SourceOutline = "source_outline"; s.SourceCenter = "source_center";
+            return s;
+        }
+
+        static IEnumerable<string> Images(BoardSkin s)
+        {
+            yield return s.Base;
+            foreach (var w in s.Wires) yield return w;
+            foreach (var c in s.WireCores) yield return c;
+            foreach (var n in new[] { s.LampHalo, s.LampRing, s.LampOff, s.LampOn, s.SourceOutline, s.SourceCenter }) yield return n;
+        }
+
+        /// <summary>The preview material of a board image of a theme (Art/Materials/Board/&lt;theme&gt;/M2_&lt;image&gt;).</summary>
+        static Material PreviewMat(string theme, string image) =>
+            AssetDatabase.LoadAssetAtPath<Material>(ArtPaths.BoardMaterials + "/" + theme + "/M2_" + image + ".mat");
+
+        /// <summary>Show a Tile prefab in the editor with the dark theme's images (the game does not use these renderers).</summary>
+        static void SkinPrefab(BoardTile bt, BoardSkin s)
+        {
+            void Use(Renderer r, string image) { var m = PreviewMat("Dark", image); if (r != null && m != null) r.sharedMaterial = m; }
+            Use(bt.Base, s.Base);
+            for (int i = 0; i < bt.Wires.Length; i++)
+            {
+                if (i < s.Wires.Length) Use(bt.Wires[i], s.Wires[i]);
+                if (bt.WireCores != null && i < bt.WireCores.Length && i < s.WireCores.Length) Use(bt.WireCores[i], s.WireCores[i]);
+            }
+            Use(bt.LampGlow, s.LampHalo); Use(bt.LampSocket, s.LampRing); Use(bt.LampBulbOff, s.LampOff); Use(bt.LampBulbOn, s.LampOn);
+            Use(bt.SourceRing, s.SourceHalo); Use(bt.SourceDisc, s.SourceOutline); Use(bt.SourceMark, s.SourceCenter);
+            Use(bt.Burst, s.LampRing);
+        }
+
         public static void AddCoreLayers(GameTheme dark)
         {
             foreach (var name in new[] { "Tile", "TriTile" })
@@ -237,13 +207,13 @@ namespace CircuitCube.EditorTools
                     go.transform.localRotation = Quaternion.identity;
                     go.transform.localScale = Vector3.one;
                     cores[i] = go.GetComponent<Renderer>();
-                    if (i < skin.WireCores.Length) cores[i].sharedMaterial = skin.WireCores[i];
+                    if (i < skin.WireCores.Length && PreviewMat("Dark", skin.WireCores[i]) != null) cores[i].sharedMaterial = PreviewMat("Dark", skin.WireCores[i]);
                 }
                 bt.WireCores = cores;
                 var mark = root.transform.Find("Source/Mark");
                 if (mark != null) bt.SourceMark = mark.GetComponent<Renderer>();
                 // default look in the editor = dark theme
-                bt.ApplySkin(dark);
+                SkinPrefab(bt, skin);
                 PrefabUtility.SaveAsPrefabAsset(root, path);
                 PrefabUtility.UnloadPrefabContents(root);
             }
@@ -353,8 +323,8 @@ namespace CircuitCube.EditorTools
         }
 
         // ------------------------------------------------------------------ UI prefabs
-        static Sprite S(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(V2 + "/UI/" + name + ".png");
-        static Sprite Icon(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(V2 + "/UI/Icons/" + name + ".png");
+        static Sprite S(string name) => ArtPaths.Sprite(name);
+        static Sprite Icon(string name) => ArtPaths.Icon(name);
 
         static void Role(Component c, UiRole role)
         {
@@ -379,7 +349,7 @@ namespace CircuitCube.EditorTools
         {
             var t = root.Find(path);
             if (t == null) { Debug.LogWarning("[CircuitCube] UI path not found: " + path); return; }
-            var txt = t.GetComponent<Text>();
+            var txt = t.GetComponent<TMP_Text>();
             if (txt != null) Role(txt, role);
         }
 
@@ -423,7 +393,7 @@ namespace CircuitCube.EditorTools
                 var r = go.transform.Find("SafeArea");
                 // Home
                 Img(r, "Home/Logo", S("logo_mark"), UiRole.None);
-                Wordmark(r.Find("Home/Logo"), r.Find("Home/Shape")?.GetComponent<Text>());
+                Wordmark(r.Find("Home/Logo"));
                 // the V2 mark is square and the lettering sits under it: smaller mark, group name below the lettering
                 var logoRt = (RectTransform)r.Find("Home/Logo");
                 logoRt.sizeDelta = new Vector2(logoRt.sizeDelta.x, 330f);
@@ -524,27 +494,22 @@ namespace CircuitCube.EditorTools
             img.raycastTarget = false;
         }
 
-        static void Wordmark(Transform logo, Text style)
+        static void Wordmark(Transform logo)
         {
             if (logo == null) return;
             var t = logo.Find("Wordmark");
-            Text txt;
             if (t == null)
             {
-                var go = new GameObject("Wordmark", typeof(RectTransform), typeof(Text));
+                var go = new GameObject("Wordmark", typeof(RectTransform));
                 go.transform.SetParent(logo, false);
                 t = go.transform;
             }
-            txt = t.GetComponent<Text>();
-            if (style != null) txt.font = style.font;
-            txt.fontStyle = FontStyle.Bold;
-            txt.supportRichText = true;
-            txt.text = "CIRCUIT <color=#2AA8B8>CUBE</color>";
-            txt.alignment = TextAnchor.UpperCenter;
-            txt.resizeTextForBestFit = true;
-            txt.resizeTextMinSize = 20;
-            txt.resizeTextMaxSize = 96;
-            txt.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var txt = UiText.On(t.gameObject, "CIRCUIT <color=#2AA8B8>CUBE</color>", 96, TextAnchor.UpperCenter);
+            txt.fontStyle = FontStyles.Bold;
+            txt.textWrappingMode = TextWrappingModes.NoWrap;
+            txt.enableAutoSizing = true;
+            txt.fontSizeMin = 20;
+            txt.fontSizeMax = 96;
             var rt = (RectTransform)t;
             rt.anchorMin = new Vector2(-0.6f, 0f);
             rt.anchorMax = new Vector2(1.6f, 0f);
@@ -573,7 +538,7 @@ namespace CircuitCube.EditorTools
 
         static void AppIcon()
         {
-            var icon = AssetDatabase.LoadAssetAtPath<Texture2D>(V2 + "/UI/app_icon.png");
+            var icon = AssetDatabase.LoadAssetAtPath<Texture2D>(ArtPaths.UI + "/Brand/app_icon.png");
             if (icon != null) PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.Unknown, new[] { icon });
         }
     }

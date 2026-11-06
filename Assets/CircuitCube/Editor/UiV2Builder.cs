@@ -1,5 +1,6 @@
 using CircuitCube.Game;
 using CircuitCube.UI;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,16 +15,13 @@ namespace CircuitCube.EditorTools
     /// </summary>
     public static class UiV2Builder
     {
-        const string V2 = "Assets/CircuitCube/Art/V2";
         const string UiPrefab = "Assets/CircuitCube/Prefabs/UI/UI.prefab";
         const string Brand = "#2AA8B8";
 
-        static Font _font;
 
         [MenuItem("Tools/Circuit Cube/Art V2/Build UI V2")]
         public static void Build()
         {
-            _font = AssetDatabase.LoadAssetAtPath<Font>("Assets/CircuitCube/Art/Fonts/Inter-SemiBold.ttf");
             var root = PrefabUtility.LoadPrefabContents(UiPrefab);
             var ui = root.GetComponent<UIRoot>();
             var safe = root.transform.Find("SafeArea");
@@ -58,7 +56,7 @@ namespace CircuitCube.EditorTools
             ArtV2Setup.Backdrop(back.transform);
             Pic(s, "Logo", C, C, Half, new Vector2(0, 220), new Vector2(420, 420), S("logo_mark"), UiRole.None);
             var word = Label(s, "Wordmark", C, C, Half, new Vector2(0, -60), new Vector2(1000, 120), "CIRCUIT <color=" + Brand + ">CUBE</color>", 92, UiRole.Text);
-            word.fontStyle = FontStyle.Bold;
+            word.fontStyle = FontStyles.Bold;
             Label(s, "Tagline", C, C, Half, new Vector2(0, -150), new Vector2(900, 60), "Connect the light", 40, UiRole.TextMuted);
             var track = Pic(s, "Track", BottomC, BottomC, Half, new Vector2(0, 260), new Vector2(460, 16), S("ui_bar"), UiRole.Track, true);
             screen.Fill = Pic(track.transform, "Fill", Vector2.zero, new Vector2(0.4f, 1f), new Vector2(0, 0.5f), Vector2.zero, Vector2.zero, S("ui_bar"), UiRole.Accent, true).rectTransform;
@@ -98,7 +96,7 @@ namespace CircuitCube.EditorTools
                 levels.name = "Levels";
             }
             Place(t, "Levels", BottomC, BottomC, new Vector2(0.5f, 0f), new Vector2(235, 60), new Vector2(450, 140));
-            levels.Find("Label").GetComponent<Text>().text = "Levels";
+            levels.Find("Label").GetComponent<TMP_Text>().text = "Levels";
             CenterLabel(levels);
             h.LevelsButton = levels.GetComponent<Button>();
             h.ShapesButton = t.Find("Shapes").GetComponent<Button>();
@@ -172,11 +170,11 @@ namespace CircuitCube.EditorTools
 
             var badge = Fresh(panel, "Expert", TopC, TopC, TopC, new Vector2(0, -412), new Vector2(230, 58));
             Img(badge, S("ui_pill"), UiRole.Accent, true);
-            Label(badge, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, "EXPERT", 30, UiRole.OnPrimary).fontStyle = FontStyle.Bold;
+            Label(badge, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, "EXPERT", 30, UiRole.OnPrimary).fontStyle = FontStyles.Bold;
             r.Badge = badge.gameObject;
 
             var names = new[] { "Moves", "Par", "Lamps" };
-            r.Stats = new Text[3];
+            r.Stats = new TMP_Text[3];
             for (int i = 0; i < 3; i++)
             {
                 var tile = Fresh(panel, "Stat" + names[i], TopC, TopC, TopC, new Vector2((i - 1) * 255, -492), new Vector2(235, 150));
@@ -193,7 +191,7 @@ namespace CircuitCube.EditorTools
             var home = panel.Find("Levels") ?? panel.Find("Home");
             home.name = "Home";
             Place(panel, "Home", new Vector2(1, 0), new Vector2(1, 0), new Vector2(1, 0), new Vector2(-60, 50), new Vector2(370, 120));
-            home.Find("Label").GetComponent<Text>().text = "Home";
+            home.Find("Label").GetComponent<TMP_Text>().text = "Home";
             SetIcon(home, "icon_home");
         }
 
@@ -205,7 +203,7 @@ namespace CircuitCube.EditorTools
             var p = Fresh(c, "Panel", C, C, Half, Vector2.zero, new Vector2(880, 960));
             Img(p, S("ui_card"), UiRole.Card, true);
             card.Caption = Label(p, "Caption", TopC, TopC, TopC, new Vector2(0, -56), new Vector2(780, 44), "NEW SHAPE UNLOCKED", 30, UiRole.Accent);
-            card.Caption.fontStyle = FontStyle.Bold;
+            card.Caption.fontStyle = FontStyles.Bold;
             var art = Fresh(p, "ArtTile", TopC, TopC, TopC, new Vector2(-80, -130), new Vector2(280, 280));
             var artBg = Img(art, S("ui_square"), UiRole.Track, true);
             artBg.GetComponent<ThemeRole>().Alpha = 0.45f;
@@ -215,7 +213,7 @@ namespace CircuitCube.EditorTools
             card.Title = Label(p, "Title", TopC, TopC, TopC, new Vector2(0, -440), new Vector2(780, 84), "Tetra", 64, UiRole.Text);
             card.Body = Label(p, "Body", TopC, TopC, TopC, new Vector2(0, -530), new Vector2(780, 110), "", 34, UiRole.TextMuted, TextAnchor.UpperCenter);
             card.Primary = TextButton(p, "Play", BottomC, new Vector2(0, 190), new Vector2(760, 150), true, "icon_play", "Play now", 52);
-            card.PrimaryLabel = card.Primary.transform.Find("Label").GetComponent<Text>();
+            card.PrimaryLabel = card.Primary.transform.Find("Label").GetComponent<TMP_Text>();
             card.SecondaryA = TextButton(p, "Later", BottomC, new Vector2(0, 50), new Vector2(760, 120), false, null, "Later", 42);
             c.gameObject.SetActive(false);
             ui.Unlock = card;
@@ -279,7 +277,7 @@ namespace CircuitCube.EditorTools
         }
 
         /// <summary>A pill with a star and the total stars, top right (Shapes and Levels) or left of the settings button.</summary>
-        static Text StarChip(Transform screen, Vector2 pos)
+        static TMP_Text StarChip(Transform screen, Vector2 pos)
         {
             var chip = Fresh(screen, "StarChip", TopR, TopR, TopR, pos, new Vector2(200, 96));
             Img(chip, S("ui_pill"), UiRole.Chip, true);
@@ -347,8 +345,8 @@ namespace CircuitCube.EditorTools
         static readonly Vector2 Half = new Vector2(0.5f, 0.5f), C = Half;
         static readonly Vector2 TopC = new Vector2(0.5f, 1f), TopR = new Vector2(1f, 1f), BottomC = new Vector2(0.5f, 0f);
 
-        static Sprite S(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(V2 + "/UI/" + name + ".png");
-        static Sprite Icon(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(V2 + "/UI/Icons/" + name + ".png");
+        static Sprite S(string name) => ArtPaths.Sprite(name);
+        static Sprite Icon(string name) => ArtPaths.Icon(name);
 
         /// <summary>A new child (an old one of the same name is replaced) with the given rect.</summary>
         static RectTransform Fresh(Transform parent, string name, Vector2 aMin, Vector2 aMax, Vector2 pivot, Vector2 pos, Vector2 size)
@@ -402,19 +400,11 @@ namespace CircuitCube.EditorTools
             return img;
         }
 
-        static Text Label(Transform parent, string name, Vector2 aMin, Vector2 aMax, Vector2 pivot, Vector2 pos, Vector2 size,
+        static TextMeshProUGUI Label(Transform parent, string name, Vector2 aMin, Vector2 aMax, Vector2 pivot, Vector2 pos, Vector2 size,
             string text, int fontSize, UiRole role, TextAnchor align = TextAnchor.MiddleCenter)
         {
             var rt = Fresh(parent, name, aMin, aMax, pivot, pos, size);
-            var t = rt.gameObject.AddComponent<Text>();
-            t.font = _font;
-            t.text = text;
-            t.fontSize = fontSize;
-            t.alignment = align;
-            t.supportRichText = true;
-            t.horizontalOverflow = HorizontalWrapMode.Wrap;
-            t.verticalOverflow = VerticalWrapMode.Overflow;
-            t.raycastTarget = false;
+            var t = UiText.On(rt.gameObject, text, fontSize, align);
             if (role != UiRole.None) rt.gameObject.AddComponent<ThemeRole>().Role = role;
             return t;
         }

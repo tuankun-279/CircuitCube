@@ -17,7 +17,7 @@ namespace CircuitCube.Game
 
         [Header("Board")]
         public Color CameraBackground = Color.black;
-        [Tooltip("Full-screen picture behind the board (Art/V2/UI/Backgrounds). Empty = plain Background colour.")]
+        [Tooltip("Full-screen picture behind the board (Art/UI/Backgrounds). Empty = plain Background colour.")]
         public Sprite Backdrop;
         public Color ShadeDark = new Color(0.72f, 0.75f, 0.85f), ShadeLight = Color.white;
         [Tooltip("Energy colours: red, blue, yellow, purple (red+blue), orange (red+yellow), green (blue+yellow), white.")]
@@ -27,6 +27,28 @@ namespace CircuitCube.Game
         public bool TintLampCore;
         [Range(0f, 1f)] public float HaloAlpha = 0.45f;
         public BoardSkin Square = new BoardSkin(), Triangle = new BoardSkin();
+
+        [Header("Board atlas (Tools/Circuit Cube/Build Atlases)")]
+        [Tooltip("Every board image of this theme packed into one texture, so a layer needs one draw call whatever image it shows.")]
+        public Texture2D BoardAtlas;
+        public AtlasRect[] BoardAtlasRects = new AtlasRect[0];
+
+        [System.NonSerialized] Dictionary<string, Vector4> _atlasUv;
+
+        /// <summary>Where a board image (file name) sits in <see cref="BoardAtlas"/>: xy scale, zw offset.</summary>
+        public bool AtlasUv(string image, out Vector4 uv)
+        {
+            uv = new Vector4(1f, 1f, 0f, 0f);
+            if (BoardAtlas == null || string.IsNullOrEmpty(image)) return false;
+            if (_atlasUv == null)
+            {
+                _atlasUv = new Dictionary<string, Vector4>();
+                foreach (var r in BoardAtlasRects) if (!string.IsNullOrEmpty(r.Image)) _atlasUv[r.Image] = r.Uv;
+            }
+            return _atlasUv.TryGetValue(image, out uv);
+        }
+
+        void OnValidate() => _atlasUv = null;
 
         public Color Get(UiRole role)
         {

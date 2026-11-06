@@ -52,8 +52,16 @@ with hollows draw with a depth buffer.
 
 The board has no GameObject per tile. `CubeBoardView` draws every layer of every tile (face, wire image, core, lamp
 and source parts, hint pin, burst) with GPU instancing (`Graphics.RenderMeshInstanced` and the
-`Shaders/BoardSprite.shader`), one draw call per layer image: about 20 draw calls for the biggest shapes instead of
-150–360, and nothing allocated per frame. Taps are picked with a ray against the tile planes, without colliders.
+`Shaders/BoardSprite.shader`). Every board image of a theme is packed into one atlas
+(`Art/Atlases/Board_Dark.png`, `Board_Light.png`), so each layer is one draw call whatever image a tile shows: 6–9
+draw calls for the biggest shapes instead of 150–360, and nothing allocated per frame. Taps are picked with a ray against the tile planes, without colliders.
+
+Art layout (also in `Editor/ArtPaths.cs`): `Art/Board/{Dark,Light,Shared}` tile images, `Art/UI/{Common,Icons,
+Shapes/{Dark,Light},Brand,Mascot,Backgrounds}` UI sprites, `Art/Fonts` Inter and its TextMeshPro font assets,
+`Art/Atlases` generated atlases, `Art/Materials/Board` preview materials for the Tile prefabs (not used in game).
+Import settings come from `Editor/UIAssetImporter.cs`. After changing a board or UI image run Tools > Circuit Cube >
+Build Atlases (UI sprite atlas `Art/Atlases/UI.spriteatlasv2` and the two board atlases; the themes keep the image
+rectangles by file name). All UI text is TextMeshPro with Inter SDF (dynamic, ASCII pre-filled).
 
 Tiles are still designed on `Prefabs/Board/Tile.prefab` and `TriTile.prefab` (layers, sizes, animation clips). After
 changing them run Tools > Circuit Cube > Board > Build Board Look, which writes `Themes/BoardLook.asset` (offsets,

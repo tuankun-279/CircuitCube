@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace CircuitCube.UI
 {
@@ -7,7 +8,7 @@ namespace CircuitCube.UI
     public sealed class LegendChip : MonoBehaviour
     {
         public Image Dot;
-        public Text Label;
+        public TMP_Text Label;
 
         public void Set(Color color, string name) { Dot.color = color; Label.text = name; }
     }

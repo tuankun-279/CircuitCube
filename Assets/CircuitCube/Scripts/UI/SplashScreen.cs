@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace CircuitCube.UI
 {
@@ -7,7 +8,7 @@ namespace CircuitCube.UI
     public sealed class SplashScreen : UIScreen
     {
         public RectTransform Fill;      // anchorMax.x shows progress
-        public Text Status;
+        public TMP_Text Status;
 
         public void SetProgress(float p) => Fill.anchorMax = new Vector2(Mathf.Clamp01(p), Fill.anchorMax.y);
     }

@@ -1,84 +1,98 @@
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
 namespace CircuitCube.EditorTools
 {
     /// <summary>
-    /// Import settings for the ChatGPT art. Only import settings: no UI is built here.
-    /// - Art/UI: sprites. ui_btn_, ui_panel_, ui_hud_, ui_level_node_ get 9-slice borders of 24% of the shorter side at
-    ///   200 pixels per unit; ui_chip and ui_bar_ (pills) get borders of half their height.
-    /// - Art/Board: textures for the 3D tile layers (mipmapped, clamped, alpha kept).
-    /// Applied once per file; after that your own changes in the inspector or Sprite Editor are kept.
+    /// Import settings for the ChatGPT art (folders in <see cref="ArtPaths"/>). Only import settings: no UI is built here.
+    /// - Art/UI: sprites without mipmaps, uncompressed (the UI atlas compresses them once). The rounded shapes in UI/Common get 9-slice borders from their corner
+    ///   radius; backgrounds may be 2048 px, the app icon 1024, everything else 512.
+    /// - Art/Board: textures for the board layers (mipmapped, clamped, alpha kept, 512 px).
+    /// Applied once per file (marked in the importer's user data); after that changes made in the inspector or Sprite
+    /// Editor are kept. <see cref="Reapply"/> clears the mark and imports again.
     /// </summary>
     public sealed class UIAssetImporter : AssetPostprocessor
     {
-        const string Marker = "circuitcube-ui";
-        static readonly string[] Sliced = { "ui_btn_", "ui_panel_", "ui_hud_", "ui_level_node_" };
-        static readonly string[] Pills = { "ui_chip", "ui_bar_" };
+        const string Marker = "circuitcube-art";
+        /// <summary>UI/Common shapes that stretch with 9-slice borders.</summary>
+        public static readonly string[] NineSlice = { "ui_button", "ui_card", "ui_pill", "ui_square", "ui_bar", "ui_card_shadow" };
 
         void OnPreprocessTexture()
         {
             string path = assetPath.Replace('\\', '/');
-            bool ui = path.Contains("/CircuitCube/Art/UI/");
-            bool board = path.Contains("/CircuitCube/Art/Board/");
+            bool ui = path.StartsWith(ArtPaths.UI + "/");
+            bool board = path.StartsWith(ArtPaths.Board + "/");
             if (!ui && !board) return;
-            if (!(assetImporter is TextureImporter importer)) return;
-            if (importer.userData != null && importer.userData.Contains(Marker)) return;
+            if (!(assetImporter is TextureImporter ti)) return;
+            if (ti.userData != null && ti.userData.Contains(Marker)) return;
 
+            ti.alphaIsTransparency = true;
+            ti.wrapMode = TextureWrapMode.Clamp;
+            ti.sRGBTexture = true;
+            string name = Path.GetFileNameWithoutExtension(path);
             if (board)
             {
-                importer.textureType = TextureImporterType.Default;
-                importer.mipmapEnabled = true;
-                importer.alphaIsTransparency = true;
-                importer.wrapMode = TextureWrapMode.Clamp;
-                importer.maxTextureSize = 1024;
-                importer.userData = Marker;
-                return;
+                ti.textureType = TextureImporterType.Default;
+                ti.mipmapEnabled = true;
+                ti.maxTextureSize = 512;
             }
-
-            importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Single;
-            importer.mipmapEnabled = false;
-            importer.alphaIsTransparency = true;
-            importer.maxTextureSize = 2048;
-            importer.wrapMode = TextureWrapMode.Clamp;
-            importer.spritePixelsPerUnit = 100;
-
-            string file = System.IO.Path.GetFileNameWithoutExtension(assetPath);
-            float share = 0f;
-            foreach (var p in Sliced) if (file.StartsWith(p)) share = 0.24f;
-            foreach (var p in Pills) if (file.StartsWith(p)) share = 0.49f;
-            if (share > 0f)
+            else
             {
-                importer.GetSourceTextureWidthAndHeight(out int w, out int h);
-                if (w <= 0 || h <= 0) ReadPngSize(assetPath, out w, out h);
-                if (w <= 0 || h <= 0) return;   // leave it unmarked so the next reimport tries again
-                float b = Mathf.Round(Mathf.Min(w, h) * share);
-                importer.spriteBorder = new Vector4(b, b, b, b);
-                importer.spritePixelsPerUnit = 200;
-                var settings = new TextureImporterSettings();
-                importer.ReadTextureSettings(settings);
-                settings.spriteMeshType = SpriteMeshType.FullRect;
-                importer.SetTextureSettings(settings);
-            }
-            importer.userData = Marker;
-        }
-
-        /// <summary>Width and height from a PNG header (big-endian bytes 16-23). Zero if the file is not a PNG.</summary>
-        static void ReadPngSize(string path, out int w, out int h)
-        {
-            w = h = 0;
-            try
-            {
-                using (var fs = System.IO.File.OpenRead(path))
+                ti.textureType = TextureImporterType.Sprite;
+                ti.spriteImportMode = SpriteImportMode.Single;
+                ti.mipmapEnabled = false;
+                ti.maxTextureSize = path.Contains("/Backgrounds/") ? 2048 : name == "app_icon" ? 1024 : 512;
+                // sprites are packed into the UI atlas, which is compressed once; the full-screen backgrounds are not
+                ti.textureCompression = path.Contains("/Backgrounds/") ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed;
+                if (System.Array.IndexOf(NineSlice, name) >= 0)
                 {
-                    var buf = new byte[24];
-                    if (fs.Read(buf, 0, 24) < 24 || buf[1] != (byte)'P' || buf[2] != (byte)'N' || buf[3] != (byte)'G') return;
-                    w = (buf[16] << 24) | (buf[17] << 16) | (buf[18] << 8) | buf[19];
-                    h = (buf[20] << 24) | (buf[21] << 16) | (buf[22] << 8) | buf[23];
+                    float b = Border(path);
+                    if (b <= 0f) return;   // leave it unmarked so the next import tries again
+                    ti.spriteBorder = new Vector4(b, b, b, b);
+                    var settings = new TextureImporterSettings();
+                    ti.ReadTextureSettings(settings);
+                    settings.spriteMeshType = SpriteMeshType.FullRect;
+                    ti.SetTextureSettings(settings);
                 }
             }
-            catch (System.IO.IOException) { }
+            ti.userData = Marker;
+        }
+
+        /// <summary>Import every art texture again with the rules above.</summary>
+        public static void Reapply()
+        {
+            foreach (var root in new[] { ArtPaths.UI, ArtPaths.Board })
+                foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { root }))
+                {
+                    string path = AssetDatabase.GUIDToAssetPath(guid);
+                    if (!(AssetImporter.GetAtPath(path) is TextureImporter ti)) continue;
+                    ti.userData = "";
+                    ti.SaveAndReimport();
+                }
+        }
+
+        /// <summary>Corner radius of a rounded shape: where its top edge becomes straight, plus a little.</summary>
+        public static float Border(string path)
+        {
+            if (!File.Exists(path)) return 0f;
+            var tex = new Texture2D(2, 2);
+            tex.LoadImage(File.ReadAllBytes(path));
+            int w = tex.width, h = tex.height;
+            int y = h - 1 - Mathf.Max(1, h / 64);
+            int first = 0;
+            for (int x = 0; x < w / 2; x++) if (tex.GetPixel(x, y).a > 0.5f) { first = x; break; }
+            // walk down from the top row until the left edge is straight
+            int r = first;
+            for (int yy = h - 1; yy > h / 2; yy--)
+            {
+                int fx = 0;
+                for (int x = 0; x < w / 2; x++) if (tex.GetPixel(x, yy).a > 0.5f) { fx = x; break; }
+                if (fx <= 1) { r = Mathf.Max(r, h - 1 - yy); break; }
+            }
+            Object.DestroyImmediate(tex);
+            float max = Mathf.Min(w, h) * 0.5f - 1f;
+            return Mathf.Min(max, r + 4f);
         }
     }
 }

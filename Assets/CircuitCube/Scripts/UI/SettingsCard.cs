@@ -2,6 +2,7 @@ using System;
 using CircuitCube.Game;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace CircuitCube.UI
 {
@@ -15,7 +16,7 @@ namespace CircuitCube.UI
         public RectTransform Panel;
         [Tooltip("Panel height with and without the pause buttons.")]
         public float PausedHeight = 1040f, SettingsHeight = 760f;
-        public Text Title;
+        public TMP_Text Title;
         public Button Close;
         public SwitchToggle Sound, Music, Vibration;
         [Tooltip("Theme buttons in order: system, light, dark.")]
@@ -62,7 +63,7 @@ namespace CircuitCube.UI
                 bool on = i == pick;
                 var bg = ThemeButtons[i].GetComponent<ThemeRole>();
                 if (bg != null) { bg.Role = on ? UiRole.Card : UiRole.Transparent; bg.Apply(); }
-                var label = ThemeButtons[i].GetComponentInChildren<Text>(true)?.GetComponent<ThemeRole>();
+                var label = ThemeButtons[i].GetComponentInChildren<TMP_Text>(true)?.GetComponent<ThemeRole>();
                 if (label != null) { label.Role = on ? UiRole.Text : UiRole.TextMuted; label.Apply(); }
             }
         }

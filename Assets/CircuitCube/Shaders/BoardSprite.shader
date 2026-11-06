@@ -1,5 +1,6 @@
 // One textured quad per tile layer, drawn with GPU instancing: every tile of a layer is a single draw call.
-// The per-tile tint comes from the instanced _Color. Blend and depth write are material settings, so the same
+// The per-tile tint comes from the instanced _Color, and _UVRect picks the tile's image out of the theme's board
+// atlas, so one draw call can show different images. Blend and depth write are material settings, so the same
 // shader draws the opaque (or alpha-clipped) tile faces and the transparent wires, lamps and glows.
 Shader "CircuitCube/BoardSprite"
 {
@@ -32,6 +33,7 @@ Shader "CircuitCube/BoardSprite"
 
             UNITY_INSTANCING_BUFFER_START(Props)
                 UNITY_DEFINE_INSTANCED_PROP(float4, _Color)
+                UNITY_DEFINE_INSTANCED_PROP(float4, _UVRect)   // xy scale, zw offset of the image in an atlas
             UNITY_INSTANCING_BUFFER_END(Props)
 
             struct Attributes
@@ -53,7 +55,8 @@ Shader "CircuitCube/BoardSprite"
                 Varyings o;
                 UNITY_SETUP_INSTANCE_ID(input);
                 o.positionCS = TransformObjectToHClip(input.positionOS.xyz);
-                o.uv = input.uv;
+                float4 rect = UNITY_ACCESS_INSTANCED_PROP(Props, _UVRect);
+                o.uv = input.uv * rect.xy + rect.zw;
                 o.color = (half4)UNITY_ACCESS_INSTANCED_PROP(Props, _Color);
                 return o;
             }

@@ -1,6 +1,6 @@
 """Rebuild the V2 wire sprites so lines are continuous, centred and evenly lit.
 
-usage: wires_v2.py <Art/V2/Board dir>
+usage: wires_v2.py <Assets/CircuitCube/Art/Board>
 
 The first cut (cut_v2.py) pasted ChatGPT wire pieces together, which left gaps in the white core, streaky glow,
 an off-centre core and glow that faded out right at the tile edge (a visible notch where two tiles meet).

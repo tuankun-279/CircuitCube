@@ -3,6 +3,7 @@ using CircuitCube.Game;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using TMPro;
 
 namespace CircuitCube.UI
 {
@@ -16,9 +17,9 @@ namespace CircuitCube.UI
         public GameObject Panel;
         public Button[] GroupButtons;      // one per shape group, in group order
         public Image[] GroupMarks;         // highlight behind the selected group button
-        public InputField LevelInput;
+        public TMP_InputField LevelInput;
         public Button PlayButton, UnlockShapeButton, UnlockAllButton, ResetButton, CloseButton;
-        public Text Status;
+        public TMP_Text Status;
 
         int _group;
 

@@ -19,15 +19,28 @@ namespace CircuitCube.Game
         public RoleColor(UiRole role, Color color) { Role = role; Color = color; }
     }
 
-    /// <summary>Materials of one tile shape for one theme. Wire and core lists follow BoardTile.Wires.</summary>
+    /// <summary>
+    /// The board images of one tile shape for one theme, by file name (Art/Board/&lt;theme&gt;/&lt;name&gt;.png). The game
+    /// draws them out of the theme's board atlas; wire and core lists follow the tile's wire masks (BoardLook Canon).
+    /// </summary>
     [Serializable]
     public sealed class BoardSkin
     {
-        public Material Base;
-        public Material[] Wires = new Material[0];
-        public Material[] WireCores = new Material[0];
-        public Material LampHalo, LampRing, LampOff, LampOn;
-        public Material SourceHalo, SourceOutline, SourceCenter;
+        public string Base;
+        [Tooltip("The face is cut out by its alpha (the triangle tile).")]
+        public bool ClipBase;
+        public string[] Wires = new string[0];
+        public string[] WireCores = new string[0];
+        public string LampHalo, LampRing, LampOff, LampOn;
+        public string SourceHalo, SourceOutline, SourceCenter;
+    }
+
+    /// <summary>One image in a theme's board atlas: its file name and its UV scale (xy) and offset (zw).</summary>
+    [Serializable]
+    public struct AtlasRect
+    {
+        public string Image;
+        public Vector4 Uv;
     }
 
     /// <summary>The theme in use. UI elements with a ThemeRole recolour themselves when it changes.</summary>

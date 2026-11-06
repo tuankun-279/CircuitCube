@@ -69,40 +69,94 @@ MonoBehaviour:
   TintLampCore: 0
   HaloAlpha: 0.45
   Square:
-    Base: {fileID: 2100000, guid: 877c646f6d38cfb479e665afb8420a3b, type: 2}
+    Base: board_tile
+    ClipBase: 0
     Wires:
-    - {fileID: 2100000, guid: afd8434bb1c28a443b571652d8324882, type: 2}
-    - {fileID: 2100000, guid: e9d381adb21f1f54f9cd2b322605daa4, type: 2}
-    - {fileID: 2100000, guid: 3e61636eb2a66b74a8af793e22200bc9, type: 2}
-    - {fileID: 2100000, guid: f3902ef455c68f44289fd2db8daece3a, type: 2}
-    - {fileID: 2100000, guid: 7c5c36c9c3382224e9ec81bcafa4125b, type: 2}
+    - wire_end
+    - wire_straight
+    - wire_corner
+    - wire_tee
+    - wire_cross
     WireCores:
-    - {fileID: 2100000, guid: 001b66e71a3cc514083101f03fdf79ea, type: 2}
-    - {fileID: 2100000, guid: 008984b786d241d46a2791676baf6553, type: 2}
-    - {fileID: 2100000, guid: 0ac2a9b0c7f799d4e9061427d602b959, type: 2}
-    - {fileID: 2100000, guid: 4a3952e2c7391c545812bc74276aaaf7, type: 2}
-    - {fileID: 2100000, guid: 32a753508df782045b50ea5983e84142, type: 2}
-    LampHalo: {fileID: 2100000, guid: ac876f9cbb2d1f54897ddb3bd1fc2105, type: 2}
-    LampRing: {fileID: 2100000, guid: da5606ba1db2bde409ef36e7306284b9, type: 2}
-    LampOff: {fileID: 2100000, guid: 851cc3454a4c6b3408b882517266d978, type: 2}
-    LampOn: {fileID: 2100000, guid: 06b6a795a9faf81409ec13dd44279980, type: 2}
-    SourceHalo: {fileID: 2100000, guid: 8988b8f02bb3ca348a0c138b6519114b, type: 2}
-    SourceOutline: {fileID: 2100000, guid: d730e7b8c0293a94fab105f0c58c13cf, type: 2}
-    SourceCenter: {fileID: 2100000, guid: 1333c937cd6191e48bfa166f3d6d9cb6, type: 2}
+    - wire_end_core
+    - wire_straight_core
+    - wire_corner_core
+    - wire_tee_core
+    - wire_cross_core
+    LampHalo: glow_halo
+    LampRing: lamp_ring
+    LampOff: lamp_core_off
+    LampOn: lamp_core_on
+    SourceHalo: glow_halo
+    SourceOutline: source_outline
+    SourceCenter: source_center
   Triangle:
-    Base: {fileID: 2100000, guid: 4de63fed324ae6c48b9cbdef1dd03d5a, type: 2}
+    Base: board_tri
+    ClipBase: 1
     Wires:
-    - {fileID: 2100000, guid: 6c110a7d44ddbe444b63b8acce52229e, type: 2}
-    - {fileID: 2100000, guid: 59d10ed7a6118ae4da43e635fb8e344e, type: 2}
-    - {fileID: 2100000, guid: 3cd61a27dc3c2b346b61472d530bc873, type: 2}
+    - tri_wire_end
+    - tri_wire_bend
+    - tri_wire_fork
     WireCores:
-    - {fileID: 2100000, guid: 2e70754ddeeeacf44a729fdd640f803f, type: 2}
-    - {fileID: 2100000, guid: 3e799abfa210ba54b896245d957d6859, type: 2}
-    - {fileID: 2100000, guid: e22d179e2464d6640a7217e8f2b3aef9, type: 2}
-    LampHalo: {fileID: 2100000, guid: ac876f9cbb2d1f54897ddb3bd1fc2105, type: 2}
-    LampRing: {fileID: 2100000, guid: da5606ba1db2bde409ef36e7306284b9, type: 2}
-    LampOff: {fileID: 2100000, guid: 851cc3454a4c6b3408b882517266d978, type: 2}
-    LampOn: {fileID: 2100000, guid: 06b6a795a9faf81409ec13dd44279980, type: 2}
-    SourceHalo: {fileID: 2100000, guid: 8988b8f02bb3ca348a0c138b6519114b, type: 2}
-    SourceOutline: {fileID: 2100000, guid: d730e7b8c0293a94fab105f0c58c13cf, type: 2}
-    SourceCenter: {fileID: 2100000, guid: 1333c937cd6191e48bfa166f3d6d9cb6, type: 2}
+    - tri_wire_end_core
+    - tri_wire_bend_core
+    - tri_wire_fork_core
+    LampHalo: glow_halo
+    LampRing: lamp_ring
+    LampOff: lamp_core_off
+    LampOn: lamp_core_on
+    SourceHalo: glow_halo
+    SourceOutline: source_outline
+    SourceCenter: source_center
+  BoardAtlas: {fileID: 2800000, guid: cf13de732a4ef4143bb168f36cd3046a, type: 3}
+  BoardAtlasRects:
+  - Image: board_tile
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.006326687, w: 0.005485372}
+  - Image: wire_tee
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.21491565, w: 0.005485372}
+  - Image: wire_straight_core
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.4235046, w: 0.005485372}
+  - Image: wire_straight
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.63209355, w: 0.005485372}
+  - Image: wire_end_core
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.006326687, w: 0.18633644}
+  - Image: wire_end
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.21491565, w: 0.18633644}
+  - Image: wire_cross_core
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.4235046, w: 0.18633644}
+  - Image: wire_cross
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.63209355, w: 0.18633644}
+  - Image: wire_corner_core
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.006326687, w: 0.3671875}
+  - Image: wire_corner
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.21491565, w: 0.3671875}
+  - Image: tri_wire_fork_core
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.4235046, w: 0.3671875}
+  - Image: wire_tee_core
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.63209355, w: 0.3671875}
+  - Image: tri_wire_fork
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.006326687, w: 0.54803854}
+  - Image: tri_wire_end
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.21491565, w: 0.54803854}
+  - Image: tri_wire_bend_core
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.4235046, w: 0.54803854}
+  - Image: tri_wire_bend
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.63209355, w: 0.54803854}
+  - Image: board_tri
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.006326687, w: 0.72888964}
+  - Image: tri_wire_end_core
+    Uv: {x: 0.19593558, y: 0.16988032, z: 0.21491565, w: 0.72888964}
+  - Image: source_outline
+    Uv: {x: 0.09777607, y: 0.084773935, z: 0.4235046, w: 0.72888964}
+  - Image: source_center
+    Uv: {x: 0.09777607, y: 0.084773935, z: 0.53393406, w: 0.72888964}
+  - Image: lamp_ring
+    Uv: {x: 0.09777607, y: 0.084773935, z: 0.6443635, w: 0.72888964}
+  - Image: lamp_core_on
+    Uv: {x: 0.09777607, y: 0.084773935, z: 0.7547929, w: 0.72888964}
+  - Image: lamp_core_off
+    Uv: {x: 0.09777607, y: 0.084773935, z: 0.8652224, w: 0.72888964}
+  - Image: glow_halo
+    Uv: {x: 0.09777607, y: 0.084773935, z: 0.006326687, w: 0.9097407}
+  - Image: hint_pin
+    Uv: {x: 0.09777607, y: 0.084773935, z: 0.116756134, w: 0.9097407}

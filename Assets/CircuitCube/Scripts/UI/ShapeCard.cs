@@ -2,6 +2,7 @@ using System;
 using CircuitCube.Game;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace CircuitCube.UI
 {
@@ -9,11 +10,11 @@ namespace CircuitCube.UI
     public sealed class ShapeCard : MonoBehaviour
     {
         public Image Icon;
-        public Text Title, Blurb, Progress;
+        public TMP_Text Title, Blurb, Progress;
         [Tooltip("RectMask2D over the full-width fill bar; its width shows progress.")]
         public RectTransform ProgressMask;
         public GameObject LockedRoot;
-        public Text LockedText;
+        public TMP_Text LockedText;
         public Button Button;
         [Tooltip("Old shape illustrations by index (used when the V2 lists below are empty).")]
         public Sprite[] Icons;

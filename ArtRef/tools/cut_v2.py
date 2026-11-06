@@ -1,5 +1,5 @@
 """Cut the v2 ChatGPT sheets (ArtRef/raw2_*.png) into game sprites.
-usage: cut_v2.py <raw dir> <out dir>
+usage: cut_v2.py <raw dir> <Assets/CircuitCube/Art>
 Every pixel comes from the ChatGPT art; this only crops, scales, places pieces on the tile grid and splits the
 bright core of a wire into its own layer (so the game can tint the tube and keep the core white)."""
 import math, os, sys
@@ -18,6 +18,14 @@ def load(name):
 
 
 def save(img, *path):
+    """Write into the project's art folders (see Editor/ArtPaths.cs): UI shapes go to UI/Common, robot faces to
+    UI/Mascot, logo and app icon to UI/Brand, shape pictures to UI/Shapes/<theme>."""
+    path = list(path)
+    if path[0] == "UI" and len(path) == 2:
+        n = path[1]
+        path = ["UI", "Mascot" if n.startswith("mascot_") else "Brand" if n.startswith(("logo", "app_icon")) else "Common", n]
+    elif path[0] == "UI" and path[1] in ("Dark", "Light"):
+        path = ["UI", "Shapes"] + path[1:]
     p = os.path.join(OUT, *path)
     os.makedirs(os.path.dirname(p), exist_ok=True)
     img.save(p)
