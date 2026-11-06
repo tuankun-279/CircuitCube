@@ -61,7 +61,7 @@ namespace CircuitCube.EditorTools
                     ti.textureType = TextureImporterType.Sprite;
                     ti.spriteImportMode = SpriteImportMode.Single;
                     ti.mipmapEnabled = false;
-                    ti.maxTextureSize = Path.GetFileNameWithoutExtension(path) == "app_icon" ? 1024 : 512;
+                    ti.maxTextureSize = path.Contains("/Backgrounds/") ? 2048 : Path.GetFileNameWithoutExtension(path) == "app_icon" ? 1024 : 512;
                     string name = Path.GetFileNameWithoutExtension(path);
                     if (System.Array.IndexOf(NineSlice, name) >= 0)
                     {
@@ -161,6 +161,7 @@ namespace CircuitCube.EditorTools
             if (dark)
             {
                 t.CameraBackground = Hex("0A0C14");
+                t.Backdrop = S("Backgrounds/bg_dark");
                 t.ShadeDark = new Color(0.70f, 0.73f, 0.84f); t.ShadeLight = Color.white;
                 t.Red = Hex("FF4D6D"); t.Blue = Hex("3DA9FF"); t.Yellow = Hex("FFE14D"); t.Purple = Hex("C77DFF");
                 t.Orange = Hex("FF9A3D"); t.Green = Hex("3DFFA2"); t.White = Hex("F4F7FF"); t.WireOff = Hex("3A4360");
@@ -172,7 +173,7 @@ namespace CircuitCube.EditorTools
                     new RoleColor(UiRole.Secondary, Hex("1B2133")), new RoleColor(UiRole.OnSecondary, Hex("E3E8F5")),
                     new RoleColor(UiRole.Round, Hex("141826")), new RoleColor(UiRole.OnRound, Hex("E3E8F5")),
                     new RoleColor(UiRole.Text, Hex("EEF1F7")), new RoleColor(UiRole.TextMuted, Hex("8A93AD")),
-                    new RoleColor(UiRole.Dim, Hex("0A0C14", 0.92f)), new RoleColor(UiRole.Overlay, Hex("000000", 0.6f)),
+                    new RoleColor(UiRole.Dim, Hex("0A0C14", 0.72f)), new RoleColor(UiRole.Overlay, Hex("000000", 0.6f)),
                     new RoleColor(UiRole.Track, Hex("262E46")), new RoleColor(UiRole.Accent, Hex("46B8C6")),
                     new RoleColor(UiRole.Star, Hex("FFC83D")), new RoleColor(UiRole.Chip, Hex("141826")),
                     new RoleColor(UiRole.NodeOpen, Hex("141826")), new RoleColor(UiRole.NodeCurrent, Hex("46B8C6")),
@@ -182,6 +183,7 @@ namespace CircuitCube.EditorTools
             else
             {
                 t.CameraBackground = Hex("EEF1F7");
+                t.Backdrop = S("Backgrounds/bg_light");
                 t.ShadeDark = new Color(0.86f, 0.88f, 0.93f); t.ShadeLight = Color.white;
                 t.Red = Hex("F0435F"); t.Blue = Hex("2F8FE8"); t.Yellow = Hex("EFA300"); t.Purple = Hex("A15BEB");
                 t.Orange = Hex("F07A1A"); t.Green = Hex("13B07A"); t.White = Hex("9AA3B8"); t.WireOff = Hex("C3CAD8");
@@ -193,7 +195,7 @@ namespace CircuitCube.EditorTools
                     new RoleColor(UiRole.Secondary, Hex("FFFFFF")), new RoleColor(UiRole.OnSecondary, Hex("18203A")),
                     new RoleColor(UiRole.Round, Hex("FFFFFF")), new RoleColor(UiRole.OnRound, Hex("18203A")),
                     new RoleColor(UiRole.Text, Hex("18203A")), new RoleColor(UiRole.TextMuted, Hex("626C88")),
-                    new RoleColor(UiRole.Dim, Hex("EEF1F7", 0.92f)), new RoleColor(UiRole.Overlay, Hex("18203A", 0.45f)),
+                    new RoleColor(UiRole.Dim, Hex("EEF1F7", 0.78f)), new RoleColor(UiRole.Overlay, Hex("18203A", 0.45f)),
                     new RoleColor(UiRole.Track, Hex("D9DEEA")), new RoleColor(UiRole.Accent, Hex("1E9AAA")),
                     new RoleColor(UiRole.Star, Hex("F5B300")), new RoleColor(UiRole.Chip, Hex("FFFFFF")),
                     new RoleColor(UiRole.NodeOpen, Hex("FFFFFF")), new RoleColor(UiRole.NodeCurrent, Hex("1E9AAA")),
@@ -462,7 +464,7 @@ namespace CircuitCube.EditorTools
                 Button(r, "TipCard/Panel/Ok", true, null);
                 Stars(go);
             });
-            Edit("Background", go => Img(go.transform, "Image", null, UiRole.Background));
+            Edit("Background", go => Backdrop(go.transform.Find("Image")));
             Edit("LevelNode", go =>
             {
                 var t = go.transform;
@@ -508,6 +510,20 @@ namespace CircuitCube.EditorTools
         }
 
         /// <summary>"CIRCUIT CUBE" under the logo mark (the V2 mark has no lettering; the plan's font goes here later).</summary>
+        /// <summary>The space picture of the current theme behind everything, cropped to fill the screen.</summary>
+        public static void Backdrop(Transform t)
+        {
+            if (t == null) return;
+            var role = t.GetComponent<ThemeRole>();
+            if (role != null) Object.DestroyImmediate(role, true);
+            if (t.GetComponent<ThemeBackdrop>() == null) t.gameObject.AddComponent<ThemeBackdrop>();
+            var fit = t.GetComponent<AspectRatioFitter>() ?? t.gameObject.AddComponent<AspectRatioFitter>();
+            fit.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+            var img = t.GetComponent<Image>();
+            img.preserveAspect = false;
+            img.raycastTarget = false;
+        }
+
         static void Wordmark(Transform logo, Text style)
         {
             if (logo == null) return;

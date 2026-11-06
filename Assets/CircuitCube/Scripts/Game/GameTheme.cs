@@ -17,6 +17,8 @@ namespace CircuitCube.Game
 
         [Header("Board")]
         public Color CameraBackground = Color.black;
+        [Tooltip("Full-screen picture behind the board (Art/V2/UI/Backgrounds). Empty = plain Background colour.")]
+        public Sprite Backdrop;
         public Color ShadeDark = new Color(0.72f, 0.75f, 0.85f), ShadeLight = Color.white;
         [Tooltip("Energy colours: red, blue, yellow, purple (red+blue), orange (red+yellow), green (blue+yellow), white.")]
         public Color Red, Blue, Yellow, Purple, Orange, Green, White;

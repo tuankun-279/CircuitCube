@@ -54,7 +54,8 @@ namespace CircuitCube.EditorTools
         {
             var s = Fresh(safe, "Splash", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero);
             var screen = s.gameObject.AddComponent<SplashScreen>();
-            Pic(s, "Background", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, null, UiRole.Background);
+            var back = Pic(s, "Background", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, null, UiRole.Background);
+            ArtV2Setup.Backdrop(back.transform);
             Pic(s, "Logo", C, C, Half, new Vector2(0, 220), new Vector2(420, 420), S("logo_mark"), UiRole.None);
             var word = Label(s, "Wordmark", C, C, Half, new Vector2(0, -60), new Vector2(1000, 120), "CIRCUIT <color=" + Brand + ">CUBE</color>", 92, UiRole.Text);
             word.fontStyle = FontStyle.Bold;

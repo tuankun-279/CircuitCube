@@ -35,7 +35,7 @@ MonoBehaviour:
   - Role: 10
     Color: {r: 0.5411765, g: 0.5764706, b: 0.6784314, a: 1}
   - Role: 11
-    Color: {r: 0.039215688, g: 0.047058824, b: 0.078431375, a: 0.92}
+    Color: {r: 0.039215688, g: 0.047058824, b: 0.078431375, a: 0.72}
   - Role: 12
     Color: {r: 0, g: 0, b: 0, a: 0.6}
   - Role: 13
@@ -55,6 +55,7 @@ MonoBehaviour:
   - Role: 20
     Color: {r: 0.8901961, g: 0.9098039, b: 0.9607843, a: 1}
   CameraBackground: {r: 0.039215688, g: 0.047058824, b: 0.078431375, a: 1}
+  Backdrop: {fileID: 21300000, guid: e488c65c20f155f4e88f9e78ffa29900, type: 3}
   ShadeDark: {r: 0.7, g: 0.73, b: 0.84, a: 1}
   ShadeLight: {r: 1, g: 1, b: 1, a: 1}
   Red: {r: 1, g: 0.3019608, b: 0.42745098, a: 1}
