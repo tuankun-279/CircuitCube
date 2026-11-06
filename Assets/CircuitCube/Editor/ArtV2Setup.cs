@@ -21,8 +21,10 @@ namespace CircuitCube.EditorTools
         const string ThemeDir = "Assets/CircuitCube/Themes";
         const string Prefabs = "Assets/CircuitCube/Prefabs";
 
-        static readonly string[] SquareWires = { "wire_end", "wire_straight", "wire_corner", "wire_tee", "wire_cross" };
-        static readonly string[] TriWires = { "tri_wire_end", "tri_wire_bend", "tri_wire_fork" };
+        // Wires are drawn from arms and hubs now (GameTheme.Wires, ArtRef/tools/board_shapes.py); the old whole-tile
+        // wire images are in ArtRef/legacy_v2.
+        static readonly string[] SquareWires = new string[0];
+        static readonly string[] TriWires = new string[0];
         static readonly string[] IconIds = { "cube", "tetra", "octa", "cylinder", "dodeca", "sphere", "megamix", "cross" };
         static readonly string[] IconFiles = { "shape_cube", "shape_tetra", "shape_octa", "shape_cylinder", "shape_dodeca", "shape_sphere", "shape_megamix", "shape_megamix" };
 

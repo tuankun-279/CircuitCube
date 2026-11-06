@@ -3,26 +3,26 @@
     "serial": 10,
     "group": "sphere",
     "rev": 1,
-    "shape": "ball-15",
-    "ports": 4,
-    "tiles": "c.0d.3431a.23.04r0b.16.39.33.3c.03.1a.2c.32b25.09.26.15.05.28624b14r1d.05.26.3b.28111639.37.1a.0812211b.06.05.3a.38303.3f.26.3a.33.1c.38321339.2a.0a.32y1a.23.0a.2",
+    "shape": "geo-1",
+    "ports": 5,
+    "tiles": "2422y29.0140d.2a.21b0440m.1420423k.0F.3a.0wy0I.0z.06.0O.0wb2244c.05.1w20460a.0x.59.1w60y.0C.0M.4",
     "locked": [],
-    "par": 63,
-    "check": "6af40a92",
-    "difficulty": 0.8899999856948853,
+    "par": 37,
+    "check": "743edbd5",
+    "difficulty": 0.8799999952316284,
     "tags": [
         "milestone"
     ],
     "gen": {
         "ver": 1,
-        "seed": 1583926721,
+        "seed": 2375850478,
         "colors": [
             6,
-            3,
-            1
+            2,
+            4
         ],
-        "scramble": 0.6000000238418579,
-        "minPar": 13
+        "scramble": 0.41999998688697817,
+        "minPar": 10
     },
     "hintOrder": []
 }

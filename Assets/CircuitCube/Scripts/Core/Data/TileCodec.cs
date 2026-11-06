@@ -6,19 +6,20 @@ namespace CircuitCube.Core
 {
     /// <summary>
     /// The board of a level as one string, 3 characters per tile, in the shape's tile order:
-    /// [wire mask in base32][kind + colour][start rotation]. Kind + colour: '.' plain wire, 'r'/'b'/'y' a red/blue/yellow
+    /// [wire mask in base64: 0-9 a-z A-Z - _][kind + colour][start rotation]. Kind + colour: '.' plain wire, 'r'/'b'/'y' a red/blue/yellow
     /// source, '1'..'7' a lamp that needs that colour set. Same format as Level Lab and the data config tool.
     /// </summary>
     public static class TileCodec
     {
-        const string B32 = "0123456789abcdefghijklmnopqrstuv";
+        // 6 bits for hexagon tiles; the first 32 characters are the old base32, so older data reads the same
+        const string B64 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_";
 
         public static string Encode(CubeTile[] tiles)
         {
             var sb = new StringBuilder(tiles.Length * 3);
             foreach (var t in tiles)
             {
-                sb.Append(B32[t.Sol & 31]);
+                sb.Append(B64[t.Sol & 63]);
                 if (t.Kind == TileKind.Source) sb.Append(t.Color == Circuit.Red ? 'r' : t.Color == Circuit.Blue ? 'b' : 'y');
                 else if (t.Kind == TileKind.Lamp) sb.Append((char)('0' + t.Color));
                 else sb.Append('.');
@@ -35,10 +36,10 @@ namespace CircuitCube.Core
             var o = new CubeTile[topo.Count];
             for (int i = 0; i < o.Length; i++)
             {
-                int sol = B32.IndexOf(tiles[3 * i]);
+                int sol = B64.IndexOf(tiles[3 * i]);
                 char k = tiles[3 * i + 1];
                 int rot = tiles[3 * i + 2] - '0';
-                if (sol < 0 || rot < 0 || rot > 9) return null;
+                if (sol < 0 || rot < 0 || rot > 9 || sol >= 1 << topo.Cells[i].Ports) return null;
                 var t = new CubeTile { Sol = sol, Rot = rot, Ports = topo.Cells[i].Ports };
                 if (k == 'r' || k == 'b' || k == 'y') { t.Kind = TileKind.Source; t.Color = k == 'r' ? Circuit.Red : k == 'b' ? Circuit.Blue : Circuit.Yellow; }
                 else if (k >= '1' && k <= '7') { t.Kind = TileKind.Lamp; t.Color = k - '0'; }

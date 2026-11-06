@@ -1,7 +1,7 @@
 {
     "id": "sphere",
     "name": "Sphere",
-    "blurb": "A round ball of blocks. No flat side to rest on.",
+    "blurb": "A ball of pentagons and hexagons. Six ways out of most tiles.",
     "icon": "sphere",
     "endless": false,
     "enable": true,

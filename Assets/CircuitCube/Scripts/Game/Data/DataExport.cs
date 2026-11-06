@@ -74,6 +74,9 @@ namespace CircuitCube.Game
             {
                 case "cube": c.cube.Add(new NShapeDef { id = id, n = n }); break;
                 case "tetra": c.tetra.Add(new NShapeDef { id = id, n = n }); break;
+                case "octa": c.octa.Add(new NShapeDef { id = id, n = n }); break;
+                case "dodeca": c.dodeca.Add(new NShapeDef { id = id, n = n }); break;
+                case "geo": c.geo.Add(new NShapeDef { id = id, n = n }); break;
                 case "ball": c.ball.Add(new BallShapeDef { id = id, r = n / 10f }); break;
                 case "cross": c.cross.Add(new CrossShapeDef { id = id, arm = a, thick = b }); break;
                 case "tower": c.tower.Add(new TowerShapeDef { id = id, w = a, h = b }); break;

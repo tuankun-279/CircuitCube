@@ -3,24 +3,24 @@
     "serial": 8,
     "group": "sphere",
     "rev": 1,
-    "shape": "ball-15",
-    "ports": 4,
-    "tiles": "3.03.3a.14615.16.15.0842c.33.0e.0b.0a.1863b.2e.29.09.13.18y07.34634b0d.05.26.01418631608y3b.0860e.36.18502635.2a.32409.39.08418r0e.07.0251a.0e.02y0b.39.19.0a.33.2",
+    "shape": "geo-1",
+    "ports": 5,
+    "tiles": "4603.0p.22408y05.11y3o.3e.1i.04b2g30c.01r35.5o.1g40w603.0a.0i.02b0y.3x.5k.3f.45.0E.3z.09.05.4g60",
     "locked": [],
-    "par": 51,
-    "check": "f21fa04a",
-    "difficulty": 0.75,
+    "par": 41,
+    "check": "c7ba032f",
+    "difficulty": 0.9599999785423279,
     "tags": [],
     "gen": {
         "ver": 1,
-        "seed": 1583910883,
+        "seed": 2375834640,
         "colors": [
-            5,
+            3,
             6,
             4
         ],
-        "scramble": 0.5519999861717224,
-        "minPar": 13
+        "scramble": 0.38600000739097597,
+        "minPar": 10
     },
     "hintOrder": []
 }

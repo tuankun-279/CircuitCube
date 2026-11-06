@@ -271,11 +271,11 @@ namespace CircuitCube.Game
             string Unl(int g) => g == 0 ? "cc.unlocked" : "cc.g" + g + ".unlocked";
             string Sk(int g, int l) => g == 0 ? "cc.stars." + l : "cc.g" + g + ".stars." + l;
             bool any = false;
-            for (int lg = 0; lg < LevelPlan.GroupCount; lg++)
+            for (int lg = 0; lg < LevelPlan.OldGroupIds.Length; lg++)
             {
                 int unlocked = PlayerPrefs.GetInt(Unl(lg), 0);
                 if (unlocked <= 1) continue;
-                int g = GameData.IndexOf(LevelPlan.GroupIds[lg]);
+                int g = GameData.IndexOf(LevelPlan.OldGroupIds[lg]);
                 if (g < 0) continue;
                 any = true;
                 var p = Prog(g);
@@ -298,7 +298,7 @@ namespace CircuitCube.Game
             _profile.seenMix = PlayerPrefs.GetInt("cc.seenMix", 0) == 1;
             _profile.seenHowTo = PlayerPrefs.GetInt("cc.seenHowTo", 0) == 1;
             int cg = PlayerPrefs.GetInt("cc.group", 0);
-            if (cg >= 0 && cg < LevelPlan.GroupCount) _profile.currentGroup = LevelPlan.GroupIds[cg];
+            if (cg >= 0 && cg < LevelPlan.OldGroupIds.Length) _profile.currentGroup = LevelPlan.OldGroupIds[cg];
             if (any) Debug.Log("[CircuitCube] Progress moved from the old save to save v3.");
         }
     }

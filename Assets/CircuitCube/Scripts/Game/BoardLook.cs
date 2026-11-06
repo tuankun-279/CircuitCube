@@ -39,6 +39,8 @@ namespace CircuitCube.Game
 
         public Mesh Quad;
         public Shader Shader;
+        [Tooltip("Draws the tile faces of a board as one mesh (BoardFace.shader).")]
+        public Shader FaceShader;
         public Texture HintTexture;
         public TileShape[] Shapes = new TileShape[0];
 

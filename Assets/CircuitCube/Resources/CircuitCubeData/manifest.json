@@ -27,9 +27,16 @@
             }
         },
         {
-            "id": "sphere",
+            "id": "octa",
             "unlock": {
                 "group": "tetra",
+                "cleared": 10
+            }
+        },
+        {
+            "id": "sphere",
+            "unlock": {
+                "group": "octa",
                 "cleared": 10
             }
         },
@@ -41,9 +48,16 @@
             }
         },
         {
-            "id": "megamix",
+            "id": "dodeca",
             "unlock": {
                 "group": "cross",
+                "cleared": 10
+            }
+        },
+        {
+            "id": "megamix",
+            "unlock": {
+                "group": "dodeca",
                 "cleared": 10
             }
         }

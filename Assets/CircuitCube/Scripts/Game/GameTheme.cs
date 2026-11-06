@@ -27,6 +27,9 @@ namespace CircuitCube.Game
         public bool TintLampCore;
         [Range(0f, 1f)] public float HaloAlpha = 0.45f;
         public BoardSkin Square = new BoardSkin(), Triangle = new BoardSkin();
+        public BoardWires Wires = new BoardWires();
+        [Tooltip("Face image per tile outline, in CellShape order: square, triangle, pentagon, hexagon, kite, Megaminx corner, Megaminx edge.")]
+        public string[] Faces = { "board_tile", "board_tri", "board_pent", "board_hex", "board_kite", "board_mega_corner", "board_mega_edge" };
 
         [Header("Board atlas (Tools/Circuit Cube/Build Atlases)")]
         [Tooltip("Every board image of this theme packed into one texture, so a layer needs one draw call whatever image it shows.")]
@@ -73,5 +76,11 @@ namespace CircuitCube.Game
         }
 
         public BoardSkin SkinFor(int ports) => ports == 3 ? Triangle : Square;
+
+        public string FaceImage(CircuitCube.Core.CellShape shape)
+        {
+            int i = (int)shape;
+            return Faces != null && i < Faces.Length && !string.IsNullOrEmpty(Faces[i]) ? Faces[i] : SkinFor(shape == CircuitCube.Core.CellShape.Triangle ? 3 : 4).Base;
+        }
     }
 }

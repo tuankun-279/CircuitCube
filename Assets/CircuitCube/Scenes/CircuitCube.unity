@@ -346,6 +346,10 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7970388047788653546, guid: 7922a3b3e259bfb4abd0568c40ea18cb, type: 3}
+      propertyPath: m_AdditionalShaderChannelsFlag
+      value: 25
+      objectReference: {fileID: 0}
     - target: {fileID: 8872294346741321087, guid: 7922a3b3e259bfb4abd0568c40ea18cb, type: 3}
       propertyPath: m_Name
       value: UI
@@ -1300,6 +1304,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 251581197815963445, guid: 3c1420bd30304684fbbae6b6c2f747e7, type: 3}
+      propertyPath: m_isRichText
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2159751128130967878, guid: 3c1420bd30304684fbbae6b6c2f747e7, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -1384,6 +1392,10 @@ PrefabInstance:
       propertyPath: App
       value: 
       objectReference: {fileID: 1578646852}
+    - target: {fileID: 7721024040006874572, guid: 3c1420bd30304684fbbae6b6c2f747e7, type: 3}
+      propertyPath: m_AdditionalShaderChannelsFlag
+      value: 25
+      objectReference: {fileID: 0}
     - target: {fileID: 8740121710113435973, guid: 3c1420bd30304684fbbae6b6c2f747e7, type: 3}
       propertyPath: m_Name
       value: DebugMenu

@@ -106,6 +106,12 @@ namespace CircuitCube.Core
         public int version;
         public List<NShapeDef> cube = new List<NShapeDef>();
         public List<NShapeDef> tetra = new List<NShapeDef>();
+        /// <summary>Octahedra: n x n triangles per face.</summary>
+        public List<NShapeDef> octa = new List<NShapeDef>();
+        /// <summary>Dodecahedra: n = 2 Kilominx (60 kites), 3 Megaminx (132 tiles).</summary>
+        public List<NShapeDef> dodeca = new List<NShapeDef>();
+        /// <summary>Balls of pentagons and hexagons: n = 1 soccer ball (32), 2..4 Goldberg GP(n,0).</summary>
+        public List<NShapeDef> geo = new List<NShapeDef>();
         public List<BallShapeDef> ball = new List<BallShapeDef>();
         public List<CrossShapeDef> cross = new List<CrossShapeDef>();
         public List<TowerShapeDef> tower = new List<TowerShapeDef>();

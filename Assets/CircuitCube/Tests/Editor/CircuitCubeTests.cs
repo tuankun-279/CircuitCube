@@ -57,6 +57,63 @@ namespace CircuitCube.Tests
         }
 
         [Test]
+        public void PolyShapeLinksPointBack(
+            [Values("octa-2", "octa-3", "octa-4", "dodeca-2", "dodeca-3", "geo-1", "geo-2", "geo-3", "geo-4")] string id)
+        {
+            var topo = ShapeResolver.Build(id, null);
+            Assert.IsNotNull(topo, id);
+            int expected;
+            switch (id)
+            {
+                case "octa-2": expected = 32; break;
+                case "octa-3": expected = 72; break;
+                case "octa-4": expected = 128; break;
+                case "dodeca-2": expected = 60; break;
+                case "dodeca-3": expected = 132; break;
+                case "geo-1": expected = 32; break;
+                case "geo-2": expected = 42; break;
+                case "geo-3": expected = 92; break;
+                default: expected = 162; break;
+            }
+            Assert.AreEqual(expected, topo.Count, id);
+            int pentagons = 0;
+            for (int c = 0; c < topo.Count; c++)
+            {
+                var cell = topo.Cells[c];
+                Assert.AreEqual(cell.Ports, cell.Corners.Length, id);
+                if (cell.Ports == 5) pentagons++;
+                for (int k = 0; k < cell.Ports; k++)
+                {
+                    var link = topo.Links[c][k];
+                    Assert.GreaterOrEqual(link.Cell, 0, id + ": open side at tile " + c);
+                    var back = topo.Links[link.Cell][link.Back];
+                    Assert.AreEqual(c, back.Cell, id + ": tile " + c + " side " + k);
+                    Assert.AreEqual(k, back.Back, id + ": tile " + c + " side " + k);
+                    // neighbours share the side: its middle is the same point on both tiles
+                    var a = (cell.Corners[k] + cell.Corners[(k + 1) % cell.Ports]) * 0.5f;
+                    var o = topo.Cells[link.Cell];
+                    var b = (o.Corners[link.Back] + o.Corners[(link.Back + 1) % o.Ports]) * 0.5f;
+                    Assert.Less((a - b).Length, 1e-3f, id + ": tile " + c + " side " + k);
+                }
+            }
+            if (id.StartsWith("geo") || id == "dodeca-3") Assert.AreEqual(12, pentagons, id);
+        }
+
+        [Test]
+        public void HexagonTilesRoundTrip()
+        {
+            var lv = LevelPlan.Build(3, 55);
+            string s = TileCodec.Encode(lv.Tiles);
+            var back = TileCodec.Decode(s, lv.Topo);
+            Assert.IsNotNull(back);
+            for (int i = 0; i < lv.Tiles.Length; i++)
+            {
+                Assert.AreEqual(lv.Tiles[i].Sol, back[i].Sol);
+                Assert.AreEqual(lv.Tiles[i].Rot, back[i].Rot);
+            }
+        }
+
+        [Test]
         public void TriangleTurnIsAThird()
         {
             Assert.AreEqual(0b010, Circuit.RotCW(0b001, 3));
@@ -71,7 +128,7 @@ namespace CircuitCube.Tests
         }
 
         [Test]
-        public void EveryGroupLevelIsSolvableAndScrambled([Values(0, 1, 2, 3, 4)] int group)
+        public void EveryGroupLevelIsSolvableAndScrambled([Values(0, 1, 2, 3, 4, 5, 6)] int group)
         {
             for (int l = 1; l <= LevelPlan.LevelsPerGroup; l++)
             {
@@ -94,7 +151,7 @@ namespace CircuitCube.Tests
         }
 
         [Test]
-        public void SameLevelGivesSameBoard([Values(0, 1, 2, 3, 4)] int group)
+        public void SameLevelGivesSameBoard([Values(0, 1, 2, 3, 4, 5, 6)] int group)
         {
             var a = LevelPlan.Build(group, 37);
             var topo = LevelPlan.TopologyFor(group, 37);

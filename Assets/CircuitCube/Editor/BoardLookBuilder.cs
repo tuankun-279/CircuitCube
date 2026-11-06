@@ -14,6 +14,7 @@ namespace CircuitCube.EditorTools
     {
         const string LookPath = "Assets/CircuitCube/Themes/BoardLook.asset";
         const string ShaderPath = "Assets/CircuitCube/Shaders/BoardSprite.shader";
+        const string FaceShaderPath = "Assets/CircuitCube/Shaders/BoardFace.shader";
         const string Prefabs = "Assets/CircuitCube/Prefabs/Board/";
         const string Clips = "Assets/CircuitCube/Animations/";
 
@@ -27,6 +28,7 @@ namespace CircuitCube.EditorTools
                 AssetDatabase.CreateAsset(look, LookPath);
             }
             look.Shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
+            look.FaceShader = AssetDatabase.LoadAssetAtPath<Shader>(FaceShaderPath);
 
             var square = Shape("Tile", look);
             var tri = Shape("TriTile", look);

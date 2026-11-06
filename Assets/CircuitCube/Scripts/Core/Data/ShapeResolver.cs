@@ -5,7 +5,7 @@ namespace CircuitCube.Core
 {
     /// <summary>
     /// Turns a shape id from level data into a board. Preset ids carry their own parameters
-    /// (cube-3, tetra-4, ball-25, cross-21, tower-24, ell-42, pyramid-5, bar-4, slab-33);
+    /// (cube-3, tetra-4, octa-3, dodeca-2, geo-3, ball-25, cross-21, tower-24, ell-42, pyramid-5, bar-4, slab-33);
     /// "voxel-…" ids are free-form shapes stored as shapes/voxel/&lt;id&gt;.json.
     /// </summary>
     public static class ShapeResolver
@@ -28,7 +28,10 @@ namespace CircuitCube.Core
             switch (type)
             {
                 case "cube": return new ShapeTopology(ShapeLibrary.Cube(num));
-                case "tetra": return PolyShapes.Tetrahedron(num);
+                case "tetra": return num >= 2 && num <= 8 ? PolyShapes.Tetrahedron(num) : null;
+                case "octa": return num >= 2 && num <= 6 ? PolyShapes.Octahedron(num) : null;
+                case "dodeca": return num == 2 ? PolyShapes.Kilominx() : num == 3 ? PolyShapes.Megaminx() : null;
+                case "geo": return num >= 1 && num <= 5 ? PolyShapes.Goldberg(num) : null;
                 case "ball": return new ShapeTopology(ShapeLibrary.Ball(num / 10f));
                 case "pyramid": return new ShapeTopology(ShapeLibrary.Pyramid(num));
                 case "cross": return d.Length >= 2 ? new ShapeTopology(ShapeLibrary.Cross(a, b)) : null;

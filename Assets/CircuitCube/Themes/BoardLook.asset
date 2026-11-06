@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Quad: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
   Shader: {fileID: 4800000, guid: 5cfce240b310c254099e70453a450a3b, type: 3}
+  FaceShader: {fileID: 4800000, guid: 4367e2f1db6624447a446cfb26ac3eed, type: 3}
   HintTexture: {fileID: 2800000, guid: 3a91a26736b3a5b4e8540c428d5cc71a, type: 3}
   Shapes:
   - Ports: 4

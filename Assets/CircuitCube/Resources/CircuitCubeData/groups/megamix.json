@@ -1,7 +1,7 @@
 {
     "id": "megamix",
     "name": "Megamix",
-    "blurb": "A new shape every level, mixed from all the others.",
+    "blurb": "A new shape every level, mixed from the block shapes.",
     "icon": "megamix",
     "endless": true,
     "enable": true,

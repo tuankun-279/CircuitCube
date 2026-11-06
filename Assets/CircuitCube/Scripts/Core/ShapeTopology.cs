@@ -51,7 +51,12 @@ namespace CircuitCube.Core
                     Vec3i p = c + n;
                     map[TileKey(p, n)] = sq.Count;
                     sq.Add(new Sq { P = p, N = n, U = u, V = v, Dirs = new[] { u, v, -u, -v } });
-                    Cells.Add(new Cell { Ports = 4, Center = V3.From(p), Normal = V3.From(n), Axis = V3.From(u), Face = f });
+                    V3 P = V3.From(p), U = V3.From(u), W = V3.From(v);
+                    Cells.Add(new Cell
+                    {
+                        Ports = 4, Center = P, Normal = V3.From(n), Axis = U, Face = f, Shape = CellShape.Square,
+                        Corners = new[] { P + U - W, P + U + W, P - U + W, P - U - W },
+                    });
                 }
                 float d = (System.Math.Abs(c.X) + 1) * (System.Math.Abs(c.X) + 1)
                         + (System.Math.Abs(c.Y) + 1) * (System.Math.Abs(c.Y) + 1)

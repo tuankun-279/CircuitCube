@@ -24,10 +24,20 @@ namespace CircuitCube.Core
         {
             new Group { Index = 0, Name = "Cube", Blurb = "Six faces, wires wrap over every edge." },
             new Group { Index = 1, Name = "Tetra", Blurb = "A four-sided pyramid of triangle tiles. One tap turns a tile a third of a turn." },
-            new Group { Index = 2, Name = "Sphere", Blurb = "A round ball of blocks. No flat side to rest on." },
-            new Group { Index = 3, Name = "Cross", Blurb = "Arms, towers and corners. Wires run into the hollows." },
-            new Group { Index = 4, Name = "Megamix", Blurb = "A new shape every level, mixed from all the others.", Endless = true },
+            new Group { Index = 2, Name = "Octa", Blurb = "Eight triangle faces meeting four at a corner." },
+            new Group { Index = 3, Name = "Sphere", Blurb = "A ball of pentagons and hexagons. Six ways out of most tiles." },
+            new Group { Index = 4, Name = "Cross", Blurb = "Arms, towers and corners. Wires run into the hollows." },
+            new Group { Index = 5, Name = "Dodeca", Blurb = "Twelve pentagon faces, cut like a Kilominx, then a Megaminx." },
+            new Group { Index = 6, Name = "Megamix", Blurb = "A new shape every level, mixed from the block shapes.", Endless = true },
         };
+
+        /// <summary>Group id used by the data files for a generator group (also the card art order).</summary>
+        public static readonly string[] GroupIds = { "cube", "tetra", "octa", "sphere", "cross", "dodeca", "megamix" };
+
+        /// <summary>Group order of the first releases (before Octa and Dodeca), for moving old PlayerPrefs saves.</summary>
+        public static readonly string[] OldGroupIds = { "cube", "tetra", "sphere", "cross", "megamix" };
+
+        static bool Big(int level) => level >= 30 && level % 10 == 0;
 
         public static int GroupCount => Groups.Length;
 
@@ -56,28 +66,33 @@ namespace CircuitCube.Core
         /// <summary>Board for a level. Each group starts small for ten levels, then grows; every 10th level is a big one.</summary>
         public static BoardTopology TopologyFor(int group, int level)
         {
-            if (group == 1)
+            switch (GroupIds[group])
             {
-                // Tetrahedron cut into n x n triangles per face: 36, 64, 100 and 144 tiles.
-                bool bigT = level >= 30 && level % 10 == 0;
-                int n = level <= 10 ? 3 : bigT ? 6 : level <= 50 ? 4 : 5;
-                return PolyShapes.Tetrahedron(n);
+                case "tetra": return PolyShapes.Tetrahedron(TetraSize(level));
+                case "octa": return PolyShapes.Octahedron(OctaSize(level));
+                case "sphere": return PolyShapes.Goldberg(SphereSize(level));
+                case "dodeca": return DodecaSize(level) == 2 ? PolyShapes.Kilominx() : PolyShapes.Megaminx();
+                default: return new ShapeTopology(ShapeFor(group, level));
             }
-            return new ShapeTopology(ShapeFor(group, level));
         }
 
-        /// <summary>Block shape for the groups built from blocks (all but Tetra).</summary>
+        // Tetrahedron, n x n triangles per face: 36, 64, 100, 144 tiles.
+        static int TetraSize(int level) => level <= 10 ? 3 : Big(level) ? 6 : level <= 50 ? 4 : 5;
+        // Octahedron, n x n triangles per face: 32, 72, 128 tiles.
+        static int OctaSize(int level) => level <= 10 ? 2 : Big(level) || level > 50 ? 4 : 3;
+        // Soccer ball 32, then Goldberg balls of 42, 92 and 162 tiles.
+        static int SphereSize(int level) => level <= 10 ? 1 : Big(level) ? 4 : level <= 30 ? 2 : 3;
+        // Kilominx (60 kites), Megaminx (132) from level 41 and on the big levels.
+        static int DodecaSize(int level) => level <= 40 && !Big(level) ? 2 : 3;
+
+        /// <summary>Block shape for the groups built from blocks (Cube, Cross, Megamix).</summary>
         public static List<Vec3i> ShapeFor(int group, int level)
         {
-            bool big = level >= 30 && level % 10 == 0;
-            switch (group)
+            bool big = Big(level);
+            switch (GroupIds[group])
             {
-                case 0: return ShapeLibrary.Cube(CubeSize(level));
-                case 2:
-                    if (level <= 10) return ShapeLibrary.Ball(1.5f);
-                    if (big) return ShapeLibrary.Ball(3f);
-                    return level <= 50 ? ShapeLibrary.Ball(2f) : ShapeLibrary.Ball(2.5f);
-                case 3:
+                case "cube": return ShapeLibrary.Cube(CubeSize(level));
+                case "cross":
                 {
                     if (level <= 10) return ShapeLibrary.Cross(1, 1);
                     if (big) return ShapeLibrary.Cross(2, 2);
@@ -103,22 +118,20 @@ namespace CircuitCube.Core
         /// </summary>
         public static string ShapeIdFor(int group, int level)
         {
-            bool big = level >= 30 && level % 10 == 0;
-            switch (group)
+            switch (GroupIds[group])
             {
-                case 0: return "cube-" + CubeSize(level);
-                case 1: return "tetra-" + (level <= 10 ? 3 : big ? 6 : level <= 50 ? 4 : 5);
-                case 2: return level <= 10 ? "ball-15" : big ? "ball-30" : level <= 50 ? "ball-20" : "ball-25";
-                case 3:
+                case "cube": return "cube-" + CubeSize(level);
+                case "tetra": return "tetra-" + TetraSize(level);
+                case "octa": return "octa-" + OctaSize(level);
+                case "sphere": return "geo-" + SphereSize(level);
+                case "dodeca": return "dodeca-" + DodecaSize(level);
+                case "cross":
                     if (level <= 10) return "cross-11";
-                    if (big) return "cross-22";
+                    if (Big(level)) return "cross-22";
                     switch (level % 4) { case 0: return "cross-21"; case 1: return "tower-24"; case 2: return "ell-42"; default: return "cross-31"; }
                 default: return "voxel-mega-" + level.ToString("D4");
             }
         }
-
-        /// <summary>Group id used by the data files for a generator group.</summary>
-        public static readonly string[] GroupIds = { "cube", "tetra", "sphere", "cross", "megamix" };
 
         // ---------------- Colours ----------------
 
@@ -158,6 +171,8 @@ namespace CircuitCube.Core
             if (group == 0 && level <= CubeIntro.Length) return 0.3f + 0.03f * (level - 1);
             float s = tiles <= 60 ? 0.6f : tiles <= 100 ? 0.45f : 0.32f;
             if (group > 0 && level <= 10) s *= 0.6f + 0.04f * level;
+            // a hexagon tile takes up to five taps to come back, so the balls turn fewer tiles
+            if (GroupIds[group] == "sphere") s *= 0.7f;
             return s;
         }
 

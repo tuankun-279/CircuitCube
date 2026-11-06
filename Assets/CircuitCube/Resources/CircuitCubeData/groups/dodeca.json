@@ -1,0 +1,17 @@
+{
+    "id": "dodeca",
+    "name": "Dodeca",
+    "blurb": "Twelve pentagon faces, cut like a Kilominx, then a Megaminx.",
+    "icon": "dodeca",
+    "endless": false,
+    "enable": true,
+    "levelCount": 10,
+    "chunkSize": 100,
+    "chunks": [
+        {
+            "index": 0,
+            "version": 1,
+            "count": 10
+        }
+    ]
+}

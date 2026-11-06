@@ -108,55 +108,56 @@ MonoBehaviour:
     SourceHalo: glow_halo
     SourceOutline: source_outline
     SourceCenter: source_center
+  Wires:
+    Arm: wire_arm
+    ArmCore: wire_arm_core
+    Hub: wire_hub
+    HubCore: wire_hub_core
+    Width: 1
+    HubSize: 1
+  Faces:
+  - board_tile
+  - board_tri
+  - board_pent
+  - board_hex
+  - board_kite
+  - board_mega_corner
+  - board_mega_edge
   BoardAtlas: {fileID: 2800000, guid: cf13de732a4ef4143bb168f36cd3046a, type: 3}
   BoardAtlasRects:
+  - Image: board_hex
+    Uv: {x: 0.28076923, y: 0.26614583, z: 0.009065934, w: 0.00859375}
+  - Image: board_kite
+    Uv: {x: 0.28076923, y: 0.26614583, z: 0.30796704, w: 0.00859375}
+  - Image: board_mega_corner
+    Uv: {x: 0.28076923, y: 0.26614583, z: 0.60686815, w: 0.00859375}
+  - Image: board_mega_edge
+    Uv: {x: 0.28076923, y: 0.26614583, z: 0.009065934, w: 0.29192707}
+  - Image: board_pent
+    Uv: {x: 0.28076923, y: 0.26614583, z: 0.30796704, w: 0.29192707}
   - Image: board_tile
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.006326687, w: 0.005485372}
-  - Image: wire_tee
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.21491565, w: 0.005485372}
-  - Image: wire_straight_core
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.4235046, w: 0.005485372}
-  - Image: wire_straight
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.63209355, w: 0.005485372}
-  - Image: wire_end_core
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.006326687, w: 0.18633644}
-  - Image: wire_end
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.21491565, w: 0.18633644}
-  - Image: wire_cross_core
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.4235046, w: 0.18633644}
-  - Image: wire_cross
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.63209355, w: 0.18633644}
-  - Image: wire_corner_core
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.006326687, w: 0.3671875}
-  - Image: wire_corner
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.21491565, w: 0.3671875}
-  - Image: tri_wire_fork_core
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.4235046, w: 0.3671875}
-  - Image: wire_tee_core
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.63209355, w: 0.3671875}
-  - Image: tri_wire_fork
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.006326687, w: 0.54803854}
-  - Image: tri_wire_end
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.21491565, w: 0.54803854}
-  - Image: tri_wire_bend_core
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.4235046, w: 0.54803854}
-  - Image: tri_wire_bend
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.63209355, w: 0.54803854}
+    Uv: {x: 0.28076923, y: 0.26614583, z: 0.60686815, w: 0.29192707}
   - Image: board_tri
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.006326687, w: 0.72888964}
-  - Image: tri_wire_end_core
-    Uv: {x: 0.19593558, y: 0.16988032, z: 0.21491565, w: 0.72888964}
+    Uv: {x: 0.28076923, y: 0.26614583, z: 0.009065934, w: 0.5752604}
+  - Image: wire_hub
+    Uv: {x: 0.1401099, y: 0.1328125, z: 0.30796704, w: 0.5752604}
+  - Image: wire_arm_core
+    Uv: {x: 0.034615386, y: 0.1328125, z: 0.4662088, w: 0.5752604}
+  - Image: wire_arm
+    Uv: {x: 0.034615386, y: 0.1328125, z: 0.51895607, w: 0.5752604}
   - Image: source_outline
-    Uv: {x: 0.09777607, y: 0.084773935, z: 0.4235046, w: 0.72888964}
-  - Image: source_center
-    Uv: {x: 0.09777607, y: 0.084773935, z: 0.53393406, w: 0.72888964}
-  - Image: lamp_ring
-    Uv: {x: 0.09777607, y: 0.084773935, z: 0.6443635, w: 0.72888964}
-  - Image: lamp_core_on
-    Uv: {x: 0.09777607, y: 0.084773935, z: 0.7547929, w: 0.72888964}
+    Uv: {x: 0.1401099, y: 0.1328125, z: 0.5717033, w: 0.5752604}
   - Image: lamp_core_off
-    Uv: {x: 0.09777607, y: 0.084773935, z: 0.8652224, w: 0.72888964}
+    Uv: {x: 0.1401099, y: 0.1328125, z: 0.72994506, w: 0.5752604}
+  - Image: lamp_ring
+    Uv: {x: 0.1401099, y: 0.1328125, z: 0.009065934, w: 0.85859376}
+  - Image: lamp_core_on
+    Uv: {x: 0.1401099, y: 0.1328125, z: 0.16730769, w: 0.85859376}
+  - Image: wire_hub_core
+    Uv: {x: 0.1401099, y: 0.1328125, z: 0.32554945, w: 0.85859376}
   - Image: glow_halo
-    Uv: {x: 0.09777607, y: 0.084773935, z: 0.006326687, w: 0.9097407}
+    Uv: {x: 0.1401099, y: 0.1328125, z: 0.4837912, w: 0.85859376}
+  - Image: source_center
+    Uv: {x: 0.1401099, y: 0.1328125, z: 0.642033, w: 0.85859376}
   - Image: hint_pin
-    Uv: {x: 0.09777607, y: 0.084773935, z: 0.116756134, w: 0.9097407}
+    Uv: {x: 0.1401099, y: 0.1328125, z: 0.8002747, w: 0.85859376}

@@ -49,11 +49,15 @@ namespace CircuitCube.Tests
             return board;
         }
 
-        // level 100 is the biggest shape of each generator group: cube 150 tiles, tetra 144, sphere 174
+        // level 100 is the biggest shape of most generator groups: cube 150 tiles, tetra 144, octa 128, sphere 162,
+        // dodeca 132 (Megaminx); level 30 is the Megamix size 180 board
         [TestCase(0, 100)]
         [TestCase(1, 100)]
         [TestCase(2, 100)]
+        [TestCase(3, 100)]
         [TestCase(4, 100)]
+        [TestCase(5, 100)]
+        [TestCase(6, 30)]
         public void BigShapeDrawsInFewCalls(int group, int level)
         {
             var board = Board(group, level);

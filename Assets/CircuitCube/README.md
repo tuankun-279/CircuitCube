@@ -19,27 +19,31 @@ Everything the player sees is an asset you edit in the Unity editor:
 | Art made with ChatGPT | `Art/UI` (sprites), `Art/Board` (tile textures) |
 | Scene with camera, event system, background, UI and the game object | `Scenes/CircuitCube.unity` |
 
-Code only fills in text, picks which wire image a tile shows, turns it, tints layers with energy colours and plays the
-clips. The tile turn is the one animation in code, because its angle depends on the move.
+Code only fills in text, places the wire arms of a tile, turns them, tints layers with energy colours and plays the
+clips. The tile turn is the one animation in code, because it depends on the move.
 
 ## Shape groups
 
-Five groups of 100 levels. Beating level 100 of a group opens the next one; Megamix keeps going after 100.
+Seven groups of 100 levels. Beating level 100 of a group opens the next one; Megamix keeps going after 100.
 
 | Group | Shapes |
 |---|---|
 | Cube | 2x2 to 5x5 cubes (the first release's levels) |
 | Tetra | regular tetrahedron, every face cut into n x n triangle tiles (36 to 144 tiles); one tap turns a tile a third of a turn |
-| Sphere | balls of blocks, radius 1.5 to 3 |
+| Octa | regular octahedron, n x n triangles per face (32, 72, 128 tiles) |
+| Sphere | soccer ball (32 tiles), then Goldberg balls of 42, 92 and 162 tiles: 12 pentagons, the rest hexagons |
 | Cross | 3D plus signs, towers, L shapes |
+| Dodeca | dodecahedron cut like a Kilominx (60 kites), from level 41 and on big levels like a Megaminx (132 tiles) |
 | Megamix | a new mix of small cubes, pyramids, balls, bars and slabs every level |
 
 In each group the first 10 levels are small and lightly scrambled, then boards grow and colours go up to four;
 every 10th level from 30 is a big board. The first level of a new group shows an introduction card.
 
-Tiles can have 3, 4 or 5 sides (`BoardTopology`). Block shapes (`ShapeLibrary` + `ShapeTopology`) link surface tiles
-over convex edges and into concave corners; polygon shapes (`PolyTopology`, `PolyShapes.Tetrahedron`) link tiles that
-share a side. Progress is saved per group (`CubeSave`); the Cube group reads the old keys.
+Tiles can have 3 to 6 sides (`BoardTopology`); each tile keeps its corners and its outline kind (`CellShape`: square,
+triangle, pentagon, hexagon, kite, Megaminx corner and edge). Block shapes (`ShapeLibrary` + `ShapeTopology`) link
+surface tiles over convex edges and into concave corners; polygon shapes (`PolyTopology`, `PolyShapes`) link tiles
+that share a side. Shape ids in the level data: `tetra-n`, `octa-n`, `dodeca-2|3`, `geo-1..4` (see `PolyShapes`).
+Wire masks are written in base64 (`TileCodec`), so hexagon tiles fit; older base32 data reads the same. Progress is saved per group (`CubeSave`); the Cube group reads the old keys.
 
 ## Editor menu
 
@@ -50,11 +54,19 @@ Tools > Circuit Cube: Open Game Scene, Reset Saved Progress, Unlock All Shapes (
 The project's default renderer is the URP Universal Renderer (`Assets/Settings/UniversalRenderer.asset`) so shapes
 with hollows draw with a depth buffer.
 
-The board has no GameObject per tile. `CubeBoardView` draws every layer of every tile (face, wire image, core, lamp
-and source parts, hint pin, burst) with GPU instancing (`Graphics.RenderMeshInstanced` and the
-`Shaders/BoardSprite.shader`). Every board image of a theme is packed into one atlas
-(`Art/Atlases/Board_Dark.png`, `Board_Light.png`), so each layer is one draw call whatever image a tile shows: 6–9
-draw calls for the biggest shapes instead of 150–360, and nothing allocated per frame. Taps are picked with a ray against the tile planes, without colliders.
+The board has no GameObject per tile. `CubeBoardView` draws:
+- the tile faces of the whole board as one mesh (`Shaders/BoardFace.shader`, shaded by the face normal); each tile is a
+  fan of triangles mapped onto the face image of its outline, corner to corner, so uneven tiles still fit their image;
+- the wires as arms: a strip from the tile centre to the middle of each side the wire leaves by, and a hub under them.
+  A turn slides every arm to the next side (angle and length eased), so kites and Goldberg hexagons turn cleanly;
+- lamps, sources, hint pins and bursts as instanced quads (`Graphics.RenderMeshInstanced`, `Shaders/BoardSprite.shader`).
+Every board image of a theme is packed into one atlas (`Art/Atlases/Board_Dark.png`, `Board_Light.png`), so each
+layer is one draw call: at most 12 for the biggest shapes, and nothing allocated per frame. Taps are picked with a ray
+against the tile polygons, without colliders.
+
+The pentagon, hexagon, kite and Megaminx faces and the arm and hub images are made from the ChatGPT square tile and
+wire by `ArtRef/tools/board_shapes.py` (the square's bevel measured from each side, redrawn on the new outlines). The
+old whole-tile wire images are in `ArtRef/legacy_v2`.
 
 Art layout (also in `Editor/ArtPaths.cs`): `Art/Board/{Dark,Light,Shared}` tile images, `Art/UI/{Common,Icons,
 Shapes/{Dark,Light},Brand,Mascot,Backgrounds}` UI sprites, `Art/Fonts` Inter and its TextMeshPro font assets,

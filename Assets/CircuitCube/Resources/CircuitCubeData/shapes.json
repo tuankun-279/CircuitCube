@@ -16,12 +16,25 @@
             "n": 3
         }
     ],
-    "ball": [
+    "octa": [
         {
-            "id": "ball-15",
-            "r": 1.5
+            "id": "octa-2",
+            "n": 2
         }
     ],
+    "dodeca": [
+        {
+            "id": "dodeca-2",
+            "n": 2
+        }
+    ],
+    "geo": [
+        {
+            "id": "geo-1",
+            "n": 1
+        }
+    ],
+    "ball": [],
     "cross": [
         {
             "id": "cross-11",

@@ -35,6 +35,21 @@ namespace CircuitCube.Game
         public string SourceHalo, SourceOutline, SourceCenter;
     }
 
+    /// <summary>
+    /// The wire images of a theme, by file name (Art/Board/&lt;theme&gt;). Every wire is drawn from arms (a strip from the
+    /// tile centre to the middle of a side, stretched to length) and a round hub in the centre; the core images are the
+    /// white line drawn on top while the wire carries energy.
+    /// </summary>
+    [Serializable]
+    public sealed class BoardWires
+    {
+        public string Arm = "wire_arm", ArmCore = "wire_arm_core", Hub = "wire_hub", HubCore = "wire_hub_core";
+        [Tooltip("Height of the arm image across the wire, in board units (a square tile is 2 wide).")]
+        public float Width = 1f;
+        [Tooltip("Width of the hub image, in board units.")]
+        public float HubSize = 1f;
+    }
+
     /// <summary>One image in a theme's board atlas: its file name and its UV scale (xy) and offset (zw).</summary>
     [Serializable]
     public struct AtlasRect
