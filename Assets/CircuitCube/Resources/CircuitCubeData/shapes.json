@@ -1,0 +1,34 @@
+{
+    "version": 1,
+    "cube": [
+        {
+            "id": "cube-2",
+            "n": 2
+        },
+        {
+            "id": "cube-3",
+            "n": 3
+        }
+    ],
+    "tetra": [
+        {
+            "id": "tetra-3",
+            "n": 3
+        }
+    ],
+    "ball": [
+        {
+            "id": "ball-15",
+            "r": 1.5
+        }
+    ],
+    "cross": [
+        {
+            "id": "cross-11",
+            "arm": 1,
+            "thick": 1
+        }
+    ],
+    "tower": [],
+    "ell": []
+}

@@ -1,0 +1,53 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace CircuitCube.Game
+{
+    /// <summary>
+    /// One look of the game (dark or light): UI colours by role, energy colours and the board materials.
+    /// Assets: Assets/CircuitCube/Themes/Theme_Dark.asset and Theme_Light.asset.
+    /// </summary>
+    [CreateAssetMenu(menuName = "Circuit Cube/Theme", fileName = "Theme")]
+    public sealed class GameTheme : ScriptableObject
+    {
+        public bool Dark = true;
+
+        [Header("UI")]
+        public List<RoleColor> Ui = new List<RoleColor>();
+
+        [Header("Board")]
+        public Color CameraBackground = Color.black;
+        public Color ShadeDark = new Color(0.72f, 0.75f, 0.85f), ShadeLight = Color.white;
+        [Tooltip("Energy colours: red, blue, yellow, purple (red+blue), orange (red+yellow), green (blue+yellow), white.")]
+        public Color Red, Blue, Yellow, Purple, Orange, Green, White;
+        public Color WireOff;
+        [Tooltip("Light mode fills a lit lamp with its colour; dark mode keeps the core white.")]
+        public bool TintLampCore;
+        [Range(0f, 1f)] public float HaloAlpha = 0.45f;
+        public BoardSkin Square = new BoardSkin(), Triangle = new BoardSkin();
+
+        public Color Get(UiRole role)
+        {
+            if (role == UiRole.Transparent) return new Color(1, 1, 1, 0);
+            foreach (var r in Ui) if (r.Role == role) return r.Color;
+            return Color.white;
+        }
+
+        public Color Energy(int set)
+        {
+            switch (set)
+            {
+                case 1: return Red;
+                case 2: return Blue;
+                case 4: return Yellow;
+                case 3: return Purple;
+                case 5: return Orange;
+                case 6: return Green;
+                case 7: return White;
+                default: return WireOff;
+            }
+        }
+
+        public BoardSkin SkinFor(int ports) => ports == 3 ? Triangle : Square;
+    }
+}

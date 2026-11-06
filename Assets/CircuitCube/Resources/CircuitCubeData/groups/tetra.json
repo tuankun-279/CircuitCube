@@ -1,0 +1,17 @@
+{
+    "id": "tetra",
+    "name": "Tetra",
+    "blurb": "A four-sided pyramid of triangle tiles. One tap turns a tile a third of a turn.",
+    "icon": "tetra",
+    "endless": false,
+    "enable": true,
+    "levelCount": 10,
+    "chunkSize": 100,
+    "chunks": [
+        {
+            "index": 0,
+            "version": 1,
+            "count": 10
+        }
+    ]
+}

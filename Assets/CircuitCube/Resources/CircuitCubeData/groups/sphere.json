@@ -1,0 +1,17 @@
+{
+    "id": "sphere",
+    "name": "Sphere",
+    "blurb": "A round ball of blocks. No flat side to rest on.",
+    "icon": "sphere",
+    "endless": false,
+    "enable": true,
+    "levelCount": 10,
+    "chunkSize": 100,
+    "chunks": [
+        {
+            "index": 0,
+            "version": 1,
+            "count": 10
+        }
+    ]
+}

@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55d76b8068ccc0646b042d49f7212c4e, type: 3}
+  m_Name: Theme_Dark
+  m_EditorClassIdentifier: 
+  Dark: 1
+  Ui:
+  - Role: 1
+    Color: {r: 0.039215688, g: 0.047058824, b: 0.078431375, a: 1}
+  - Role: 2
+    Color: {r: 0.078431375, g: 0.09411765, b: 0.14901961, a: 1}
+  - Role: 3
+    Color: {r: 0.27450982, g: 0.72156864, b: 0.7764706, a: 1}
+  - Role: 4
+    Color: {r: 0.02745098, g: 0.078431375, b: 0.09411765, a: 1}
+  - Role: 5
+    Color: {r: 0.105882354, g: 0.12941177, b: 0.2, a: 1}
+  - Role: 6
+    Color: {r: 0.8901961, g: 0.9098039, b: 0.9607843, a: 1}
+  - Role: 7
+    Color: {r: 0.078431375, g: 0.09411765, b: 0.14901961, a: 1}
+  - Role: 8
+    Color: {r: 0.8901961, g: 0.9098039, b: 0.9607843, a: 1}
+  - Role: 9
+    Color: {r: 0.93333334, g: 0.94509804, b: 0.96862745, a: 1}
+  - Role: 10
+    Color: {r: 0.5411765, g: 0.5764706, b: 0.6784314, a: 1}
+  - Role: 11
+    Color: {r: 0.039215688, g: 0.047058824, b: 0.078431375, a: 0.92}
+  - Role: 12
+    Color: {r: 0, g: 0, b: 0, a: 0.6}
+  - Role: 13
+    Color: {r: 0.14901961, g: 0.18039216, b: 0.27450982, a: 1}
+  - Role: 14
+    Color: {r: 0.27450982, g: 0.72156864, b: 0.7764706, a: 1}
+  - Role: 15
+    Color: {r: 1, g: 0.78431374, b: 0.23921569, a: 1}
+  - Role: 16
+    Color: {r: 0.078431375, g: 0.09411765, b: 0.14901961, a: 1}
+  - Role: 17
+    Color: {r: 0.078431375, g: 0.09411765, b: 0.14901961, a: 1}
+  - Role: 18
+    Color: {r: 0.27450982, g: 0.72156864, b: 0.7764706, a: 1}
+  - Role: 19
+    Color: {r: 0.05882353, g: 0.07450981, b: 0.1254902, a: 1}
+  - Role: 20
+    Color: {r: 0.8901961, g: 0.9098039, b: 0.9607843, a: 1}
+  CameraBackground: {r: 0.039215688, g: 0.047058824, b: 0.078431375, a: 1}
+  ShadeDark: {r: 0.7, g: 0.73, b: 0.84, a: 1}
+  ShadeLight: {r: 1, g: 1, b: 1, a: 1}
+  Red: {r: 1, g: 0.3019608, b: 0.42745098, a: 1}
+  Blue: {r: 0.23921569, g: 0.6627451, b: 1, a: 1}
+  Yellow: {r: 1, g: 0.88235295, b: 0.3019608, a: 1}
+  Purple: {r: 0.78039217, g: 0.49019608, b: 1, a: 1}
+  Orange: {r: 1, g: 0.6039216, b: 0.23921569, a: 1}
+  Green: {r: 0.23921569, g: 1, b: 0.63529414, a: 1}
+  White: {r: 0.95686275, g: 0.96862745, b: 1, a: 1}
+  WireOff: {r: 0.22745098, g: 0.2627451, b: 0.3764706, a: 1}
+  TintLampCore: 0
+  HaloAlpha: 0.45
+  Square:
+    Base: {fileID: 2100000, guid: 877c646f6d38cfb479e665afb8420a3b, type: 2}
+    Wires:
+    - {fileID: 2100000, guid: afd8434bb1c28a443b571652d8324882, type: 2}
+    - {fileID: 2100000, guid: e9d381adb21f1f54f9cd2b322605daa4, type: 2}
+    - {fileID: 2100000, guid: 3e61636eb2a66b74a8af793e22200bc9, type: 2}
+    - {fileID: 2100000, guid: f3902ef455c68f44289fd2db8daece3a, type: 2}
+    - {fileID: 2100000, guid: 7c5c36c9c3382224e9ec81bcafa4125b, type: 2}
+    WireCores:
+    - {fileID: 2100000, guid: 001b66e71a3cc514083101f03fdf79ea, type: 2}
+    - {fileID: 2100000, guid: 008984b786d241d46a2791676baf6553, type: 2}
+    - {fileID: 2100000, guid: 0ac2a9b0c7f799d4e9061427d602b959, type: 2}
+    - {fileID: 2100000, guid: 4a3952e2c7391c545812bc74276aaaf7, type: 2}
+    - {fileID: 2100000, guid: 32a753508df782045b50ea5983e84142, type: 2}
+    LampHalo: {fileID: 2100000, guid: ac876f9cbb2d1f54897ddb3bd1fc2105, type: 2}
+    LampRing: {fileID: 2100000, guid: da5606ba1db2bde409ef36e7306284b9, type: 2}
+    LampOff: {fileID: 2100000, guid: 851cc3454a4c6b3408b882517266d978, type: 2}
+    LampOn: {fileID: 2100000, guid: 06b6a795a9faf81409ec13dd44279980, type: 2}
+    SourceHalo: {fileID: 2100000, guid: 8988b8f02bb3ca348a0c138b6519114b, type: 2}
+    SourceOutline: {fileID: 2100000, guid: d730e7b8c0293a94fab105f0c58c13cf, type: 2}
+    SourceCenter: {fileID: 2100000, guid: 1333c937cd6191e48bfa166f3d6d9cb6, type: 2}
+  Triangle:
+    Base: {fileID: 2100000, guid: 4de63fed324ae6c48b9cbdef1dd03d5a, type: 2}
+    Wires:
+    - {fileID: 2100000, guid: 6c110a7d44ddbe444b63b8acce52229e, type: 2}
+    - {fileID: 2100000, guid: 59d10ed7a6118ae4da43e635fb8e344e, type: 2}
+    - {fileID: 2100000, guid: 3cd61a27dc3c2b346b61472d530bc873, type: 2}
+    WireCores:
+    - {fileID: 2100000, guid: 2e70754ddeeeacf44a729fdd640f803f, type: 2}
+    - {fileID: 2100000, guid: 3e799abfa210ba54b896245d957d6859, type: 2}
+    - {fileID: 2100000, guid: e22d179e2464d6640a7217e8f2b3aef9, type: 2}
+    LampHalo: {fileID: 2100000, guid: ac876f9cbb2d1f54897ddb3bd1fc2105, type: 2}
+    LampRing: {fileID: 2100000, guid: da5606ba1db2bde409ef36e7306284b9, type: 2}
+    LampOff: {fileID: 2100000, guid: 851cc3454a4c6b3408b882517266d978, type: 2}
+    LampOn: {fileID: 2100000, guid: 06b6a795a9faf81409ec13dd44279980, type: 2}
+    SourceHalo: {fileID: 2100000, guid: 8988b8f02bb3ca348a0c138b6519114b, type: 2}
+    SourceOutline: {fileID: 2100000, guid: d730e7b8c0293a94fab105f0c58c13cf, type: 2}
+    SourceCenter: {fileID: 2100000, guid: 1333c937cd6191e48bfa166f3d6d9cb6, type: 2}

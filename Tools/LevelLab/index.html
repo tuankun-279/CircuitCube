@@ -1,0 +1,1277 @@
+<title>Circuit Cube Level Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* Layout: workbench — level list | 3D viewport | inspector; stacks to one column on phones. */
+:root{
+  --bg:#EDF0F5; --panel:#FFFFFF; --inset:#F3F5F9; --line:#D7DDE9; --fg:#18203A; --muted:#626C88;
+  --accent:#1E9AAA; --accent-ink:#FFFFFF; --accent-soft:#DCF1F3;
+  --ok:#138A5C; --warn:#B76E00; --bad:#C2334B; --ok-soft:#DDF3EA; --warn-soft:#FBEFD9; --bad-soft:#F9E1E5;
+  --stage:#0B0E17;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A0D15; --panel:#131826; --inset:#0F1320; --line:#262E46; --fg:#E3E8F5; --muted:#8A93AD;
+  --accent:#46B8C6; --accent-ink:#071418; --accent-soft:#15313A; --ok:#3DC99A; --warn:#E8A23A; --bad:#FF6F86; --ok-soft:#10291F; --warn-soft:#2E2210; --bad-soft:#341620; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0A0D15; --panel:#131826; --inset:#0F1320; --line:#262E46; --fg:#E3E8F5; --muted:#8A93AD;
+  --accent:#46B8C6; --accent-ink:#071418; --accent-soft:#15313A; --ok:#3DC99A; --warn:#E8A23A; --bad:#FF6F86; --ok-soft:#10291F; --warn-soft:#2E2210; --bad-soft:#341620; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 28px}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;max-width:1500px;margin:0 auto 12px}
+.top h1{margin:0;font-size:19px;font-weight:700}
+.top .sp{flex:1}
+.dbs{font-size:12.5px;color:var(--muted)}
+.dbs b{color:var(--fg);font-weight:600}
+.app{display:grid;grid-template-columns:250px minmax(0,1fr) 340px;gap:12px;max-width:1500px;margin:0 auto;align-items:start}
+@media (max-width:1100px){.app{grid-template-columns:minmax(0,1fr) 330px}.side{grid-column:1 / -1}}
+@media (max-width:760px){.app{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;min-width:0}
+.panel h2{margin:0 0 8px;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.panel h3{margin:12px 0 6px;font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.stack{display:flex;flex-direction:column;gap:12px;min-width:0}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+input[type=text],input[type=number],select{background:var(--inset);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:13px var(--sans);min-width:0;width:100%}
+input[type=range]{accent-color:var(--accent);width:100%}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--fg);font:500 13px var(--sans);padding:7px 11px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.sm{padding:4px 8px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--panel);color:var(--muted);font:500 13px var(--sans);padding:7px 12px;cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.tools{display:flex;gap:6px;flex-wrap:wrap}
+.tool{border:1px solid var(--line);background:var(--inset);color:var(--fg);border-radius:9px;padding:6px 10px;font:500 12.5px var(--sans);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.tool.on{border-color:var(--accent);background:var(--accent-soft)}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.2)}
+.dia{width:11px;height:11px;transform:rotate(45deg);display:inline-block;border-radius:2px}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 8px;font-size:12px;background:var(--inset)}
+.chip button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;padding:0 4px}
+.stage{position:relative;background:var(--stage);border-radius:14px;overflow:hidden;height:min(68vh,640px);min-height:380px;border:1px solid var(--line)}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:absolute;left:10px;top:10px;right:10px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:none}
+.hud .pill{pointer-events:auto;background:rgba(20,25,40,.86);color:#E3E8F5;border:1px solid #2A3352;border-radius:999px;padding:4px 10px;font-size:12px}
+.hint{position:absolute;left:10px;bottom:10px;right:10px;color:#AEB6CC;font-size:12px;pointer-events:none;text-shadow:0 1px 2px #000}
+.modes{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.list{display:flex;flex-direction:column;gap:3px;max-height:52vh;overflow:auto;margin-top:6px}
+.li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:6px;align-items:center;border:1px solid transparent;border-radius:8px;padding:4px 6px;cursor:pointer;font-size:13px}
+.li:hover{background:var(--inset)}
+.li.sel{border-color:var(--accent);background:var(--accent-soft)}
+.li .n{color:var(--muted);font:12px var(--mono);text-align:right}
+.li .id{font-family:var(--mono);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li .act{display:flex;gap:2px;opacity:.0}
+.li:hover .act,.li.sel .act{opacity:1}
+.li .act button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;padding:0 3px}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.kv div{background:var(--inset);border:1px solid var(--line);border-radius:9px;padding:6px 8px}
+.kv b{display:block;font-size:15px;font-variant-numeric:tabular-nums}
+.kv span{font-size:11px;color:var(--muted)}
+.msgs{list-style:none;padding:0;margin:6px 0 0;display:flex;flex-direction:column;gap:3px;font-size:12.5px}
+.msgs li::before{content:"✓ ";color:var(--ok);font-weight:700}
+.msgs li.w{color:var(--warn)} .msgs li.w::before{content:"! ";color:var(--warn)}
+.msgs li.b{color:var(--bad)} .msgs li.b::before{content:"✕ ";color:var(--bad)}
+pre{background:var(--inset);border:1px solid var(--line);border-radius:10px;padding:8px;margin:6px 0 0;overflow:auto;font:11.5px/1.45 var(--mono);max-height:240px;white-space:pre}
+details summary{cursor:pointer;color:var(--muted);font-size:12.5px}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:13px;z-index:20;max-width:min(92vw,560px)}
+.note{font-size:12px;color:var(--muted);margin:6px 0 0}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+/* config views (groups & rules, checks) */
+.c-wrap{max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.c-cols{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:12px;align-items:start}
+@media (max-width:1000px){.c-cols{grid-template-columns:minmax(0,1fr)}}
+.c-banner{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;border-radius:10px;background:var(--warn-soft);color:var(--warn);font-weight:500}
+.c-banner .grow{margin-right:auto}
+.c-card{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+.c-card.off{background:var(--inset)}
+.c-ord{display:flex;flex-direction:column;align-items:center;gap:2px}
+.c-ord b{font:600 17px var(--mono);color:var(--muted)}
+.c-ord button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:6px}
+.c-ord button:hover:not(:disabled){background:var(--inset);color:var(--fg)}
+.c-ord button:disabled{opacity:.3;cursor:default}
+.c-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px 12px;min-width:0}
+.c-fields .wide{grid-column:1/-1}
+.c-title{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.c-title .gid{font:600 15px var(--mono)}
+.c-pill{display:inline-flex;align-items:center;font:500 11.5px var(--mono);padding:2px 8px;border-radius:999px;background:var(--inset);border:1px solid var(--line);color:var(--muted)}
+.c-pill.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.c-pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.c-pill.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.c-form{display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px 10px;align-items:center}
+.c-form label{font-size:12.5px;color:var(--muted)}
+.c-form input{max-width:110px}
+.c-form .c-help{font-size:11.5px;color:var(--muted);grid-column:2}
+table.c-score{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:12.5px}
+table.c-score th,table.c-score td{white-space:nowrap;padding:5px 6px;border-bottom:1px solid var(--line);text-align:center}
+table.c-score td:first-child,table.c-score th:first-child{text-align:left;color:var(--muted)}
+.c-pts{font:600 13px var(--mono)} .c-pts.top{color:var(--ok)}
+.c-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.c-stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.c-stat span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.c-stat b{display:block;font:600 21px var(--mono)}
+.c-issue{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13px}
+.c-issue:last-child{border-bottom:0}
+.c-sev{font:600 10.5px var(--mono);padding:2px 6px;border-radius:4px;text-transform:uppercase;white-space:nowrap}
+.c-sev.err{background:var(--bad-soft);color:var(--bad)} .c-sev.warn{background:var(--warn-soft);color:var(--warn)}
+.c-modal{position:fixed;inset:0;z-index:40;background:rgba(10,13,21,.55);display:grid;place-items:center;padding:16px}
+.c-modal .panel{width:min(520px,100%);max-height:calc(100% - 32px);overflow:auto;display:flex;flex-direction:column;gap:10px}
+.c-prog{height:6px;border-radius:3px;background:var(--inset);overflow:hidden}
+.c-prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.opts{display:flex;flex-direction:column;gap:4px}
+.opt{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:9px;padding:6px 8px;cursor:pointer;background:var(--inset)}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.opt input{margin-top:3px;accent-color:var(--accent)}
+.opt b{display:block;font-size:13px;font-weight:600}
+.opt small{display:block;font-size:11.5px;color:var(--muted)}
+.bsrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
+.bsrow .bp{display:flex;gap:4px}
+.bsrow .bp input{width:52px;padding:5px 6px}
+.bsrow button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px}
+table.bt td button.re{border:1px solid var(--line);background:var(--inset);color:var(--fg);border-radius:6px;cursor:pointer;font-size:12px;padding:1px 6px}
+.top .seg button{padding:6px 12px}
+@media (prefers-reduced-motion:reduce){.c-prog i{transition:none}}
+table.bt{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+table.bt th,table.bt td{padding:4px 5px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+table.bt th{color:var(--muted);font-weight:600}
+.btwrap{max-height:280px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:9px}
+.pager{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.pager button{border:1px solid var(--line);background:var(--inset);color:var(--muted);border-radius:7px;font:12px var(--mono);padding:2px 7px;cursor:pointer}
+.pager button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chart{width:100%;height:70px;display:block;margin-top:8px}
+.empty{border:1px dashed var(--line);border-radius:12px;padding:14px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+
+<div class="top">
+  <h1>Circuit Cube · Level Lab</h1>
+  <span class="dbs" id="dbStatus">Connecting to data…</span>
+  <span class="sp"></span>
+  <div class="seg" role="tablist" aria-label="Area">
+    <button type="button" data-view="design" class="on">Level design</button>
+    <button type="button" data-view="groups">Groups &amp; rules</button>
+    <button type="button" data-view="check">Check</button>
+  </div>
+  <button class="btn" id="btnImport" type="button" title="Import a zip exported from Unity (Tools/Circuit Cube/Data/Export Data Zip)">Import zip</button>
+  <input id="zipInput" type="file" accept=".zip,application/zip" hidden>
+  <button class="btn primary" id="btnExport" type="button" title="Export a zip in the CDN layout to import into Unity">Export zip</button>
+</div>
+
+<div class="app" id="viewDesign">
+  <!-- LEFT: groups + levels -->
+  <aside class="side stack">
+    <div class="panel">
+      <h2>Group</h2>
+      <select id="groupSel" aria-label="Level group"></select>
+      <div class="row" style="margin-top:8px;justify-content:space-between">
+        <span class="note" id="groupMeta" style="margin:0"></span>
+        <button class="btn sm" id="btnNewGroup" type="button">+ Group</button>
+      </div>
+      <div id="newGroupForm" hidden style="margin-top:8px" class="stack">
+        <div class="grid2"><label class="f" for="ngId">Id<input id="ngId" type="text" placeholder="octa"></label>
+        <label class="f" for="ngName">Name<input id="ngName" type="text" placeholder="Octahedron"></label></div>
+        <div class="row"><button class="btn primary sm" id="ngSave" type="button">Create group</button><button class="btn sm" id="ngCancel" type="button">Cancel</button></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between"><h2 style="margin:0">Levels in order</h2><button class="btn primary sm" id="btnNewLevel" type="button">+ New level</button></div>
+      <div class="list" id="levelList"></div>
+      <div class="pager" id="pager"></div>
+      <p class="note">↑ ↓ reorder, ✕ remove from the group. The order is saved in chunks of 100 levels; only changed chunks get a new version. Level data loads when opened.</p>
+    </div>
+  </aside>
+
+  <!-- CENTER: viewport -->
+  <main class="stack" style="min-width:0">
+    <div class="panel">
+      <div class="modes">
+        <div class="seg" role="tablist" aria-label="Step">
+          <button type="button" id="mShape" class="on">1 · Shape</button>
+          <button type="button" id="mBoard">2 · Board</button>
+          <button type="button" id="mPlay">3 · Play test</button>
+        </div>
+        <div class="row">
+          <label class="chk" for="showSol" id="showSolWrap"><input id="showSol" type="checkbox" checked> Show solution</label>
+          <button class="btn sm" id="btnFit" type="button">Fit view</button>
+        </div>
+      </div>
+      <div class="stage" id="stage">
+        <div class="hud" id="hud"></div>
+        <div class="hint" id="hint"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- RIGHT: inspector -->
+  <aside class="stack" style="min-width:0">
+    <div class="panel" id="paneShape">
+      <h2>Shape</h2>
+      <div class="grid2">
+        <label class="f" for="pType">Preset
+          <select id="pType">
+            <option value="cube">Cube</option><option value="cross">Cross</option><option value="tower">Tower</option>
+            <option value="ell">Ell (L shape)</option><option value="pyramid">Stepped pyramid</option><option value="ball">Ball</option>
+            <option value="bar">Thanh</option><option value="slab">Slab</option><option value="tetra">Tetra (triangle tiles)</option><option value="dodeca" disabled>Dodeca 12 faces, pentagon tiles (coming soon)</option>
+          </select></label>
+        <div id="pParams" class="grid2"></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" id="btnPlace" type="button">Use this preset</button>
+        <button class="btn" id="btnMerge" type="button">Merge in</button>
+      </div>
+      <div class="grid3" style="margin-top:8px">
+        <label class="f" for="offX">Offset X<input id="offX" type="number" value="2"></label>
+        <label class="f" for="offY">Offset Y<input id="offY" type="number" value="0"></label>
+        <label class="f" for="offZ">Offset Z<input id="offZ" type="number" value="0"></label>
+      </div>
+      <h3>Edit with the mouse</h3>
+      <div class="tools" id="shapeTools">
+        <button type="button" class="tool on" data-t="add">＋ Add block</button>
+        <button type="button" class="tool" data-t="del">－ Remove block</button>
+        <button type="button" class="tool" data-t="orbit">Orbit camera only</button>
+      </div>
+      <div class="row" style="margin-top:8px"><button class="btn sm" id="btnMegamix" type="button">Random Megamix</button><button class="btn sm primary" id="btnShapeGen" type="button" title="Generate wires, sources and lamps for this shape now">Generate board now →</button><button class="btn sm" id="btnUndoShape" type="button">Undo</button></div>
+      <div class="kv" style="margin-top:10px"><div><b id="kBlocks">0</b><span>blocks</span></div><div><b id="kTiles">0</b><span>tiles</span></div><div><b id="kShapeId" style="font-size:12px;font-family:var(--mono)">—</b><span>shape id</span></div></div>
+      <ul class="msgs" id="shapeMsgs"></ul>
+    </div>
+
+    <div class="panel" id="paneBoard" hidden>
+      <h2>Auto generate</h2>
+      <div class="opts" role="radiogroup" aria-label="What to keep when generating">
+        <label class="opt" for="gkNone"><input id="gkNone" type="radio" name="genKeep" value="none" checked><span><b>Generate everything</b><small>From an empty shape: wires, sources, lamps and scramble.</small></span></label>
+        <label class="opt" for="gkFill"><input id="gkFill" type="radio" name="genKeep" value="fill"><span><b>Keep what is drawn, generate the rest</b><small>Wires, sources and lamps you placed stay; empty tiles get connected.</small></span></label>
+        <label class="opt" for="gkScr"><input id="gkScr" type="radio" name="genKeep" value="scramble"><span><b>Scramble only</b><small>Keep the solution, turn the tiles away again.</small></span></label>
+      </div>
+      <label class="f" for="gDiff" style="margin-top:10px">Difficulty <b id="gDiffV" class="mono"></b><input id="gDiff" type="range" min="1" max="10" step="1" value="4"></label>
+      <p class="note" id="gDiffInfo"></p>
+      <details id="gColorBox" style="margin-top:6px"><summary>Circuit colours: <span id="gColorMode">by difficulty</span></summary>
+        <div class="row" id="gColors" style="margin-top:6px"></div>
+        <div class="tools" id="gAdd" style="margin-top:6px"></div>
+        <div class="row" style="margin-top:6px"><button class="btn sm" id="gColorAuto" type="button">Use colours by difficulty</button></div>
+      </details>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="btnGen" type="button">Sinh</button><button class="btn" id="btnGenNext" type="button" title="Generate again with another seed">Regenerate</button><span class="note" id="gSeedNote" style="margin:0"></span></div>
+      <h2 style="margin-top:14px">Draw by hand</h2>
+      <div class="tools" id="boardTools">
+        <button type="button" class="tool on" data-t="wire">Draw wire</button>
+        <button type="button" class="tool" data-t="src"><i class="dia" id="srcSw"></i> Source</button>
+        <button type="button" class="tool" data-t="lamp"><i class="dot" id="lampSw"></i> Lamp</button>
+        <button type="button" class="tool" data-t="plain">Plain tile</button>
+        <button type="button" class="tool" data-t="erase">Erase tile wires</button>
+        <button type="button" class="tool" data-t="rot">Turn start</button>
+      </div>
+      <div class="grid2" style="margin-top:8px">
+        <label class="f" for="srcColor">Source colour<select id="srcColor"><option value="1">Red</option><option value="2">Blue</option><option value="4">Yellow</option></select></label>
+        <label class="f" for="lampColor">Lamp colour<select id="lampColor"><option value="1">Red</option><option value="2">Blue</option><option value="4">Yellow</option><option value="3">Purple (red+blue)</option><option value="5">Orange (red+yellow)</option><option value="6">Green (blue+yellow)</option><option value="7">White (all 3)</option></select></label>
+      </div>
+      <div class="row" style="margin-top:8px"><button class="btn sm" id="btnUnscramble" type="button">Back to solution</button><button class="btn sm" id="btnClearBoard" type="button">Clear board</button></div>
+    </div>
+    <div class="panel" id="panePlay" hidden>
+      <h2>Play test</h2>
+      <div class="kv"><div><b id="pLit">0/0</b><span>lamps lit</span></div><div><b id="pMoves">0</b><span>moves</span></div><div><b id="pPar">0</b><span>par</span></div></div>
+      <p class="note" id="pState"></p>
+      <div class="row" style="margin-top:8px"><button class="btn" id="btnRestart" type="button">Restart</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>Level</h2>
+      <div class="grid2">
+        <label class="f" for="lvId">ID<input id="lvId" type="text" spellcheck="false"></label>
+        <label class="f">Shape<input id="lvShape" type="text" readonly></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label class="chk" for="tagTut"><input id="tagTut" type="checkbox"> tutorial</label>
+        <label class="chk" for="tagMile"><input id="tagMile" type="checkbox"> milestone</label>
+      </div>
+      <div class="kv" style="margin-top:8px"><div><b id="lvPar">0</b><span>par</span></div><div><b id="lvTiles">0</b><span>tiles</span></div><div><b id="lvRev">new</b><span>rev</span></div></div>
+      <ul class="msgs" id="boardMsgs"></ul>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="btnSave" type="button">Save level</button><button class="btn" id="btnSaveCopy" type="button" title="Save this board as a new level at the end of the group">Save as new</button><button class="btn danger" id="btnDelete" type="button" hidden>Delete level</button></div>
+      <p class="note" id="saveNote"></p>
+      <details style="margin-top:10px"><summary>Show the JSON to be saved</summary><pre id="jsonPrev"></pre></details>
+    </div>
+    <div class="panel" id="paneBatch">
+      <h2>Batch generate</h2>
+      <p class="note" style="margin:0 0 8px">Generate many levels getting harder, review them, then save into the selected group. Regenerate any single level you do not like.</p>
+      <div class="f">Shape</div>
+      <div id="bShapeRows" class="stack" style="gap:6px;margin-top:4px"></div>
+      <div class="row" style="margin-top:6px"><button class="btn sm" id="bAddShape" type="button">+ Add shape</button><span class="note" style="margin:0">Several shapes are spread evenly in order.</span></div>
+      <div class="grid3" style="margin-top:10px">
+        <label class="f" for="bN">Levels<input id="bN" type="number" value="20" min="1" max="200"></label>
+        <label class="f" for="bD0">Difficulty from<select id="bD0"></select></label>
+        <label class="f" for="bD1">to<select id="bD1"></select></label>
+      </div>
+      <p class="note" id="bInfo"></p>
+      <div class="row" style="margin-top:8px"><button class="btn primary" id="btnBatch" type="button">Generate batch</button><span class="note" id="batchNote" style="margin:0"></span></div>
+      <div id="batchOut"></div>
+    </div>
+  </aside>
+</div>
+<section id="viewGroups" hidden>
+  <div class="c-wrap">
+    <div id="cGroupsDirty" class="c-banner" hidden><span class="grow">Unsaved group changes.</span><button class="btn" type="button" id="cGroupsRevert">Discard changes</button><button class="btn primary" type="button" id="cGroupsSave">Save groups</button></div>
+    <div class="c-cols">
+      <div class="stack" id="cGroupCards"></div>
+      <div class="stack">
+        <div class="panel"><h2>Game rules</h2><div class="c-form" id="cRulesForm"></div><div class="row" style="margin-top:10px"><button class="btn primary" type="button" id="cRulesSave" disabled>Save rules</button></div></div>
+        <div class="panel"><h2>Points under the current rules</h2><table class="c-score" id="cScore"></table><p class="note">6 points is Expert (at par, no hints). Stars shown = points ÷ 2 until the half-star art exists.</p></div>
+        <div class="panel"><h2>Add group</h2><div class="grid2"><label class="f" for="cNgId">Id<input id="cNgId" type="text" placeholder="octa" autocomplete="off"></label><label class="f" for="cNgName">Name<input id="cNgName" type="text" placeholder="Octahedron" autocomplete="off"></label></div>
+          <div class="row" style="margin-top:8px"><button class="btn" type="button" id="cAddGroup">Add group (hidden)</button></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="viewCheck" hidden>
+  <div class="c-wrap">
+    <div class="row"><button class="btn primary" type="button" id="cBtnCheck">Check everything</button><span class="note" id="cCheckInfo" style="margin:0">Rebuilds every level on its shape: tile count, solution, scramble, par, check, order and unlock rules.</span></div>
+    <div class="c-stats" id="cCheckStats"></div>
+    <div class="panel" id="cCheckList"><div class="empty">Not checked yet.</div></div>
+  </div>
+</section>
+<div class="c-modal" id="cImport" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="cImpTitle">
+    <h2 id="cImpTitle">Import zip</h2>
+    <div id="cImpSummary" class="note" style="margin:0"></div>
+    <label class="chk"><input type="radio" name="cImpMode" value="merge" checked> <span><b>Merge</b>: overwrite levels, chunks and groups with the same id; keep the rest</span></label>
+    <label class="chk"><input type="radio" name="cImpMode" value="replace"> <span><b>Replace all</b>: delete the current data, then import</span></label>
+    <div class="c-prog" id="cImpProgWrap" hidden><i id="cImpProg"></i></div>
+    <div class="note" id="cImpStatus" style="margin:0"></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn" type="button" id="cImpCancel">Cancel</button><button class="btn primary" type="button" id="cImpGo">Import</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad4=n=>String(n).padStart(4,"0");
+function toast(t){const e=$("#toast");e.textContent=t;e.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>e.hidden=true,3200)}
+function fnv(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h>>>0}
+
+/* ================= game rules, ported from the Unity code ================= */
+// mulberry32, identical to CubeRng.cs
+function Rng(seed){let s=seed>>>0;const o={next(){s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1)>>>0;t=(t^((t+Math.imul(t^(t>>>7),t|61))>>>0))>>>0;return ((t^(t>>>14))>>>0)/4294967296},range(n){return Math.floor(o.next()*n)},shuffle(a){for(let i=a.length-1;i>0;i--){const j=o.range(i+1);[a[i],a[j]]=[a[j],a[i]]}}};return o}
+const rotCW=(m,p=4)=>((m<<1)&((1<<p)-1))|(m>>(p-1));
+const rotN=(m,t,p=4)=>{t=((t%p)+p)%p;while(t-->0)m=rotCW(m,p);return m};
+const bits=m=>{let c=0;while(m){c+=m&1;m>>=1}return c};
+const pop3=v=>(v&1)+((v>>1)&1)+((v>>2)&1);
+const taps=(sol,rot,p=4)=>{for(let k=0;k<p;k++)if(rotN(sol,rot+k,p)===sol)return k;return 0};
+// Vec3i helpers (doubled coordinates, like ShapeTopology.cs)
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]], sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]], mul=(a,s)=>[a[0]*s,a[1]*s,a[2]*s], neg=a=>[-a[0],-a[1],-a[2]];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const eq=(a,b)=>a[0]===b[0]&&a[1]===b[1]&&a[2]===b[2];
+const key=v=>((v[0]+512)*1024+(v[1]+512))*1024+(v[2]+512);
+const NORMALS=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+const uFor=n=>n[0]!==0?[0,1,0]:[1,0,0];
+const faceOf=n=>n[0]>0?0:n[0]<0?1:n[1]>0?2:n[1]<0?3:n[2]>0?4:5;
+const half=v=>v>=0?Math.floor(v/2):-Math.floor(-v/2);
+function centerDoubled(unit){ // ShapeLibrary.B + Center
+  const d=unit.map(b=>[b[0]*2,b[1]*2,b[2]*2]);
+  const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
+  d.forEach(b=>{for(let i=0;i<3;i++){mn[i]=Math.min(mn[i],b[i]);mx[i]=Math.max(mx[i],b[i])}});
+  const off=[-half(mn[0]+mx[0]),-half(mn[1]+mx[1]),-half(mn[2]+mx[2])];
+  return d.map(b=>add(b,off));
+}
+function buildTopology(unitBlocks){
+  const blocks=centerDoubled(unitBlocks);
+  const solid=new Set(),list=[];
+  blocks.forEach(b=>{const k=key(b);if(!solid.has(k)){solid.add(k);list.push(b)}});
+  list.sort((a,b)=>key(a)-key(b));
+  const map=new Map(),cells=[];
+  list.forEach(c=>{for(let f=0;f<6;f++){const n=NORMALS[f];if(solid.has(key(add(c,mul(n,2)))))continue;
+    const u=uFor(n),v=cross(n,u),p=add(c,n);map.set(key(p)+"|"+faceOf(n),cells.length);
+    cells.push({ports:4,P:p,N:n,U:u,V:v,dirs:[u,v,neg(u),neg(v)],face:f})}});
+  const links=cells.map((cell,i)=>{const c=sub(cell.P,cell.N);return cell.dirs.map(d=>{let np,nn,back;
+    if(solid.has(key(add(add(c,mul(d,2)),mul(cell.N,2))))){np=add(add(cell.P,d),cell.N);nn=neg(d);back=neg(cell.N)}
+    else if(solid.has(key(add(c,mul(d,2))))){np=add(cell.P,mul(d,2));nn=cell.N;back=neg(d)}
+    else{np=sub(add(cell.P,d),cell.N);nn=d;back=cell.N}
+    const j=map.get(key(np)+"|"+faceOf(nn));const bk=cells[j].dirs.findIndex(x=>eq(x,back));return {cell:j,back:bk}})});
+  return {cells,links,blocks:list,count:cells.length};
+}
+const portsAt=(topo,i)=>topo.cells[i].ports||4;
+// PolyShapes.Tetrahedron(n) + PolyTopology, same tile order and ports as Unity. Units: board units (square tile = 2).
+function tetraTopology(n){
+  const edge=n*2.6,s=edge/(2*Math.SQRT2),A=[s,s,s],B=[s,-s,-s],C=[-s,s,-s],D=[-s,-s,s];
+  const faces=[[A,B,C],[A,D,B],[A,C,D],[B,D,C]],polys=[],ids=[];
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],nrm=a=>{const l=Math.hypot(a[0],a[1],a[2]);return l>1e-6?mul(a,1/l):a};
+  faces.forEach((F,f)=>{let [p0,p1,p2]=F;if(dot(cross(sub(p1,p0),sub(p2,p0)),add(add(p0,p1),p2))<0){const t=p1;p1=p2;p2=t}
+    const e1=mul(sub(p1,p0),1/n),e2=mul(sub(p2,p0),1/n),G=(i,j)=>add(add(p0,mul(e1,i)),mul(e2,j));
+    for(let i=0;i<n;i++)for(let j=0;i+j<n;j++){polys.push([G(i,j),G(i+1,j),G(i,j+1)]);ids.push(f);
+      if(i+j<n-1){polys.push([G(i+1,j),G(i+1,j+1),G(i,j+1)]);ids.push(f)}}});
+  const cells=[],links=[],owner=new Map();let r=0;
+  const Q=v=>Math.round(v*64),ek=(a,b)=>{const m=mul(add(a,b),0.5);return Q(m[0])+","+Q(m[1])+","+Q(m[2])};
+  polys.forEach((P,i)=>{let c=[0,0,0];P.forEach(v=>{c=add(c,v);r=Math.max(r,Math.hypot(v[0],v[1],v[2]))});c=mul(c,1/P.length);
+    const N=nrm(cross(sub(P[1],P[0]),sub(P[2],P[0]))),A0=nrm(sub(mul(add(P[0],P[1]),0.5),c));
+    cells.push({ports:P.length,C:c,N,A:A0,verts:P,face:ids[i],poly:true});links.push(P.map(()=>({cell:-1,back:-1})))});
+  polys.forEach((P,i)=>P.forEach((v,p)=>{const k=ek(v,P[(p+1)%P.length]);const o=owner.get(k);
+    if(o){links[i][p]={cell:o[0],back:o[1]};links[o[0]][o[1]]={cell:i,back:p}}else owner.set(k,[i,p])}));
+  return {cells,links,blocks:[],count:cells.length,poly:true,radius:r};
+}
+const isPolyType=t=>t==="tetra";
+function topoOf(shape,blocks){return shape&&isPolyType(shape.type)?tetraTopology(shape.params.n):buildTopology(blocks)}
+function components(topo,B,useSol){
+  const n=topo.count,comp=new Array(n).fill(-1),sets=[];
+  for(let c=0;c<n;c++){if(comp[c]>=0)continue;const id=sets.length;let set=0;comp[c]=id;const st=[c];
+    while(st.length){const x=st.pop();if(B.kind[x]===1)set|=B.color[x];const px=portsAt(topo,x),mx=useSol?B.sol[x]:rotN(B.sol[x],B.start[x],px);
+      for(let k=0;k<px;k++){if(!((mx>>k)&1))continue;const L=topo.links[x][k],j=L.cell;if(comp[j]>=0)continue;
+        const mj=useSol?B.sol[j]:rotN(B.sol[j],B.start[j],portsAt(topo,j));if(!((mj>>L.back)&1))continue;comp[j]=id;st.push(j)}}
+    sets.push(set)}
+  return {comp,sets};
+}
+function isSolved(topo,B,useSol){const {comp,sets}=components(topo,B,useSol);let lamps=0;
+  for(let i=0;i<topo.count;i++)if(B.kind[i]===2){lamps++;if(sets[comp[i]]!==B.color[i])return false}return lamps>0}
+// CubeGenerator.TryGenerate, step for step
+function tryGenerate(topo,groups,seed,minPar,scramble){
+  const R=Rng(seed),n=topo.count,G=groups.length,maxLeaves=6+Math.floor((n+3*G-1)/(3*G));
+  const hasFree=(owner,c)=>topo.links[c].some(L=>owner[L.cell]<0);
+  for(let attempt=0;attempt<4000;attempt++){
+    const owner=new Array(n).fill(-1),mask=new Array(n).fill(0),members=[],last=[];let ok=true;
+    for(let g=0;g<G;g++){members.push([]);let c,t=0;do{c=R.range(n);t++}while(owner[c]>=0&&t<200);
+      if(owner[c]>=0){ok=false;break}owner[c]=g;members[g].push(c);last[g]=c}
+    if(!ok)continue;
+    while(true){const active=[];for(let g=0;g<G;g++){for(const c of members[g])if(hasFree(owner,c)){active.push(g);break}}
+      if(!active.length)break;const gi=active[R.range(active.length)];let from=last[gi];
+      if(!(R.next()<0.6&&hasFree(owner,from))){const cand=members[gi].filter(c=>hasFree(owner,c));from=cand[R.range(cand.length)]}
+      const free=[];topo.links[from].forEach((L,k)=>{if(owner[L.cell]<0)free.push(k)});
+      const dir=free[R.range(free.length)],L=topo.links[from][dir];owner[L.cell]=gi;mask[from]|=1<<dir;mask[L.cell]|=1<<L.back;members[gi].push(L.cell);last[gi]=L.cell}
+    if(owner.some(o=>o<0))continue;
+    const kind=new Array(n).fill(0),color=new Array(n).fill(0);
+    for(let g=0;g<G&&ok;g++){const set=groups[g];const leaves=members[g].filter(c=>bits(mask[c])===1);const need=pop3(set);
+      if(leaves.length<need+1||leaves.length>need+maxLeaves){ok=false;break}
+      R.shuffle(leaves);const bs=[1,2,4].filter(b=>set&b);
+      leaves.forEach((c,i)=>{if(i<need){kind[c]=1;color[c]=bs[i]}else{kind[c]=2;color[c]=set}})}
+    if(!ok)continue;
+    const B={sol:mask,kind,color,start:new Array(n).fill(0),locked:[]};
+    if(!isSolved(topo,B,true))continue;
+    for(let s=0;s<60;s++){let par=0;for(let i=0;i<n;i++){const P=portsAt(topo,i);B.start[i]=R.next()<scramble?1+R.range(P-1):0;par+=taps(B.sol[i],B.start[i],P)}
+      if(par>=minPar&&!isSolved(topo,B,false))return {board:B,par}}
+  }
+  return null;
+}
+function generate(topo,groups,seed,minPar,scramble){
+  for(let t=0;t<6;t++){const r=tryGenerate(topo,groups,(seed+t*101)>>>0,minPar,scramble);if(r)return {...r,groups:groups.slice(),usedSeed:seed}}
+  return null;
+}
+// Keeps what the designer drew (wires, sources, lamps) and grows random wire trees over the empty tiles,
+// then puts sources and lamps on the new dead ends so every circuit lights its lamps, and scrambles.
+function fillGenerate(topo,B0,colorsWanted,seed,minPar,scramble){
+  const n=topo.count,used=i=>B0.sol[i]!==0||B0.kind[i]!==0;
+  // circuits already drawn: tiles joined by wires that meet on both sides
+  const comp=new Array(n).fill(-1),comps=[];
+  for(let c=0;c<n;c++){if(comp[c]>=0||!used(c))continue;const id=comps.length,st=[c],cells=[c];comp[c]=id;
+    while(st.length){const x=st.pop();topo.links[x].forEach((L,k)=>{if(!((B0.sol[x]>>k)&1)||!((B0.sol[L.cell]>>L.back)&1)||comp[L.cell]>=0)return;comp[L.cell]=id;st.push(L.cell);cells.push(L.cell)})}
+    comps.push(cells)}
+  const info=comps.map((cells,g)=>{let src=0;const lamps=new Set();cells.forEach(c=>{if(B0.kind[c]===1)src|=B0.color[c];if(B0.kind[c]===2)lamps.add(B0.color[c])});
+    if(lamps.size>1)return {error:`A drawn circuit has lamps of different colours (${[...lamps].map(x=>COLOR_NAME[x]).join(", ")}): each circuit lights one colour only.`};
+    const lamp=lamps.size?[...lamps][0]:0;if(lamp&&(src&~lamp))return {error:`A circuit with a ${COLOR_NAME[src]} source does not match a ${COLOR_NAME[lamp]} lamp.`};
+    return {set:lamp||src||0,src,hasLamp:!!lamp}});
+  const bad=info.find(x=>x.error);if(bad)return bad;
+  for(let t=0;t<6;t++){const R=Rng((seed+t*101)>>>0);
+    for(let attempt=0;attempt<1500;attempt++){
+      const owner=comp.slice(),mask=B0.sol.slice(),members=comps.map(c=>c.slice()),sets=info.map(x=>x.set),fixed=info.map(x=>({...x}));
+      // extra circuits so the board has at least as many as colours asked for
+      let ok=true;while(members.length<colorsWanted.length){let c,tr=0;do{c=R.range(n);tr++}while(owner[c]>=0&&tr<200);if(owner[c]>=0){ok=false;break}
+        owner[c]=members.length;members.push([c]);sets.push(0);fixed.push({set:0,src:0,hasLamp:false})}
+      if(!ok)continue;
+      const pool=colorsWanted.filter(c=>!sets.includes(c));let ci=0;for(let g=0;g<sets.length;g++)if(!sets[g]){sets[g]=pool.length?pool.shift():colorsWanted[ci++%colorsWanted.length]}
+      const grow=c=>(B0.kind[c]===0||bits(mask[c])===0)&&topo.links[c].some(L=>owner[L.cell]<0);const last=members.map(m=>m[m.length-1]);
+      while(true){const active=[];for(let g=0;g<members.length;g++)if(members[g].some(grow))active.push(g);if(!active.length)break;
+        const gi=active[R.range(active.length)];let from=last[gi];
+        if(!(R.next()<0.6&&grow(from))){const cand=members[gi].filter(grow);from=cand[R.range(cand.length)]}
+        const free=[];topo.links[from].forEach((L,k)=>{if(owner[L.cell]<0)free.push(k)});const dir=free[R.range(free.length)],L=topo.links[from][dir];
+        owner[L.cell]=gi;mask[from]|=1<<dir;mask[L.cell]|=1<<L.back;members[gi].push(L.cell);last[gi]=L.cell}
+      if(owner.some(o=>o<0)||mask.some(m=>!m))continue;
+      const kind=B0.kind.slice(),color=B0.color.slice();
+      for(let g=0;g<members.length&&ok;g++){const set=sets[g],leaves=members[g].filter(c=>kind[c]===0&&bits(mask[c])===1);
+        const missing=[1,2,4].filter(b=>(set&b)&&!(fixed[g].src&b)),needLamp=fixed[g].hasLamp?0:1;
+        if(leaves.length<missing.length+needLamp||leaves.length>missing.length+needLamp+8){ok=false;break}
+        R.shuffle(leaves);leaves.forEach((c,i)=>{if(i<missing.length){kind[c]=1;color[c]=missing[i]}else{kind[c]=2;color[c]=set}})}
+      if(!ok)continue;
+      // a designer node that ended up with more than one wire is not a dead end any more
+      if(kind.some((k,i)=>k&&bits(mask[i])!==1))continue;
+      const B={sol:mask,kind,color,start:new Array(n).fill(0),locked:[]};if(!isSolved(topo,B,true))continue;
+      const sc=scrambleBoard(topo,B,scramble,minPar,R);if(!sc)continue;B.start=sc.start;
+      if(sc.par<minPar&&attempt<1400)continue;
+      return {board:B,par:sc.par,colors:[...new Set(sets)]};
+    }}
+  return {error:"Could not generate around the drawn part: try fewer colours, a lower difficulty, or leave more tiles empty."};
+}
+// ShapeLibrary presets in unit coords (before B() and Center)
+const PRESETS={
+  cube:{params:[["n","Edge",3,1,8]],build:p=>{const o=[];for(let x=0;x<p.n;x++)for(let y=0;y<p.n;y++)for(let z=0;z<p.n;z++)o.push([x,y,z]);return o},id:p=>"cube-"+p.n},
+  cross:{params:[["arm","Tay",1,1,4],["thick","Thick",1,1,3]],build:p=>{const s=new Set(),o=[];const A=(x,y,z)=>{const k=x+","+y+","+z;if(!s.has(k)){s.add(k);o.push([x,y,z])}};
+    for(let a=-p.arm;a<p.arm+p.thick;a++)for(let b=0;b<p.thick;b++)for(let c=0;c<p.thick;c++){A(a,b,c);A(b,a,c);A(b,c,a)}return o},id:p=>"cross-"+p.arm+p.thick},
+  tower:{params:[["w","Wide",2,1,5],["h","Cao",4,2,8]],build:p=>{const o=[];for(let x=0;x<p.w+2;x++)for(let z=0;z<p.w+2;z++)o.push([x,0,z]);
+    for(let y=1;y<p.h;y++)for(let x=1;x<=p.w;x++)for(let z=1;z<=p.w;z++)o.push([x,y,z]);return o},id:p=>"tower-"+p.w+p.h},
+  ell:{params:[["len","Long",4,2,8],["thick","Thick",2,1,3]],build:p=>{const s=new Set(),o=[];const A=(x,y,z)=>{const k=x+","+y+","+z;if(!s.has(k)){s.add(k);o.push([x,y,z])}};
+    for(let a=0;a<p.len;a++)for(let b=0;b<p.thick;b++)for(let c=0;c<p.thick;c++){A(a,b,c);A(b,a,c)}return o},id:p=>"ell-"+p.len+p.thick},
+  pyramid:{params:[["base","Base",5,1,9]],build:p=>{const o=[];for(let h=0,s=p.base;s>=1;h++,s-=2)for(let x=0;x<s;x++)for(let z=0;z<s;z++)o.push([x+h,h,z+h]);return o},id:p=>"pyramid-"+p.base},
+  ball:{params:[["r","Radius",2,1,4,0.5]],build:p=>{const o=[],R=Math.floor(p.r)+1;for(let x=-R;x<=R;x++)for(let y=-R;y<=R;y++)for(let z=-R;z<=R;z++)if(x*x+y*y+z*z<=p.r*p.r)o.push([x,y,z]);return o},id:p=>"ball-"+Math.round(p.r*10)},
+  bar:{params:[["len","Long",4,2,10]],build:p=>{const o=[];for(let i=0;i<p.len;i++)o.push([i,0,0]);return o},id:p=>"bar-"+p.len},
+  slab:{params:[["w","Wide",3,1,8],["d","Deep",3,1,8]],build:p=>{const o=[];for(let x=0;x<p.w;x++)for(let z=0;z<p.d;z++)o.push([x,0,z]);return o},id:p=>"slab-"+p.w+p.d},
+  tetra:{params:[["n","Divisions per edge",3,2,8]],build:()=>[],id:p=>"tetra-"+p.n,poly:true}
+};
+// ---- format v2: one string, 3 characters per tile: [wire mask base32][kind+colour][rotation] ----
+const B32="0123456789abcdefghijklmnopqrstuv",SRC_CH={1:"r",2:"b",4:"y"},SRC_VAL={r:1,b:2,y:4};
+function encodeTiles(B){let s="";for(let i=0;i<B.sol.length;i++){s+=B32[B.sol[i]]+(B.kind[i]===1?SRC_CH[B.color[i]]:B.kind[i]===2?String(B.color[i]):".")+String(B.start[i])}return s}
+function decodeTiles(str){const n=str.length/3,B={sol:[],kind:[],color:[],start:[],locked:[]};
+  for(let i=0;i<n;i++){const a=str[3*i],b=str[3*i+1],c=str[3*i+2];B.sol.push(B32.indexOf(a));
+    if(SRC_VAL[b]){B.kind.push(1);B.color.push(SRC_VAL[b])}else if(b>="1"&&b<="7"){B.kind.push(2);B.color.push(+b)}else{B.kind.push(0);B.color.push(0)}
+    B.start.push(+c)}return B}
+const diffOf=(par,tiles,g)=>tiles?+Math.min(1,0.75*par/(tiles*1.2)+0.08*Math.max(0,g-1)).toFixed(2):0;
+function parseShapeId(id){const m=/^([a-z]+)-(\d+)$/.exec(String(id).trim());if(!m||!PRESETS[m[1]])return null;const t=m[1],d=m[2],p={};
+  const two=()=>d.length>=2?[+d.slice(0,-1),+d.slice(-1)]:null;
+  if(t==="cube"||t==="tetra")p.n=+d;else if(t==="pyramid")p.base=+d;else if(t==="bar")p.len=+d;else if(t==="ball")p.r=+d/10;
+  else{const x=two();if(!x)return null;if(t==="cross"){p.arm=x[0];p.thick=x[1]}else if(t==="tower"){p.w=x[0];p.h=x[1]}else if(t==="ell"){p.len=x[0];p.thick=x[1]}else if(t==="slab"){p.w=x[0];p.d=x[1]}}
+  return {id:PRESETS[t].id(p),type:t,params:p,blocks:PRESETS[t].build(p)}}
+const COLOR_HEX={0:0x5B6584,1:0xFF4D6D,2:0x3DA9FF,4:0xFFE14D,3:0xC77DFF,5:0xFF9A3D,6:0x3DFFA2,7:0xF4F7FF};
+const COLOR_CSS={1:"#FF4D6D",2:"#3DA9FF",4:"#FFE14D",3:"#C77DFF",5:"#FF9A3D",6:"#3DFFA2",7:"#F4F7FF"};
+const COLOR_NAME={1:"Red",2:"Blue",4:"Yellow",3:"Purple",5:"Orange",6:"Green",7:"White"};
+
+/* ================= editor state ================= */
+const S={
+  blocks:[], shape:{id:"cube-3",type:"cube",params:{n:3}}, pristine:true,
+  topo:null, board:null, gen:null, mode:"shape", shapeTool:"add", boardTool:"wire", pathPrev:-1,
+  level:{id:"",rev:0,tags:[]}, group:null, moves:0, playStart:null, history:[], boardDirty:false
+};
+let DB=null, MANIFEST=null, ORDERS={}, LEVELS={}, SHAPES={}, canWrite=true;
+
+function setBlocks(list,shape,pristine){
+  S.history.push({blocks:S.blocks,shape:S.shape,pristine:S.pristine});if(S.history.length>40)S.history.shift();
+  const s=new Set(),o=[];list.forEach(b=>{const k=b.join(",");if(!s.has(k)){s.add(k);o.push(b.slice())}});
+  S.blocks=o;S.shape=shape;S.pristine=pristine;rebuildTopo(true);
+}
+function voxelShape(){const sorted=S.blocks.map(b=>b.join(",")).sort().join(";");return {id:"voxel-"+fnv(sorted).toString(16).padStart(8,"0").slice(0,6),type:"voxel",params:{}}}
+function rebuildTopo(resetBoard){
+  try{S.topo=S.shape&&isPolyType(S.shape.type)?topoOf(S.shape,[]):S.blocks.length?buildTopology(S.blocks):null}catch(e){S.topo=null}
+  if(!S.pristine)S.shape=voxelShape();
+  if(resetBoard||!S.board||!S.topo||S.board.sol.length!==S.topo.count){S.board=S.topo?emptyBoard(S.topo.count):null;S.gen=null}
+  S.pathPrev=-1;refreshAll();
+}
+const emptyBoard=n=>({sol:new Array(n).fill(0),kind:new Array(n).fill(0),color:new Array(n).fill(0),start:new Array(n).fill(0),locked:[]});
+
+/* ================= three.js view ================= */
+const stage=$("#stage");
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+stage.prepend(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x0B0E17);
+const camera=new THREE.PerspectiveCamera(40,1,0.1,200);camera.position.set(6,5,8);
+const controls=new THREE.OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=0.12;
+scene.add(new THREE.AmbientLight(0xffffff,0.55));const dl=new THREE.DirectionalLight(0xffffff,0.75);dl.position.set(4,8,6);scene.add(dl);
+const root=new THREE.Group();scene.add(root);
+const MAT={
+  block:new THREE.MeshLambertMaterial({color:0x1A2238}),
+  blockShape:new THREE.MeshLambertMaterial({color:0x2C3759}),
+  tile:[0x232C48,0x1D2540,0x2A3456,0x151B2E,0x202946,0x181F35].map(c=>new THREE.MeshLambertMaterial({color:c})),
+  edge:new THREE.LineBasicMaterial({color:0x4A5A8C}),
+  sel:new THREE.MeshBasicMaterial({color:0x46B8C6,transparent:true,opacity:0.35,depthWrite:false}),
+};
+const basic=c=>new THREE.MeshBasicMaterial({color:c});
+const GEO={box:new THREE.BoxGeometry(0.98,0.98,0.98),tile:new THREE.PlaneGeometry(0.88,0.88),seg:new THREE.PlaneGeometry(0.15,0.5),core:new THREE.PlaneGeometry(0.05,0.5),
+  dot:new THREE.CircleGeometry(0.075,16),ring:new THREE.RingGeometry(0.13,0.2,28),disc:new THREE.CircleGeometry(0.11,24),halo:new THREE.CircleGeometry(0.3,28)};
+const edgeGeo=new THREE.EdgesGeometry(GEO.box);
+let pickables=[];
+function clearRoot(){while(root.children.length){const c=root.children.pop();c.traverse(o=>{if(o.geometry&&!Object.values(GEO).includes(o.geometry)&&o.geometry!==edgeGeo)o.geometry.dispose();if(o.material&&o.material._own)o.material.dispose()})}pickables=[]}
+function vec(a){return new THREE.Vector3(a[0],a[1],a[2])}
+// per-tile-kind geometry: square tiles (inradius 0.5 world) and triangles (side 1.3 world, as in PolyShapes)
+const TRI_IN=1.3/(2*Math.sqrt(3));
+function polyGeo(P,inr,scale){const g=new THREE.BufferGeometry(),R=inr/Math.cos(Math.PI/P)*scale,v=[];
+  for(let k=0;k<P;k++){const a0=(k+0.5)*2*Math.PI/P,a1=(k+1.5)*2*Math.PI/P;v.push(0,0,0,R*Math.cos(a0),R*Math.sin(a0),0,R*Math.cos(a1),R*Math.sin(a1),0)}
+  g.setAttribute("position",new THREE.Float32BufferAttribute(v,3));g.computeVertexNormals();return g}
+const KIND={4:{inr:0.5,tile:GEO.tile,seg:GEO.seg,core:GEO.core},3:{inr:TRI_IN,tile:polyGeo(3,TRI_IN,0.86),base:polyGeo(3,TRI_IN,1.0),seg:new THREE.PlaneGeometry(0.15,TRI_IN),core:new THREE.PlaneGeometry(0.05,TRI_IN)}};
+Object.values(KIND).forEach(k=>{["tile","base","seg","core"].forEach(n=>{if(k[n]&&!Object.values(GEO).includes(k[n]))GEO["k"+k.inr+n]=k[n]})});
+function cellFrame(c){ // world centre, normal, port-0 axis
+  if(c.poly)return {pos:mul(c.C,0.5),n:c.N,u:c.A};
+  return {pos:[c.P[0]/2,c.P[1]/2,c.P[2]/2],n:c.N,u:c.U};
+}
+function draw(){
+  clearRoot();
+  if(!S.topo&&!S.blocks.length){return}
+  const showTiles=S.mode!=="shape"&&S.topo,poly=S.topo&&S.topo.poly;
+  if(!poly){
+    // blocks (centred, doubled -> world /2)
+    const cb=centerDoubled(S.blocks);
+    cb.forEach((b,i)=>{const m=new THREE.Mesh(GEO.box,showTiles?MAT.block:MAT.blockShape);m.position.set(b[0]/2,b[1]/2,b[2]/2);m.userData.block=i;root.add(m);
+      if(!showTiles){const e=new THREE.LineSegments(edgeGeo,MAT.edge);e.position.copy(m.position);root.add(e);pickables.push(m)}});
+  }
+  if(!S.topo)return;
+  if(!showTiles&&!poly)return;
+  const B=S.board,T=S.topo,useSol=S.mode==="board"&&$("#showSol").checked;
+  const {comp,sets}=components(T,B,useSol);
+  for(let i=0;i<T.count;i++){
+    const c=T.cells[i],P=c.ports||4,K=KIND[P]||KIND[4],F=cellFrame(c),g=new THREE.Group();
+    const n=vec(F.n),u=vec(F.u),v=new THREE.Vector3().crossVectors(n,u);
+    g.setRotationFromMatrix(new THREE.Matrix4().makeBasis(u,v,n));
+    g.position.set(F.pos[0]+F.n[0]*0.006,F.pos[1]+F.n[1]*0.006,F.pos[2]+F.n[2]*0.006);
+    if(K.base){const bm=new THREE.Mesh(K.base,showTiles?MAT.block:MAT.blockShape);bm.position.z=-0.004;g.add(bm)}
+    const tile=new THREE.Mesh(K.tile,MAT.tile[c.face%6]);tile.userData.tile=i;g.add(tile);if(showTiles)pickables.push(tile);
+    if(!showTiles){root.add(g);continue}
+    const m=useSol?B.sol[i]:rotN(B.sol[i],B.start[i],P);const set=sets[comp[i]];
+    const lit=set;const wc=COLOR_HEX[lit]!==undefined&&lit?COLOR_HEX[lit]:0x5B6584;
+    const wmat=basic(wc);wmat._own=true;
+    for(let k=0;k<P;k++)if(m&(1<<k)){const th=k*2*Math.PI/P,dx=Math.cos(th),dy=Math.sin(th);
+      const sg=new THREE.Mesh(K.seg,wmat);sg.position.set(dx*K.inr/2,dy*K.inr/2,0.004);sg.rotation.z=th-Math.PI/2;g.add(sg);
+      if(lit){const cr=new THREE.Mesh(K.core,basic(0xFFFFFF));cr.material._own=true;cr.material.transparent=true;cr.material.opacity=0.85;cr.position.set(dx*K.inr/2,dy*K.inr/2,0.006);cr.rotation.z=sg.rotation.z;g.add(cr)}}
+    if(m&&B.kind[i]===0){const d=new THREE.Mesh(GEO.dot,wmat);d.position.z=0.005;g.add(d)}
+    const sc=P===3?0.8:1;
+    if(B.kind[i]===1){const col=COLOR_HEX[B.color[i]];const h=new THREE.Mesh(GEO.halo,basic(col));h.material._own=true;h.material.transparent=true;h.material.opacity=0.22;h.position.z=0.003;h.scale.setScalar(sc);g.add(h);
+      const d=new THREE.Mesh(new THREE.PlaneGeometry(0.26*sc,0.26*sc),basic(col));d.material._own=true;d.rotation.z=Math.PI/4;d.position.z=0.008;g.add(d);
+      const w=new THREE.Mesh(new THREE.PlaneGeometry(0.08,0.08),basic(0xFFFFFF));w.material._own=true;w.rotation.z=Math.PI/4;w.position.z=0.009;g.add(w)}
+    if(B.kind[i]===2){const col=COLOR_HEX[B.color[i]];const on=sets[comp[i]]===B.color[i];
+      if(on){const h=new THREE.Mesh(GEO.halo,basic(col));h.material._own=true;h.material.transparent=true;h.material.opacity=0.3;h.position.z=0.003;h.scale.setScalar(sc);g.add(h)}
+      const r=new THREE.Mesh(GEO.ring,basic(col));r.material._own=true;r.position.z=0.008;r.scale.setScalar(sc);g.add(r);
+      const d=new THREE.Mesh(GEO.disc,basic(on?0xFFFFFF:0x06070D));d.material._own=true;d.position.z=0.009;d.scale.setScalar(sc);g.add(d)}
+    if(S.mode==="board"&&S.pathPrev===i){const sel=new THREE.Mesh(K.tile,MAT.sel);sel.position.z=0.012;g.add(sel)}
+    root.add(g);
+  }
+}
+function fit(){
+  if(!S.topo&&!S.blocks.length)return;let r=1;
+  if(S.topo&&S.topo.poly)r=S.topo.radius/2+0.5;else centerDoubled(S.blocks).forEach(b=>{r=Math.max(r,Math.hypot(b[0],b[1],b[2])/2+0.9)});
+  controls.target.set(0,0,0);const d=r/Math.sin(THREE.MathUtils.degToRad(camera.fov/2))*1.05;
+  const dir=camera.position.clone().normalize();if(dir.lengthSq()<0.1)dir.set(0.6,0.5,0.8).normalize();camera.position.copy(dir.multiplyScalar(d));controls.update();
+}
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/Math.max(1,h);camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(stage);
+(function loop(){controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)})();
+
+// picking: a click is a press + release without dragging
+const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();let down=null;
+renderer.domElement.addEventListener("pointerdown",e=>{down={x:e.clientX,y:e.clientY,t:Date.now()}});
+renderer.domElement.addEventListener("pointerup",e=>{
+  if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;if(moved>6)return;
+  const r=renderer.domElement.getBoundingClientRect();ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(ndc,camera);const hit=ray.intersectObjects(pickables,false)[0];onPick(hit,e);
+});
+function onPick(hit,e){
+  if(S.mode==="shape"){
+    if(!hit||S.shapeTool==="orbit")return;if(S.topo&&S.topo.poly)return toast("Triangle shapes are set by parameters; blocks cannot be added or removed.");const i=hit.object.userData.block;if(i===undefined)return;
+    const base=S.blocks[i];
+    if(S.shapeTool==="del"||e.shiftKey){if(S.blocks.length<=1)return toast("A shape needs at least one block.");setBlocks(S.blocks.filter((_,j)=>j!==i),null,false)}
+    else{const n=hit.face.normal;const nb=[base[0]+Math.round(n.x),base[1]+Math.round(n.y),base[2]+Math.round(n.z)];setBlocks(S.blocks.concat([nb]),null,false)}
+    return;
+  }
+  if(!hit||hit.object.userData.tile===undefined){if(S.mode==="board"){S.pathPrev=-1;draw()}return}
+  const i=hit.object.userData.tile,B=S.board,T=S.topo;
+  if(S.mode==="play"){B.start[i]=(B.start[i]+1)%portsAt(T,i);S.moves++;refreshPlay();draw();return}
+  S.boardDirty=true;S.gen=null;
+  const t=S.boardTool;
+  if(t==="wire"){
+    if(S.pathPrev<0||S.pathPrev===i){S.pathPrev=S.pathPrev===i?-1:i}
+    else{const k=T.links[S.pathPrev].findIndex(L=>L.cell===i);
+      if(k<0){S.pathPrev=i}else{const L=T.links[S.pathPrev][k];
+        // draw on the solution: reset rotation of both ends so the editor shows the real wire
+        B.sol[S.pathPrev]|=1<<k;B.sol[i]|=1<<L.back;S.pathPrev=i}}
+  }else if(t==="src"){B.kind[i]=1;B.color[i]=+$("#srcColor").value}
+  else if(t==="lamp"){B.kind[i]=2;B.color[i]=+$("#lampColor").value}
+  else if(t==="plain"){B.kind[i]=0;B.color[i]=0}
+  else if(t==="erase"){T.links[i].forEach((L,k)=>{if(B.sol[i]&(1<<k))B.sol[L.cell]&=~(1<<L.back)});B.sol[i]=0}
+  else if(t==="rot"){B.start[i]=(B.start[i]+1)%portsAt(T,i)}
+  refreshBoard();draw();
+}
+
+/* ================= UI: shape pane ================= */
+function renderParams(){
+  const p=PRESETS[$("#pType").value];
+  $("#pParams").innerHTML=p.params.map(([k,l,v,mn,mx,st])=>`<label class="f" for="pp_${k}">${l}<input id="pp_${k}" type="number" value="${v}" min="${mn}" max="${mx}" step="${st||1}"></label>`).join("");
+}
+function readPreset(){const t=$("#pType").value,p=PRESETS[t],params={};p.params.forEach(([k,,v,mn,mx])=>{let x=+$("#pp_"+k).value;if(!isFinite(x))x=v;params[k]=Math.min(mx,Math.max(mn,x))});return {t,p,params}}
+$("#pType").onchange=renderParams;
+$("#btnPlace").onclick=()=>{const {t,p,params}=readPreset();setBlocks(p.build(params),{id:p.id(params),type:t,params},true);fit()};
+$("#btnMerge").onclick=()=>{const {p,params}=readPreset();if(p.poly||isPolyType(S.shape.type))return toast("Triangle tiles cannot be merged with square blocks.");const o=[+$("#offX").value||0,+$("#offY").value||0,+$("#offZ").value||0];
+  setBlocks(S.blocks.concat(p.build(params).map(b=>add(b,o))),null,false);fit()};
+$("#btnUndoShape").onclick=()=>{const h=S.history.pop();if(!h)return toast("Nothing left to undo.");S.blocks=h.blocks;S.shape=h.shape;S.pristine=h.pristine;rebuildTopo(true)};
+$("#btnMegamix").onclick=()=>{setBlocks(megamixBlocks(Rng((Math.random()*2**32)>>>0)),null,false);fit()};
+document.querySelectorAll("#shapeTools .tool").forEach(b=>b.onclick=()=>{S.shapeTool=b.dataset.t;document.querySelectorAll("#shapeTools .tool").forEach(x=>x.classList.toggle("on",x===b));hint()});
+
+/* ================= UI: board pane ================= */
+// One difficulty dial (1-10) drives colours, scramble and minimum par, scaled by the shape's tile count and tile sides,
+// so the same number feels alike on a cube, a tetrahedron or (later) a dodecahedron.
+const DIFF_NAME=["","Very easy","Very easy","Easy","Easy","Medium","Medium","Hard","Hard","Very hard","Very hard"];
+function diffParams(d,topo){
+  const t=(Math.max(1,Math.min(10,d))-1)/9,n=topo?topo.count:0,P=topo?portsAt(topo,0):4;
+  const colors=Math.max(1,Math.min(3,1+Math.round(t*2.2)+(n<30&&t>0.5?-1:0)));
+  const scramble=+(0.3+0.5*t).toFixed(2);
+  const minPar=Math.max(3,Math.round(n*scramble*(P/2)*(0.4+0.3*t)));
+  return {colors,scramble,minPar};
+}
+function colorsFor(c,R){const s=[1,2,4],mx=[3,5,6];R.shuffle(s);R.shuffle(mx);const mixes=c>=2?1+R.range(Math.min(2,c-1)):0;return mx.slice(0,mixes).concat(s.slice(0,c-mixes))}
+let genColors=[1],colorAuto=true;
+const genKeep=()=>document.querySelector("input[name=genKeep]:checked").value;
+function renderColors(){
+  $("#gColors").innerHTML=genColors.map((c,i)=>`<span class="chip"><i class="dot" style="background:${COLOR_CSS[c]}"></i>${COLOR_NAME[c]}<button type="button" data-i="${i}" aria-label="Remove">×</button></span>`).join("")||'<span class="note" style="margin:0">No colours yet.</span>';
+  $("#gColors").querySelectorAll("button").forEach(b=>b.onclick=()=>{genColors.splice(+b.dataset.i,1);colorAuto=false;renderColors()});
+  $("#gAdd").innerHTML=[1,2,4,3,5,6].map(c=>`<button type="button" class="tool" data-c="${c}"><i class="dot" style="background:${COLOR_CSS[c]}"></i>+ ${COLOR_NAME[c]}</button>`).join("");
+  $("#gAdd").querySelectorAll("button").forEach(b=>b.onclick=()=>{if(genColors.length>=5)return toast("At most 5 circuit colours.");genColors.push(+b.dataset.c);colorAuto=false;renderColors()});
+  $("#gColorMode").textContent=colorAuto?"by difficulty":"custom ("+genColors.map(c=>COLOR_NAME[c]).join(", ")+")";
+  renderDiff();
+}
+function renderDiff(){
+  const d=+$("#gDiff").value,p=diffParams(d,S.topo);$("#gDiffV").textContent=d+" · "+DIFF_NAME[d];
+  const keep=genKeep();
+  $("#gDiffInfo").textContent=!S.topo?"Build a shape first.":keep==="scramble"?`Scramble ${Math.round(p.scramble*100)}% of tiles · par at least ${p.minPar}.`:
+    `${colorAuto?p.colors:genColors.length} circuit colours · scramble ${Math.round(p.scramble*100)}% of tiles · par at least ${p.minPar} (${S.topo.count} tiles).`;
+}
+function seedNote(){$("#gSeedNote").textContent=S.gen&&S.gen.seed!=null?"seed "+S.gen.seed:""}
+function pickColors(p,R){return colorAuto?colorsFor(p.colors,R):genColors.slice()}
+function scrambleBoard(topo,B,scramble,minPar,R){
+  let best=null;
+  for(let k=0;k<80;k++){const st=B.sol.map((m,i)=>m&&R.next()<scramble?1+R.range(portsAt(topo,i)-1):0);
+    const par=st.reduce((a,r,i)=>a+(B.sol[i]?taps(B.sol[i],r,portsAt(topo,i)):0),0);const T={...B,start:st};
+    if(isSolved(topo,T,false))continue;if(par>=minPar)return {start:st,par};if(!best||par>best.par)best={start:st,par}}
+  return best;
+}
+function runGen(newSeed){
+  if(!S.topo)return toast("Build a shape first.");const keep=genKeep(),d=+$("#gDiff").value,p=diffParams(d,S.topo);
+  const seed=newSeed||!S.gen||S.gen.seed==null?(Math.random()*2**31)>>>0:S.gen.seed>>>0,R=Rng(seed^0x9e3779b9),t0=performance.now();
+  if(keep==="scramble"){
+    if(!isSolved(S.topo,S.board,true))return toast("The solution does not light every lamp yet, so it cannot be scrambled. Finish the circuits first.");
+    const r=scrambleBoard(S.topo,S.board,p.scramble,p.minPar,R);if(!r)return toast("Could not scramble: too few tiles can turn.");
+    S.board.start=r.start;S.gen={ver:0,mode:"scramble",seed,colors:lampSetsOf(S.board),scramble:p.scramble,minPar:p.minPar};
+    toast(`Scrambled · par ${r.par}${r.par<p.minPar?` (below ${p.minPar}: few tiles can turn)`:""}.`);
+  }else{
+    const colors=pickColors(p,R);if(!colors.length)return toast("Pick at least one colour.");
+    const r=keep==="fill"?fillGenerate(S.topo,S.board,colors,seed,p.minPar,p.scramble):(generate(S.topo,colors,seed,p.minPar,p.scramble)||generate(S.topo,colors,seed,Math.round(p.minPar*0.6),p.scramble));
+    if(!r||r.error)return toast(r&&r.error?r.error:"Could not generate at this difficulty. Press Regenerate, lower the difficulty or use fewer colours.");
+    S.board=r.board;S.gen=keep==="fill"?{ver:0,mode:"fill",seed,colors:r.colors||colors,scramble:p.scramble,minPar:p.minPar}:{ver:1,seed:r.usedSeed!=null?r.usedSeed:seed,colors,scramble:p.scramble,minPar:p.minPar};
+    toast(`Generated ${S.topo.count} tiles in ${Math.round(performance.now()-t0)} ms · par ${r.par}.`);
+  }
+  S.boardDirty=true;S.pathPrev=-1;seedNote();refreshBoard();draw();
+}
+function lampSetsOf(B){return [...new Set(B.color.filter((c,i)=>B.kind[i]===2))]}
+$("#btnGen").onclick=()=>runGen(false);
+$("#btnGenNext").onclick=()=>runGen(true);
+$("#gDiff").oninput=renderDiff;
+document.querySelectorAll("input[name=genKeep]").forEach(r=>r.onchange=renderDiff);
+$("#gColorAuto").onclick=()=>{colorAuto=true;renderColors()};
+$("#btnShapeGen").onclick=()=>{if(!S.topo)return toast("Build a shape first.");$("#gkNone").checked=true;setMode("board");runGen(true)};
+document.querySelectorAll("#boardTools .tool").forEach(b=>b.onclick=()=>{S.boardTool=b.dataset.t;S.pathPrev=-1;document.querySelectorAll("#boardTools .tool").forEach(x=>x.classList.toggle("on",x===b));hint();draw()});
+const swatch=()=>{$("#srcSw").style.background=COLOR_CSS[$("#srcColor").value];$("#lampSw").style.background=COLOR_CSS[$("#lampColor").value]};
+$("#srcColor").onchange=swatch;$("#lampColor").onchange=swatch;
+$("#btnUnscramble").onclick=()=>{if(!S.board)return;S.board.start.fill(0);refreshBoard();draw()};
+$("#btnClearBoard").onclick=()=>{if(!S.topo)return;S.board=emptyBoard(S.topo.count);S.gen=null;S.pathPrev=-1;seedNote();refreshBoard();draw()};
+$("#showSol").onchange=draw;
+
+/* ================= modes ================= */
+function setMode(m){
+  if(m!=="shape"&&!S.topo)return toast("Build a shape first.");
+  S.mode=m;["Shape","Board","Play"].forEach(x=>$("#m"+x).classList.toggle("on",x.toLowerCase()===m));
+  $("#paneShape").hidden=m!=="shape";$("#paneBoard").hidden=m!=="board";$("#panePlay").hidden=m!=="play";$("#showSolWrap").hidden=m!=="board";
+  if(m==="play"){S.playStart=S.board.start.slice();S.moves=0;refreshPlay()}
+  if(m==="board"&&S.playStart){S.board.start=S.playStart;S.playStart=null}
+  S.pathPrev=-1;hint();draw();refreshBoard();
+}
+$("#mShape").onclick=()=>{if(S.mode==="play"&&S.playStart){S.board.start=S.playStart;S.playStart=null}setMode("shape")};
+$("#mBoard").onclick=()=>setMode("board");$("#mPlay").onclick=()=>setMode("play");
+$("#btnFit").onclick=fit;
+$("#btnRestart").onclick=()=>{if(S.playStart){S.board.start=S.playStart.slice();S.moves=0;refreshPlay();draw()}};
+function hint(){
+  const t={shape:{add:"Tap a block face to add a block next to it. Hold Shift while tapping to remove. Drag to orbit the camera.",del:"Tap a block to remove it.",orbit:"Drag to orbit, scroll or pinch to zoom."}[S.shapeTool],
+    board:{wire:"Tap neighbouring tiles one after another to lay a wire. Tap the selected tile again to stop.",src:"Tap a tile to place a source (diamond).",lamp:"Tap a tile to place a lamp (ring).",plain:"Tap a tile to remove its source or lamp.",erase:"Tap a tile to erase its wires.",rot:"Tap a tile to turn its start rotation."}[S.boardTool],
+    play:"Tap tiles to turn them as in the game. A lamp lights when its full colour reaches it."}[S.mode];
+  $("#hint").textContent=t||"";
+}
+
+/* ================= derived info ================= */
+function par(){return S.board&&S.topo?S.board.sol.reduce((a,m,i)=>a+(m?taps(m,S.board.start[i],portsAt(S.topo,i)):0),0):0}
+function boardCheck(){
+  const out=[];if(!S.topo||!S.board)return [["b","No shape yet."]];
+  const B=S.board,n=S.topo.count;let src=0,lamp=0,empty=0,badLeaf=0;
+  for(let i=0;i<n;i++){if(B.kind[i]===1)src++;if(B.kind[i]===2)lamp++;if(!B.sol[i])empty++;if(B.kind[i]&&bits(B.sol[i])!==1)badLeaf++}
+  if(!src)out.push(["b","No source yet."]);if(!lamp)out.push(["b","No lamp yet."]);
+  if(src&&lamp){out.push(isSolved(S.topo,B,true)?["","The solution lights every lamp."]:["b","The solution does not light every lamp (missing wire, wrong colour or circuits joined by mistake)."])}
+  if(badLeaf)out.push(["w",`${badLeaf} sources/lamps are not wire ends (they need exactly 1 wire).`]);
+  if(empty)out.push(["w",`${empty}/${n} tiles have no wire (the generator covers every tile).`]);
+  const p=par();if(src&&lamp&&p===0)out.push(["w","Not scrambled: par = 0."]);
+  if(src&&lamp&&p>0&&isSolved(S.topo,B,false))out.push(["w","The board starts already solved."]);
+  return out;
+}
+function levelDoc(){
+  const B=S.board,t=[];if($("#tagTut").checked)t.push("tutorial");if($("#tagMile").checked)t.push("milestone");
+  const tiles=B?encodeTiles(B):"";const check=fnv(tiles.replace(/(..)./g,"$1")).toString(16).padStart(8,"0");
+  const n=S.topo?S.topo.count:0,p=par(),id=$("#lvId").value.trim();const m=/-(\d+)$/.exec(id);
+  const lampSets=B?new Set(B.color.filter((c,i)=>B.kind[i]===2)).size:1;
+  return {id,serial:m?+m[1]:0,group:S.group,rev:(S.level.rev||0)+1,shape:S.shape.id,ports:S.topo?portsAt(S.topo,0):4,tiles,locked:B?B.locked.slice():[],
+    par:p,check,difficulty:diffOf(p,n,S.gen?S.gen.colors.length:Math.max(1,lampSets)),tags:t,gen:S.gen,hintOrder:S.level.hintOrder||[]};
+}
+function shapeDoc(){if(isPolyType(S.shape.type))return {id:S.shape.id,type:S.shape.type,n:S.shape.params.n};return shapeDocFrom({id:S.shape.id,type:S.shape.type,params:S.shape.params,blocks:S.blocks})}
+function compactJSON(o){return JSON.stringify(o,null,2).replace(/\[\n\s+((?:"[^"\n]*"|-?[\d.]+)(?:,\n\s+(?:"[^"\n]*"|-?[\d.]+))*)\n\s+\]/g,(m,inner)=>"["+inner.split(/,\n\s+/).join(", ")+"]").replace(/\[\n\s+(\[[^\]]*\](?:,\n\s+\[[^\]]*\])*)\n\s+\]/g,(m,inner)=>"["+inner.split(/,\n\s+/).join(", ")+"]")}
+function refreshShape(){
+  if(typeof renderDiff==="function")try{renderDiff();if(BSHAPES.some(r=>r.v==="current"))renderBatchShapes()}catch(_){}
+  $("#kBlocks").textContent=S.blocks.length;$("#kTiles").textContent=S.topo?S.topo.count:0;$("#kShapeId").textContent=S.shape.id;
+  const m=[];if(S.topo&&S.topo.poly)m.push(["",`Tetra: ${S.topo.count} triangle tiles (${S.shape.params.n}×${S.shape.params.n} per face), each turns 3 ways.`]);else if(S.pristine)m.push(["",`Preset ${S.shape.type}: saved in the catalog as "${S.shape.id}".`]);else m.push(["",`Merged shape: saved as type "voxel" with a block list, id "${S.shape.id}".`]);
+  if(S.topo&&S.topo.count>220)m.push(["w","More than 220 tiles: the level will be very long on a phone."]);
+  $("#shapeMsgs").innerHTML=m.map(([c,t])=>`<li class="${c}">${esc(t)}</li>`).join("");
+}
+function refreshBoard(){
+  if(typeof refreshCrud==="function")try{refreshCrud()}catch(_){}
+  $("#lvShape").value=S.shape.id;$("#lvPar").textContent=par();$("#lvTiles").textContent=S.topo?S.topo.count:0;$("#lvRev").textContent=S.level.rev?S.level.rev:"new";
+  $("#boardMsgs").innerHTML=boardCheck().map(([c,t])=>`<li class="${c}">${esc(t)}</li>`).join("");
+  $("#jsonPrev").textContent=compactJSON({level:levelDoc(),shape:shapeDoc()});
+}
+function refreshPlay(){
+  const {comp,sets}=components(S.topo,S.board,false);let on=0,all=0;
+  S.board.kind.forEach((k,i)=>{if(k===2){all++;if(sets[comp[i]]===S.board.color[i])on++}});
+  $("#pLit").textContent=on+"/"+all;$("#pMoves").textContent=S.moves;$("#pPar").textContent=S.playStart?S.playStart.reduce((a,r,i)=>a+(S.board.sol[i]?taps(S.board.sol[i],r,portsAt(S.topo,i)):0),0):0;
+  const p=+$("#pPar").textContent;
+  $("#pState").textContent=all&&on===all?(S.moves<=p?`Won in ${S.moves} moves, at par: 6 points.`:`Won in ${S.moves} moves, over par: 5 points.`):"Not solved yet.";
+}
+function refreshAll(){refreshShape();refreshBoard();draw()}
+
+/* ================= data store (artifact db), format v3 ================= */
+// meta/manifest   {schema:3, minApp, shapesVersion, rules, groups:[{id, unlock}]}  ← index only
+// groups/<id>     {id, name, blurb, icon, endless, enable, levelCount, chunkSize, chunks:[{index,version,count}], nextSerial*}
+// orders/<id>-<k> {group, chunk:k, version, levels:[serial…]}  ← 100 positions per chunk
+// levels/<id>-<serial> · shapes/<shapeId>        (* nextSerial is Level Lab only, dropped on export)
+const PAGE=100,CHUNK=100;let listPage=0,chunkUnsub=null,ORDER=null,CHUNKS=[],GROUPS={};
+const DEFAULT_RULES={windowBack:10,windowAhead:10,hintsPerLevel:3,hintPenalty:1,minScore:3,parScore:6,overParScore:5};
+const DEFAULT_MANIFEST={schema:3,minApp:"1.0.0",shapesVersion:1,rules:DEFAULT_RULES,groups:[{id:"cube",unlock:null}]};
+const groupDetail=(id,name)=>({id,name:name||id,blurb:"",icon:id,endless:false,enable:false,levelCount:0,chunkSize:CHUNK,chunks:[],nextSerial:1});
+const idOf=(g,n)=>g+"-"+pad4(n);
+function setStatus(t){$("#dbStatus").innerHTML=t}
+function groups(){return (MANIFEST&&MANIFEST.groups||[]).map((e,i)=>Object.assign({sort:i+1},GROUPS[e.id]||{id:e.id,name:e.id},{id:e.id,unlock:e.unlock}))}
+function curGroup(){return groups().find(g=>g.id===S.group)}
+function renderGroups(){
+  const sel=$("#groupSel");sel.innerHTML=groups().map(g=>`<option value="${esc(g.id)}">${esc(g.name||g.id)} (${esc(g.id)})${g.enable?"":" · hidden"}</option>`).join("");
+  if(!S.group||!groups().some(g=>g.id===S.group))S.group=groups()[0]?groups()[0].id:null;
+  if(S.group)sel.value=S.group;
+  const g=curGroup(),n=ORDER&&ORDER.group===S.group?ORDER.levels.length:0;
+  $("#groupMeta").textContent=g?`${n} levels · ${(g.chunks||[]).length} order chunks`:"";
+  renderLevels();
+}
+function renderLevels(){
+  const ids=ORDER&&ORDER.group===S.group?ORDER.levels:[];
+  if(!ids.length){$("#levelList").innerHTML='<div class="empty">This group has no levels yet. Design one and press <b>Save level</b>, or use <b>Batch generate</b>.</div>';$("#pager").innerHTML="";return}
+  const pages=Math.ceil(ids.length/PAGE);listPage=Math.min(listPage,pages-1);const from=listPage*PAGE;
+  const cur=$("#lvId").value,ch=CHUNKS[listPage];
+  $("#levelList").innerHTML=(ch?`<div class="note" style="margin:0 0 4px">Chunk ${listPage} · version ${ch.version}</div>`:"")+ids.slice(from,from+PAGE).map((sn,k)=>{const id=idOf(S.group,sn);return `<div class="li${id===cur?" sel":""}" data-sn="${sn}"><span class="n">${from+k+1}</span><span class="id">${esc(id)}</span><span class="act"><button type="button" data-a="up" aria-label="Up">↑</button><button type="button" data-a="down" aria-label="Down">↓</button><button type="button" data-a="rm" aria-label="Remove from group">✕</button></span></div>`}).join("");
+  $("#levelList").querySelectorAll(".li").forEach(el=>el.onclick=e=>{const a=e.target.dataset&&e.target.dataset.a;const sn=+el.dataset.sn;if(a){e.stopPropagation();editOrder(sn,a)}else loadLevel(sn)});
+  $("#pager").innerHTML=pages>1?Array.from({length:pages},(_,p)=>`<button type="button" data-p="${p}" class="${p===listPage?"on":""}">${p*PAGE+1}–${Math.min(ids.length,(p+1)*PAGE)}</button>`).join(""):"";
+  $("#pager").querySelectorAll("button").forEach(b=>b.onclick=()=>{listPage=+b.dataset.p;renderLevels()});
+}
+function subscribeOrder(){
+  if(chunkUnsub){chunkUnsub();chunkUnsub=null}ORDER=null;CHUNKS=[];listPage=0;if(!DB||!S.group)return renderGroups();const g=S.group;
+  chunkUnsub=DB.collection("orders").where("group","==",g).onSnapshot(q=>{
+    CHUNKS=[];q.docs.forEach(d=>{const c=d.data();CHUNKS[c.chunk]=c});
+    ORDER={group:g,levels:[].concat(...CHUNKS.map(c=>c?c.levels:[]))};renderGroups()},()=>{});
+}
+const arrEq=(a,b)=>a.length===b.length&&a.every((x,i)=>x===b[i]);
+// Writes only the chunks whose content changed (each gets version+1), then the group detail, then the manifest if needed.
+async function commitGroup(levels,shapesAdded,maxSerial){
+  const g=S.group;const det=JSON.parse(JSON.stringify(GROUPS[g]||groupDetail(g)));const bumped=[];
+  if(levels){
+    const parts=[];for(let i=0;i<levels.length;i+=CHUNK)parts.push(levels.slice(i,i+CHUNK));
+    for(let k=0;k<parts.length;k++){const old=CHUNKS[k];if(old&&arrEq(old.levels,parts[k]))continue;
+      const version=(old?old.version:0)+1;await DB.doc(`orders/${g}-${k}`).set({group:g,chunk:k,version,levels:parts[k]});bumped.push(k+"→v"+version)}
+    for(let k=parts.length;k<CHUNKS.length;k++)if(CHUNKS[k]){await DB.doc(`orders/${g}-${k}`).delete();bumped.push(k+"→deleted")}
+    det.chunkSize=CHUNK;det.levelCount=levels.length;
+    det.chunks=parts.map((p,k)=>{const old=CHUNKS[k];const same=old&&arrEq(old.levels,p);return {index:k,version:same?old.version:(old?old.version:0)+1,count:p.length}});
+  }
+  if(maxSerial&&maxSerial>=(det.nextSerial||1))det.nextSerial=maxSerial+1;
+  if(JSON.stringify(det)!==JSON.stringify(GROUPS[g]))await DB.doc("groups/"+g).set(det);
+  if(shapesAdded){const m=JSON.parse(JSON.stringify(MANIFEST));m.shapesVersion=(m.shapesVersion||0)+1;await DB.doc("meta/manifest").set(m)}
+  return bumped;
+}
+async function editOrder(sn,a){
+  if(!DB)return toast("Not connected to data.");const ids=ORDER.levels.slice(),i=ids.indexOf(sn);
+  if(a==="up"&&i>0)[ids[i-1],ids[i]]=[ids[i],ids[i-1]];else if(a==="down"&&i<ids.length-1)[ids[i+1],ids[i]]=[ids[i],ids[i+1]];else if(a==="rm")ids.splice(i,1);else return;
+  try{const b=await commitGroup(ids,0,0);toast(`Updated the order of ${S.group}: chunks ${b.join(", ")}.`)}catch(e){toast("Could not save the order: "+(e.message||e.code))}
+}
+function nextSerial(){const g=GROUPS[S.group];const fromOrder=ORDER&&ORDER.levels.length?Math.max(...ORDER.levels)+1:1;return Math.max(g&&g.nextSerial||1,fromOrder)}
+function newLevel(){
+  if(!S.group)return;$("#lvId").value=idOf(S.group,nextSerial());S.level={id:$("#lvId").value,rev:0,tags:[]};$("#tagTut").checked=false;$("#tagMile").checked=false;
+  if(S.topo){S.board=emptyBoard(S.topo.count);S.gen=null}refreshBoard();draw();renderLevels();setMode("shape");
+}
+const shapeCache={};
+async function fetchShape(id){
+  if(shapeCache[id])return shapeCache[id];const p=parseShapeId(id);if(p){shapeCache[id]=p;return p}
+  if(!DB)return null;const s=await DB.doc("shapes/"+id).get();if(!s.exists)return null;const d=s.data();
+  const r=d.type==="voxel"?{id,type:"voxel",params:{},blocks:nestBlocks(d.blocks)}:(PRESETS[d.type]?{id,type:d.type,params:d,blocks:PRESETS[d.type].build(d)}:null);
+  if(r)shapeCache[id]=r;return r;
+}
+function applyShape(sh){S.blocks=sh.blocks.map(b=>b.slice());S.shape={id:sh.id,type:sh.type,params:sh.params};S.pristine=sh.type!=="voxel";S.topo=topoOf(S.shape,S.blocks);S.history=[]}
+async function loadLevel(sn){
+  if(!DB)return;const id=idOf(S.group,sn);let snap;try{snap=await DB.doc("levels/"+id).get()}catch(e){return toast("Could not read "+id+".")}
+  if(!snap.exists)return toast(id+" is in the order but has no level data.");const L=snap.data();
+  const sh=await fetchShape(L.shape);if(!sh)return toast("Shape "+L.shape+" is not in the catalog.");applyShape(sh);
+  const B=L.tiles?decodeTiles(L.tiles):null;
+  if(!B||B.sol.length!==S.topo.count){toast("The tile data does not match the shape's tile count.");S.board=emptyBoard(S.topo.count)}else{B.locked=(L.locked||[]).slice();S.board=B}
+  S.gen=L.gen||null;S.level={id,rev:L.rev||0,tags:L.tags||[],hintOrder:L.hintOrder||[]};$("#lvId").value=id;$("#tagTut").checked=(L.tags||[]).includes("tutorial");$("#tagMile").checked=(L.tags||[]).includes("milestone");
+  if(L.gen&&L.gen.colors&&L.gen.colors.length){genColors=L.gen.colors.slice();colorAuto=true;renderColors()}seedNote();
+  refreshShape();refreshBoard();setMode("board");fit();renderLevels();
+}
+async function ensureShape(sd,known){
+  if(known&&known.has(sd.id))return false;const s=await DB.doc("shapes/"+sd.id).get();if(known)known.add(sd.id);
+  if(s.exists)return false;await DB.doc("shapes/"+sd.id).set(sd);return true;
+}
+// voxel blocks: flat [x,y,z,x,y,z,…] in data (Unity JsonUtility cannot read nested arrays); older rows may still hold [[x,y,z],…]
+function nestBlocks(b){if(!Array.isArray(b))return[];if(b.length&&Array.isArray(b[0]))return b.map(v=>v.slice());const o=[];for(let i=0;i+2<b.length;i+=3)o.push([+b[i],+b[i+1],+b[i+2]]);return o}
+function flatBlocks(b){const o=[];nestBlocks(b).forEach(v=>o.push(v[0],v[1],v[2]));return o}
+function shapeDocFrom(sh){const d={id:sh.id,type:sh.type};if(sh.type==="voxel")d.blocks=flatBlocks(sh.blocks);else Object.assign(d,sh.params);return d}
+async function save(){
+  if(!DB)return toast("Not connected to data, cannot save.");if(!canWrite)return toast("You can only view.");
+  const doc=levelDoc(),m=/^([a-z0-9_]+)-(\d{4,})$/.exec(doc.id);
+  if(!m)return toast("The id must look like <group>-<4 digits>, for example cube-0012.");if(m[1]!==S.group)return toast(`The id must start with the selected group's id (${S.group}-).`);
+  const errs=boardCheck().filter(x=>x[0]==="b");if(errs.length)return toast("Not saved: "+errs[0][1]);
+  const btn=$("#btnSave");btn.disabled=true;$("#saveNote").textContent="Saving…";
+  try{
+    const prev=await DB.doc("levels/"+doc.id).get();doc.rev=prev.exists?(prev.data().rev||0)+1:1;doc.updatedAt=new Date().toISOString();
+    const shapeAdded=await ensureShape(shapeDoc());
+    await DB.doc("levels/"+doc.id).set(doc);
+    const ids=ORDER.levels.slice(),add=!ids.includes(doc.serial);if(add)ids.push(doc.serial);
+    const b=await commitGroup(add?ids:null,shapeAdded?1:0,doc.serial);
+    S.level.rev=doc.rev;
+    const parts=[`${doc.id} rev ${doc.rev}`];if(b.length)parts.push(`added to ${S.group}, order chunks ${b.join(", ")}`);if(shapeAdded)parts.push(`new shape ${doc.shape}, shapesVersion raised`);
+    toast("Saved: "+parts.join(" · ")+".");$("#saveNote").textContent="Saved at "+new Date().toLocaleTimeString();
+  }catch(e){toast("Save failed: "+(e.message||e.code));$("#saveNote").textContent=""}
+  finally{btn.disabled=false;refreshBoard()}
+}
+$("#btnSave").onclick=save;
+$("#btnNewLevel").onclick=newLevel;
+$("#groupSel").onchange=()=>{S.group=$("#groupSel").value;subscribeOrder();$("#lvId").value=idOf(S.group,nextSerial());S.level={id:$("#lvId").value,rev:0,tags:[]};refreshBoard()};
+$("#lvId").oninput=refreshBoard;$("#tagTut").onchange=refreshBoard;$("#tagMile").onchange=refreshBoard;
+$("#btnNewGroup").onclick=()=>{$("#newGroupForm").hidden=false;$("#ngId").focus()};
+$("#ngCancel").onclick=()=>$("#newGroupForm").hidden=true;
+$("#ngSave").onclick=async()=>{
+  const id=$("#ngId").value.trim().toLowerCase(),name=$("#ngName").value.trim()||id;
+  if(!/^[a-z0-9_]+$/.test(id))return toast("A group id may only use lowercase letters, digits and _.");if(groups().some(g=>g.id===id))return toast("That group id already exists.");
+  if(!DB)return toast("Not connected to data.");
+  const m=JSON.parse(JSON.stringify(MANIFEST||DEFAULT_MANIFEST));const last=m.groups.slice(-1)[0];
+  m.groups.push({id,unlock:last?{group:last.id,cleared:100}:null});
+  try{await DB.doc("groups/"+id).set(groupDetail(id,name));await DB.doc("meta/manifest").set(m);S.group=id;subscribeOrder();$("#newGroupForm").hidden=true;toast(`Created group ${id} (hidden: enable = false).`)}catch(e){toast("Could not create: "+(e.message||e.code))}
+};
+
+/* ---- batch generation along a difficulty curve ---- */
+let BATCH=[];
+const lerp=(a,b,t)=>a+(b-a)*t;
+const SHAPE_LABEL={cube:"Cube",cross:"Cross",tower:"Tower",ell:"Ell (L shape)",pyramid:"Stepped pyramid",ball:"Ball",bar:"Thanh",slab:"Slab",tetra:"Tetra (triangle tiles)"};
+// Shape menu for batches. New polyhedra (dodeca…) slot in here with a topology builder; "soon" entries show disabled.
+const BATCH_MENU=[{v:"current",label:"Shape being built"}].concat(Object.keys(PRESETS).map(k=>({v:k,label:SHAPE_LABEL[k]||k})),
+  [{v:"megamix",label:"Megamix (random blocks each level)"},{v:"dodeca",label:"Dodeca 12 pentagon faces (coming soon)",soon:true}]);
+let BSHAPES=[{v:"current",params:{}}];
+function renderBatchShapes(){
+  $("#bShapeRows").innerHTML=BSHAPES.map((r,i)=>{const pr=PRESETS[r.v];
+    return `<div class="bsrow" data-i="${i}"><select data-k="v" aria-label="Shape ${i+1}">${BATCH_MENU.map(o=>`<option value="${o.v}"${o.v===r.v?" selected":""}${o.soon?" disabled":""}>${esc(o.label)}</option>`).join("")}</select>
+      <span class="bp">${pr?pr.params.map(([k,l,v,mn,mx,st])=>`<input type="number" data-p="${k}" title="${esc(l)}" aria-label="${esc(l)}" value="${r.params[k]!=null?r.params[k]:v}" min="${mn}" max="${mx}" step="${st||1}">`).join(""):r.v==="current"?`<span class="note mono" style="margin:0">${esc(S.shape.id)}</span>`:""}</span>
+      <button type="button" data-rm="${i}" aria-label="Remove shape" ${BSHAPES.length>1?"":"hidden"}>×</button></div>`}).join("");
+  $("#bShapeRows").querySelectorAll(".bsrow").forEach(row=>{const r=BSHAPES[+row.dataset.i];
+    row.querySelector("select").onchange=e=>{r.v=e.target.value;r.params={};renderBatchShapes()};
+    row.querySelectorAll("input[data-p]").forEach(inp=>inp.oninput=()=>{r.params[inp.dataset.p]=+inp.value});
+    const rm=row.querySelector("[data-rm]");if(rm)rm.onclick=()=>{BSHAPES.splice(+rm.dataset.rm,1);renderBatchShapes()}});
+  renderBatchInfo();
+}
+$("#bAddShape").onclick=()=>{BSHAPES.push({v:"cube",params:{}});renderBatchShapes()};
+["bD0","bD1"].forEach((id,j)=>{$("#"+id).innerHTML=Array.from({length:10},(_,i)=>`<option value="${i+1}"${i+1===(j?7:2)?" selected":""}>${i+1} · ${DIFF_NAME[i+1]}</option>`).join("");$("#"+id).onchange=renderBatchInfo});
+$("#bN").oninput=renderBatchInfo;
+function renderBatchInfo(){const d0=+$("#bD0").value,d1=+$("#bD1").value,N=+$("#bN").value||1;
+  $("#bInfo").textContent=N>1?`Level 1 at difficulty ${d0}, level ${N} at difficulty ${d1}; evenly harder in between. Colours, scramble and par follow each shape's tile count.`:`One level, difficulty ${d0}.`}
+function megamixBlocks(R){const parts=["cube","pyramid","ball","bar","slab"];let blocks=PRESETS.cube.build({n:2+R.range(2)});
+  const cnt=1+R.range(3);for(let i=0;i<cnt;i++){const t=parts[R.range(parts.length)],pr=PRESETS[t];const prm={};pr.params.forEach(([k,,v,mn,mx])=>prm[k]=Math.min(mx,Math.max(mn,mn+R.range(Math.min(3,mx-mn+1)))));
+    if(t==="ball")prm.r=1.5;const part=pr.build(prm);const a=blocks[R.range(blocks.length)],n=NORMALS[R.range(6)];const off=add(add(a,n),neg(part[R.range(part.length)]));blocks=blocks.concat(part.map(b=>add(b,off)))}
+  const s=new Set(),o=[];blocks.forEach(b=>{const k=b.join(",");if(!s.has(k)){s.add(k);o.push(b)}});return o}
+function voxelOf(blocks){const sorted=blocks.map(b=>b.join(",")).sort().join(";");return {id:"voxel-"+fnv(sorted).toString(16).padStart(8,"0").slice(0,6),type:"voxel",params:{},blocks}}
+function batchShapeAt(row,R){
+  if(row.v==="current")return {id:S.shape.id,type:S.shape.type,params:S.shape.params,blocks:S.blocks.map(b=>b.slice())};
+  if(row.v==="megamix")return voxelOf(megamixBlocks(R));
+  const pr=PRESETS[row.v],prm={};pr.params.forEach(([k,,v,mn,mx])=>{const x=row.params[k];prm[k]=Math.min(mx,Math.max(mn,isFinite(x)?x:v))});
+  return {id:pr.id(prm),type:row.v,params:prm,blocks:pr.build(prm)};
+}
+const topoCache={};
+function topoFor(sh){if(sh.type==="voxel")return topoOf(sh,sh.blocks);return topoCache[sh.id]||(topoCache[sh.id]=topoOf(sh,sh.blocks))}
+function genOne(sh,d){
+  const topo=topoFor(sh),p=diffParams(d,topo),seed=(Math.random()*2**31)>>>0,R=Rng(seed^0x51ed270b),colors=colorsFor(p.colors,R);
+  const r=generate(topo,colors,seed,p.minPar,p.scramble)||generate(topo,colors,seed+7,Math.round(p.minPar*0.6),p.scramble);
+  if(!r)return null;return {sel:true,shape:sh,topo,board:r.board,par:r.par,tiles:topo.count,d,gen:{ver:1,seed:r.usedSeed,colors,scramble:p.scramble,minPar:p.minPar},diff:diffOf(r.par,topo.count,colors.length)};
+}
+function runBatch(){
+  if(BSHAPES.some(r=>r.v==="current")&&!S.topo)return toast("No shape is being built.");
+  const N=Math.max(1,Math.min(200,+$("#bN").value||1)),d0=+$("#bD0").value,d1=+$("#bD1").value,t0=performance.now();BATCH=[];let fails=0;
+  const R=Rng((Math.random()*2**31)>>>0);
+  for(let i=0;i<N;i++){const t=N>1?i/(N-1):0,row=BSHAPES[Math.min(BSHAPES.length-1,Math.floor(t*BSHAPES.length*0.9999))],d=Math.round(lerp(d0,d1,t));
+    const x=genOne(batchShapeAt(row,R),d);if(x)BATCH.push(x);else fails++}
+  $("#batchNote").textContent=`${BATCH.length} levels in ${Math.round(performance.now()-t0)} ms${fails?` · ${fails} levels could not be generated (shape too small for this difficulty)`:""}`;renderBatch();
+}
+function renderBatch(){
+  if(!BATCH.length){$("#batchOut").innerHTML="";return}
+  const W=300,H=70,mx=Math.max(...BATCH.map(b=>b.par)),bw=W/BATCH.length;
+  const bars=BATCH.map((b,i)=>`<rect x="${(i*bw+0.5).toFixed(1)}" y="${(H-4-(b.par/mx)*(H-14)).toFixed(1)}" width="${Math.max(1,bw-1).toFixed(1)}" height="${((b.par/mx)*(H-14)).toFixed(1)}" rx="1" fill="${b.sel?"var(--accent)":"var(--line)"}"><title>#${i+1} par ${b.par}</title></rect>`).join("");
+  const nsel=BATCH.filter(b=>b.sel).length;
+  $("#batchOut").innerHTML=`<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Par of each level in the batch">${bars}<text x="2" y="10" font-size="9" fill="var(--muted)">max par ${mx}</text></svg>
+   <div class="btwrap"><table class="bt"><thead><tr><th></th><th>#</th><th>Shape</th><th>Tiles</th><th>Hard</th><th>Colours</th><th>Par</th><th></th></tr></thead><tbody>${BATCH.map((b,i)=>`<tr><td><input type="checkbox" data-i="${i}" ${b.sel?"checked":""} aria-label="Select level ${i+1}"></td><td>${i+1}</td><td class="mono">${esc(b.shape.id)}</td><td>${b.tiles}</td><td>${b.d}</td><td>${b.gen.colors.map(c=>`<i class="dot" style="background:${COLOR_CSS[c]}"></i>`).join("")}</td><td>${b.par}</td><td><button class="re" type="button" data-r="${i}" title="Regenerate this level">↻</button> <button class="re" type="button" data-v="${i}">Xem</button></td></tr>`).join("")}</tbody></table></div>
+   <div class="row" style="margin-top:8px"><button class="btn primary" id="btnBatchSave" type="button">Save ${nsel} levels into ${esc(S.group||"")}</button><button class="btn" id="btnBatchAgain" type="button">Regenerate the whole batch</button><span class="note" id="batchProg" style="margin:0"></span></div>`;
+  $("#batchOut").querySelectorAll("input[data-i]").forEach(c=>c.onchange=()=>{BATCH[+c.dataset.i].sel=c.checked;renderBatch()});
+  $("#batchOut").querySelectorAll("button[data-r]").forEach(b=>b.onclick=()=>{const i=+b.dataset.r,o=BATCH[i];
+    const sh=o.shape.type==="voxel"&&/^voxel-/.test(o.shape.id)&&BSHAPES.some(r=>r.v==="megamix")?voxelOf(megamixBlocks(Rng((Math.random()*2**31)>>>0))):o.shape;
+    const x=genOne(sh,o.d);if(!x)return toast("Could not regenerate this level, try again.");BATCH[i]=x;renderBatch()});
+  $("#batchOut").querySelectorAll("button[data-v]").forEach(b=>b.onclick=()=>{const x=BATCH[+b.dataset.v];applyShape(x.shape);S.board=JSON.parse(JSON.stringify(x.board));S.gen=x.gen;
+    S.level={id:"",rev:0,tags:[]};$("#lvId").value=idOf(S.group,nextSerial());seedNote();refreshShape();refreshBoard();setMode("board");fit()});
+  $("#btnBatchSave").onclick=saveBatch;$("#btnBatchAgain").onclick=runBatch;
+}
+async function saveBatch(){
+  if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");if(!S.group)return;
+  const rows=BATCH.filter(b=>b.sel);if(!rows.length)return toast("No level selected.");
+  const btn=$("#btnBatchSave");btn.disabled=true;const prog=$("#batchProg");let sn=nextSerial(),added=0;const known=new Set(),serials=[];
+  try{
+    for(let i=0;i<rows.length;i++){const b=rows[i];prog.textContent=`Saving ${i+1}/${rows.length}…`;
+      const sd=isPolyType(b.shape.type)?{id:b.shape.id,type:b.shape.type,n:b.shape.params.n}:shapeDocFrom(b.shape);
+      if(await ensureShape(sd,known))added++;
+      const tiles=encodeTiles(b.board),id=idOf(S.group,sn);
+      await DB.doc("levels/"+id).set({id,serial:sn,group:S.group,rev:1,shape:b.shape.id,ports:portsAt(b.topo,0),tiles,locked:[],par:b.par,
+        check:fnv(tiles.replace(/(..)./g,"$1")).toString(16).padStart(8,"0"),difficulty:b.diff,tags:[],gen:b.gen,hintOrder:[],updatedAt:new Date().toISOString()});
+      serials.push(sn);sn++}
+    const v=await commitGroup(ORDER.levels.concat(serials),added,sn-1);
+    prog.textContent="";toast(`Saved ${rows.length} levels (${idOf(S.group,serials[0])} → ${idOf(S.group,serials[serials.length-1])}) · order chunks ${v.join(", ")}${added?` · ${added} new shapes`:""}.`);
+    BATCH=[];renderBatch();
+  }catch(e){prog.textContent="";toast(`Stopped at level ${serials.length+1}: ${e.message||e.code}. ${serials.length} levels were written but are not in the order yet; press save again to continue.`)}
+  finally{if(btn)btn.disabled=false}
+}
+$("#btnBatch").onclick=runBatch;
+
+/* ---- export in the CDN folder layout ---- */
+async function pagedQuery(coll,whereEq,field,step=400){
+  const out=[];let last=null;
+  for(let guard=0;guard<500;guard++){let q=DB.collection(coll);if(whereEq)q=q.where(whereEq[0],"==",whereEq[1]);if(last!==null)q=q.where(field,">",last);
+    const snap=await q.orderBy(field).limit(step).get();snap.docs.forEach(d=>out.push(d.data()));if(snap.size<step)break;last=snap.docs[snap.docs.length-1].data()[field]}
+  return out;
+}
+$("#btnExport").onclick=async()=>{
+  if(!DB||!MANIFEST)return toast("No data to export yet.");if(typeof JSZip==="undefined")return toast("The zip library has not loaded.");
+  const btn=$("#btnExport");btn.disabled=true;
+  try{
+    const zip=new JSZip(),mOut=JSON.parse(JSON.stringify(MANIFEST));mOut.rules=Object.assign({},DEFAULT_RULES,mOut.rules||{});mOut.groups.forEach(g=>{if(!g.unlock)g.unlock={group:"",cleared:0}});
+    zip.file("manifest.json",JSON.stringify(mOut,null,2));let nLv=0;
+    for(const e of MANIFEST.groups){const g=e.id;toast(`Exporting group ${g}…`);
+      const d=await DB.doc("groups/"+g).get();const det=d.exists?Object.assign({},d.data()):groupDetail(g);delete det.nextSerial;zip.file(`groups/${g}.json`,JSON.stringify(det,null,2));
+      const ch=await DB.collection("orders").where("group","==",g).get();ch.docs.forEach(x=>{const c=x.data();zip.file(`orders/${g}/${c.chunk}.json`,JSON.stringify(c))});
+      const lv=await pagedQuery("levels",["group",g],"serial");lv.forEach(L=>{const c=Object.assign({},L);delete c.updatedAt;zip.file(`levels/${g}/${pad4(L.serial)}.json`,JSON.stringify(c))});nLv+=lv.length}
+    const shapes=await pagedQuery("shapes",null,"id");const cat={version:MANIFEST.shapesVersion};
+    shapes.forEach(s=>{if(s.type==="voxel")zip.file(`shapes/voxel/${s.id}.json`,JSON.stringify({id:s.id,type:"voxel",blocks:flatBlocks(s.blocks)}));else{const c=Object.assign({},s),t=c.type;delete c.type;(cat[t]=cat[t]||[]).push(c)}});
+    zip.file("shapes.json",JSON.stringify(cat,null,2));
+    const blob=await zip.generateAsync({type:"blob",compression:"DEFLATE"});
+    let dl=null;try{dl=await claude.use("downloads")}catch(_){}
+    if(!dl)return toast("This view does not allow downloads.");
+    await dl.save({filename:"circuitcube-data.zip",data:blob});toast(`Exported ${nLv} levels, ${shapes.length} shapes.`);
+  }catch(e){if(!e||e.code!=="declined")toast("Export failed: "+((e&&(e.message||e.code))||e))}
+  finally{btn.disabled=false}
+};
+
+/* ================= CRUD: delete / save as new ================= */
+let delArmed=false;
+function refreshCrud(){const exists=!!S.level.rev;$("#btnDelete").hidden=!exists;$("#btnDelete").textContent="Delete level";delArmed=false}
+$("#btnSaveCopy").onclick=()=>{if(!S.group)return;const id=idOf(S.group,nextSerial());$("#lvId").value=id;S.level={id,rev:0,tags:S.level.tags||[],hintOrder:[]};refreshCrud();save()};
+$("#btnDelete").onclick=async()=>{
+  if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");
+  const id=$("#lvId").value.trim(),m=/-(\d+)$/.exec(id);if(!m||!S.level.rev)return;
+  if(!delArmed){delArmed=true;$("#btnDelete").textContent="Press again to delete "+id;return}
+  const sn=+m[1],btn=$("#btnDelete");btn.disabled=true;
+  try{let b=[];if(ORDER&&ORDER.levels.includes(sn))b=await commitGroup(ORDER.levels.filter(x=>x!==sn),0,0);
+    await DB.doc("levels/"+id).delete();toast(`Deleted ${id}${b.length?` · order chunks ${b.join(", ")}`:""}.`);newLevel()}
+  catch(e){toast("Could not delete: "+(e.message||e.code))}finally{btn.disabled=false;refreshCrud()}
+};
+
+/* ================= views ================= */
+const VIEWS=["design","groups","check"];
+function showView(v){if(!VIEWS.includes(v))v="design";
+  $("#viewDesign").hidden=v!=="design";$("#viewGroups").hidden=v!=="groups";$("#viewCheck").hidden=v!=="check";
+  document.querySelectorAll(".top .seg button").forEach(b=>b.classList.toggle("on",b.dataset.view===v));
+  if(v==="groups")cfgRender();if(v==="design")requestAnimationFrame(resize)}
+document.querySelectorAll(".top .seg button").forEach(b=>b.onclick=()=>{location.hash=b.dataset.view});
+addEventListener("hashchange",()=>showView(location.hash.slice(1)));
+
+/* ================= groups & rules ================= */
+const ICONS=["cube","tetra","sphere","cross","megamix"];
+const RULE_INFO={windowBack:["Keep behind","Levels already played kept on the device (X − n)."],windowAhead:["Download ahead","Levels ahead downloaded for offline play (X + n)."],
+  hintsPerLevel:["Hints per level","Free hints in one level."],hintPenalty:["Points per hint","Points taken off for each hint."],
+  minScore:["Minimum points","A win always gives at least this."],parScore:["Points at par","Moves ≤ par."],overParScore:["Points over par","Moves > par."]};
+let gDraft=null,rDraft=null;
+const jeq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+function gDirty(){return !!gDraft&&(!jeq(gDraft.manifest,MANIFEST)||!jeq(gDraft.groups,GROUPS))}
+function unlockText(u){return !u||!u.group?"Open from the start.":`Opens after ${u.cleared} levels of group ${u.group}.`}
+function cfgOnData(){if(!gDirty())gDraft=null;rDraft=null;if(!$("#viewGroups").hidden)cfgRender()}
+function cfgRender(){
+  if(!MANIFEST){$("#cGroupCards").innerHTML='<div class="empty">No data yet. Press <b>Import zip</b> to load data exported from Unity.</div>';return}
+  if(!gDraft)gDraft={manifest:JSON.parse(JSON.stringify(MANIFEST)),groups:JSON.parse(JSON.stringify(GROUPS))};
+  const m=gDraft.manifest,ids=m.groups.map(x=>x.id);
+  $("#cGroupCards").innerHTML=m.groups.map((ref,i)=>{
+    const g=gDraft.groups[ref.id]||groupDetail(ref.id),u=ref.unlock;
+    const opts=['<option value="">Open from the start</option>'].concat(ids.filter(x=>x!==ref.id).map(x=>`<option value="${esc(x)}"${u&&u.group===x?" selected":""}>After group ${esc(x)}</option>`)).join("");
+    return `<div class="c-card${g.enable?"":" off"}" data-gid="${esc(ref.id)}">
+      <div class="c-ord"><button type="button" data-act="up" ${i?"":"disabled"} aria-label="Up">▲</button><b>${i+1}</b><button type="button" data-act="down" ${i<ids.length-1?"":"disabled"} aria-label="Down">▼</button></div>
+      <div class="c-fields">
+        <div class="c-title"><span class="gid">${esc(ref.id)}</span><span class="c-pill ${g.enable?"ok":""}">${g.enable?"enabled":"hidden"}</span>${g.endless?'<span class="c-pill">endless</span>':""}
+          <span class="c-pill">${g.levelCount||0} levels · ${(g.chunks||[]).length} chunks</span><span class="note c-ul" style="margin:0">${esc(unlockText(u))}</span>
+          <button class="btn sm" type="button" data-open="${esc(ref.id)}" style="margin-left:auto">Open this group's levels →</button></div>
+        <label class="f" for="cgn-${i}">Name<input id="cgn-${i}" type="text" data-f="name" value="${esc(g.name||"")}"></label>
+        <label class="f" for="cgi-${i}">Icon<select id="cgi-${i}" data-f="icon">${ICONS.map(x=>`<option${g.icon===x?" selected":""}>${x}</option>`).join("")}${ICONS.includes(g.icon)?"":`<option selected>${esc(g.icon||"")}</option>`}</select></label>
+        <label class="f" for="cgu-${i}">Unlock<select id="cgu-${i}" data-u="group">${opts}</select></label>
+        <label class="f" for="cgc-${i}">Levels to clear<input id="cgc-${i}" type="number" min="0" data-u="cleared" value="${u&&u.group?u.cleared:0}" ${u&&u.group?"":"disabled"}></label>
+        <label class="f wide" for="cgb-${i}">Description<input id="cgb-${i}" type="text" data-f="blurb" value="${esc(g.blurb||"")}"></label>
+        <div class="row wide"><label class="chk"><input type="checkbox" data-f="enable" ${g.enable?"checked":""}> Enabled in the game</label>
+          <label class="chk"><input type="checkbox" data-f="endless" ${g.endless?"checked":""}> Endless (after the data runs out, play continues with generated levels)</label></div>
+      </div></div>`}).join("");
+  $("#cGroupsDirty").hidden=!gDirty();
+  if(!rDraft)rDraft={rules:Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}),minApp:MANIFEST.minApp||"1.0.0"};
+  $("#cRulesForm").innerHTML=Object.keys(RULE_INFO).map(k=>`<label for="cr-${k}">${RULE_INFO[k][0]}</label><input id="cr-${k}" type="number" min="0" data-k="${k}" value="${rDraft.rules[k]}"><span class="c-help">${RULE_INFO[k][1]}</span>`).join("")+
+    `<label for="cr-minApp">minApp</label><input id="cr-minApp" type="text" value="${esc(rDraft.minApp)}"><span class="c-help">Lowest app version that can read this data. schema ${MANIFEST.schema||3} · shapesVersion ${MANIFEST.shapesVersion||1}.</span>`;
+  document.querySelectorAll("#cRulesForm input[data-k]").forEach(el=>el.oninput=()=>{rDraft.rules[el.dataset.k]=Math.max(0,parseInt(el.value)||0);rulesChanged()});
+  $("#cr-minApp").oninput=e=>{rDraft.minApp=e.target.value.trim();rulesChanged()};
+  rulesChanged();
+}
+function rulesChanged(){
+  const r=rDraft.rules;$("#cRulesSave").disabled=jeq(r,Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}))&&rDraft.minApp===(MANIFEST.minApp||"1.0.0");
+  const hs=Array.from({length:Math.min(6,r.hintsPerLevel)+1},(_,i)=>i),pts=(mv,h)=>Math.max(r.minScore,(mv<=5?r.parScore:r.overParScore)-h*r.hintPenalty);
+  $("#cScore").innerHTML=`<thead><tr><th></th>${hs.map(h=>`<th>${h} hints</th>`).join("")}</tr></thead><tbody>`+[["At par",5],["Over par",9]].map(([l,mv])=>`<tr><td>${l}</td>${hs.map(h=>{const p=pts(mv,h);return `<td><span class="c-pts${mv===5&&h===0?" top":""}">${p}</span> <span class="note">${p<=0?0:Math.max(1,Math.floor(p/2))}★</span></td>`}).join("")}</tr>`).join("")+"</tbody>";
+}
+$("#cGroupCards").addEventListener("input",e=>{
+  const card=e.target.closest(".c-card");if(!card)return;const id=card.dataset.gid,ref=gDraft.manifest.groups.find(x=>x.id===id);
+  const g=gDraft.groups[id]||(gDraft.groups[id]=groupDetail(id));const f=e.target.dataset.f,u=e.target.dataset.u;
+  if(f)g[f]=e.target.type==="checkbox"?e.target.checked:e.target.value;
+  if(u==="group"){ref.unlock=e.target.value?{group:e.target.value,cleared:(ref.unlock&&ref.unlock.cleared)||10}:null;cfgRender();return}
+  if(u==="cleared"&&ref.unlock)ref.unlock.cleared=Math.max(0,parseInt(e.target.value)||0);
+  if(e.target.type==="checkbox")cfgRender();else{$("#cGroupsDirty").hidden=!gDirty();card.querySelector(".c-ul").textContent=unlockText(ref.unlock)}
+});
+$("#cGroupCards").addEventListener("click",e=>{
+  const o=e.target.closest("[data-open]");if(o){openGroup(o.dataset.open);return}
+  const b=e.target.closest("button[data-act]");if(!b)return;const arr=gDraft.manifest.groups,i=arr.findIndex(x=>x.id===b.closest(".c-card").dataset.gid),j=b.dataset.act==="up"?i-1:i+1;
+  if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];cfgRender();
+});
+$("#cGroupsRevert").onclick=()=>{gDraft=null;cfgRender()};
+$("#cGroupsSave").onclick=async()=>{
+  if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");const btn=$("#cGroupsSave");btn.disabled=true;
+  try{for(const id in gDraft.groups)if(!jeq(gDraft.groups[id],GROUPS[id]))await DB.doc("groups/"+id).set(gDraft.groups[id]);
+    if(!jeq(gDraft.manifest,MANIFEST))await DB.doc("meta/manifest").set(gDraft.manifest);gDraft=null;toast("Groups saved.")}
+  catch(e){toast("Save failed: "+(e.message||e.code))}finally{btn.disabled=false}
+};
+$("#cRulesSave").onclick=async()=>{if(!DB||!canWrite)return toast("Not saved: no write permission.");const m=JSON.parse(JSON.stringify(MANIFEST));m.rules=rDraft.rules;m.minApp=rDraft.minApp||"1.0.0";
+  try{await DB.doc("meta/manifest").set(m);rDraft=null;toast("Rules saved.")}catch(e){toast("Save failed: "+(e.message||e.code))}};
+$("#cAddGroup").onclick=async()=>{
+  if(!DB||!canWrite)return toast("Not saved: no write permission.");const id=$("#cNgId").value.trim().toLowerCase(),name=$("#cNgName").value.trim()||id;
+  if(!/^[a-z][a-z0-9_]{1,23}$/.test(id))return toast("A group id uses lowercase letters, digits or _, 2–24 characters, starting with a letter.");if(groups().some(g=>g.id===id))return toast("Group already exists: "+id+".");
+  const m=JSON.parse(JSON.stringify(MANIFEST||DEFAULT_MANIFEST)),last=m.groups.slice(-1)[0];m.groups.push({id,unlock:last?{group:last.id,cleared:10}:null});
+  try{await DB.doc("groups/"+id).set(groupDetail(id,name));await DB.doc("meta/manifest").set(m);$("#cNgId").value="";$("#cNgName").value="";gDraft=null;toast(`Added group ${id} (hidden).`)}catch(e){toast("Could not add: "+(e.message||e.code))}
+};
+function openGroup(g,sn){location.hash="design";if(S.group!==g){S.group=g;$("#groupSel").value=g;subscribeOrder()}if(sn)loadLevel(sn);else newLevel()}
+
+/* ================= check ================= */
+$("#cBtnCheck").onclick=async()=>{
+  if(!DB||!MANIFEST)return;const btn=$("#cBtnCheck");btn.disabled=true;$("#cCheckInfo").textContent="Reading data…";
+  const issues=[],add=(sev,where,msg,link)=>issues.push({sev,where,msg,link});let nLv=0,nOrd=0;
+  try{
+    const ids=MANIFEST.groups.map(g=>g.id),shapeRows=await pagedQuery("shapes",null,"id"),shapeMap={},topos={};shapeRows.forEach(x=>shapeMap[x.id]=x);
+    const topoFor=id=>{if(id in topos)return topos[id];let sh=parseShapeId(id);if(!sh&&shapeMap[id]&&shapeMap[id].type==="voxel")sh={id,type:"voxel",params:{},blocks:nestBlocks(shapeMap[id].blocks)};
+      return topos[id]=sh?topoOf(sh,sh.blocks):null};
+    const first=MANIFEST.groups[0];if(first&&first.unlock&&first.unlock.group)add("warn","manifest","The first group should be open from the start.");
+    for(const ref of MANIFEST.groups){
+      const g=GROUPS[ref.id];if(!g){add("err",ref.id,"In the manifest but the group data is missing.");continue}
+      const u=ref.unlock;if(u&&u.group){if(!ids.includes(u.group))add("err",ref.id,"Unlock points to a group that does not exist: "+u.group+".");
+        else{const pg=GROUPS[u.group];if(pg&&!pg.endless&&u.cleared>pg.levelCount)add("warn",ref.id,`Needs ${u.cleared} levels of ${u.group} but that group has only ${pg.levelCount}.`);
+          if(ids.indexOf(u.group)>ids.indexOf(ref.id))add("warn",ref.id,"The unlocking group comes after this group.")}}
+      $("#cCheckInfo").textContent="Checking group "+ref.id+"…";
+      const chunks=(await DB.collection("orders").where("group","==",ref.id).get()).docs.map(d=>d.data()).sort((a,b)=>a.chunk-b.chunk);
+      const levels=await pagedQuery("levels",["group",ref.id],"serial"),byS={};levels.forEach(L=>byS[L.serial]=L);nLv+=levels.length;
+      const flat=[];chunks.forEach(c=>flat.push(...c.levels));nOrd+=flat.length;
+      if(flat.length!==g.levelCount)add("err",ref.id,`levelCount = ${g.levelCount} but the order chunks hold ${flat.length} levels.`);
+      (g.chunks||[]).forEach(ci=>{const c=chunks.find(x=>x.chunk===ci.index);if(!c)add("err",ref.id,`Order chunk ${ci.index} is missing.`);else{if(c.version!==ci.version)add("err",ref.id,`Chunk ${ci.index}: the group says v${ci.version}, the chunk is v${c.version}.`);if(c.levels.length!==ci.count)add("err",ref.id,`Chunk ${ci.index}: count ${ci.count} but it holds ${c.levels.length} levels.`)}});
+      const seen=new Set();flat.forEach((sn,i)=>{if(seen.has(sn))add("err",ref.id,`Serial ${sn} appears twice (position ${i+1}).`,[ref.id,sn]);seen.add(sn);if(!byS[sn])add("err",ref.id,`Position ${i+1}: level serial ${sn} is missing.`)});
+      for(const L of levels){const w=L.id,lk=[ref.id,L.serial],T=topoFor(L.shape);
+        if(!T){add("err",w,"Could not build shape "+L.shape+".",lk);continue}
+        const B=decodeTiles(L.tiles||"");if(B.sol.length!==T.count){add("err",w,`The tile string has ${B.sol.length} tiles, shape ${L.shape} has ${T.count}.`,lk);continue}
+        const chk=fnv(L.tiles.replace(/(..)./g,"$1")).toString(16).padStart(8,"0");if(chk!==L.check)add("err",w,`check ${L.check} does not match the tile string (${chk}).`,lk);
+        if(!isSolved(T,B,true))add("err",w,"The solution does not light every lamp.",lk);else if(isSolved(T,B,false))add("err",w,"The board starts already solved.",lk);
+        const p=B.sol.reduce((a,m,i)=>a+(m?taps(m,B.start[i],portsAt(T,i)):0),0);if(p!==L.par)add("warn",w,`Par says ${L.par}, the board needs ${p} turns.`,lk);
+        if((L.ports||4)!==portsAt(T,0))add("err",w,`ports = ${L.ports} but the shape's tiles have ${portsAt(T,0)} sides.`,lk);
+        if(!seen.has(L.serial))add("warn",w,"Has data but is not in the order.",lk)}
+    }
+    const ne=issues.filter(i=>i.sev==="err").length,nw=issues.length-ne;
+    $("#cCheckStats").innerHTML=`<div class="c-stat"><span>Group</span><b>${ids.length}</b></div><div class="c-stat"><span>Levels in order / in data</span><b>${nOrd} / ${nLv}</b></div><div class="c-stat"><span>Saved shapes</span><b>${shapeRows.length}</b></div><div class="c-stat"><span>Errors · warnings</span><b style="color:var(${ne?"--bad":nw?"--warn":"--ok"})">${ne} · ${nw}</b></div>`;
+    $("#cCheckList").innerHTML=issues.length?issues.map((it,i)=>`<div class="c-issue"><span class="c-sev ${it.sev}">${it.sev==="err"?"error":"warning"}</span><span><b class="mono">${esc(it.where)}</b> ${esc(it.msg)}</span>${it.link?`<button class="btn sm" type="button" data-issue="${i}">Open</button>`:"<span></span>"}</div>`).join(""):`<div class="empty" style="color:var(--ok)">No errors. The data is ready to export to Unity.</div>`;
+    $("#cCheckList").onclick=e=>{const b=e.target.closest("[data-issue]");if(b){const [g,sn]=issues[+b.dataset.issue].link;openGroup(g,sn)}};
+    $("#cCheckInfo").textContent="Checked at "+new Date().toLocaleTimeString();
+  }catch(e){$("#cCheckInfo").textContent="Check stopped: "+(e.message||e.code)}finally{btn.disabled=false}
+};
+
+/* ================= zip import (Unity export or another Level Lab) ================= */
+let pendingImport=null;
+$("#btnImport").onclick=()=>{if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");if(typeof JSZip==="undefined")return toast("The zip library has not loaded.");$("#zipInput").value="";$("#zipInput").click()};
+$("#zipInput").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{const zip=await JSZip.loadAsync(f),names=Object.keys(zip.files).filter(n=>!zip.files[n].dir);
+    const mf=names.find(n=>n==="manifest.json"||n.endsWith("/manifest.json"));if(!mf)return toast("The zip has no manifest.json.");
+    const pre=mf.slice(0,mf.length-"manifest.json".length),files={};
+    for(const n of names)if(n.startsWith(pre)&&n.endsWith(".json")&&!n.includes(".."))files[n.slice(pre.length)]=JSON.parse(await zip.files[n].async("string"));
+    const P={manifest:files["manifest.json"],groups:[],orders:[],levels:[],shapes:[]};let mm;
+    for(const k in files){const d=files[k];
+      if((mm=/^groups\/([^/]+)\.json$/.exec(k)))P.groups.push(d);
+      else if((mm=/^orders\/([^/]+)\/(\d+)\.json$/.exec(k)))P.orders.push(Object.assign({group:mm[1],chunk:+mm[2]},d));
+      else if(/^levels\/[^/]+\/\d+\.json$/.test(k))P.levels.push(d);
+      else if(/^shapes\/voxel\/[^/]+\.json$/.test(k))P.shapes.push({id:d.id,type:"voxel",blocks:flatBlocks(d.blocks)});
+      else if(k==="shapes.json"){for(const t in d)if(Array.isArray(d[t]))d[t].forEach(x=>P.shapes.push(Object.assign({},x,{type:x.type||t})))}}
+    if(!P.manifest||!Array.isArray(P.manifest.groups))return toast("manifest.json is not format v3.");
+    P.manifest.groups.forEach(g=>{if(g.unlock&&!g.unlock.group)g.unlock=null});pendingImport=P;
+    $("#cImpSummary").innerHTML=`<b class="mono">${esc(f.name)}</b> · groups ${P.manifest.groups.map(g=>esc(g.id)).join(", ")} · ${P.levels.length} levels · ${P.orders.length} order chunks · ${P.shapes.length} shapes`;
+    $("#cImpStatus").textContent="";$("#cImpProgWrap").hidden=true;$("#cImpGo").disabled=false;$("#cImpCancel").disabled=false;$("#cImpCancel").textContent="Cancel";$("#cImport").hidden=false;$("#cImpGo").focus();
+  }catch(err){toast("Could not read the zip: "+(err.message||err))}
+};
+$("#cImpCancel").onclick=()=>{$("#cImport").hidden=true;pendingImport=null};
+$("#cImpGo").onclick=async()=>{
+  const P=pendingImport;if(!P)return;const mode=document.querySelector("input[name=cImpMode]:checked").value;
+  $("#cImpGo").disabled=true;$("#cImpCancel").disabled=true;$("#cImpProgWrap").hidden=false;
+  const bar=$("#cImpProg"),st=$("#cImpStatus");let done=0,total=1;const tick=t=>{done++;bar.style.width=Math.round(done/Math.max(1,total)*100)+"%";st.textContent=t};
+  try{let dels=[];
+    if(mode==="replace"){st.textContent="Reading the current data…";
+      for(const r of await pagedQuery("shapes",null,"id"))dels.push("shapes/"+r.id);
+      for(const r of await pagedQuery("groups",null,"id"))dels.push("groups/"+r.id);
+      for(const gid of (MANIFEST?MANIFEST.groups.map(g=>g.id):[])){
+        for(const r of await pagedQuery("levels",["group",gid],"serial"))dels.push("levels/"+r.id);
+        (await DB.collection("orders").where("group","==",gid).get()).docs.forEach(d=>{const c=d.data();dels.push(`orders/${c.group}-${c.chunk}`)})}}
+    const keep=new Set([...P.levels.map(L=>"levels/"+(L.id||L.group+"-"+pad4(L.serial))),...P.orders.map(o=>`orders/${o.group}-${o.chunk}`),...P.groups.map(g=>"groups/"+g.id),...P.shapes.map(x=>"shapes/"+x.id)]);
+    dels=dels.filter(x=>!keep.has(x));total=dels.length+P.shapes.length+P.levels.length+P.orders.length+P.groups.length+1;
+    for(const x of dels){await DB.doc(x).delete();tick("Delete "+x)}
+    for(const x of P.shapes){await DB.doc("shapes/"+x.id).set(x);tick("Shape "+x.id)}
+    const maxS={};for(const L of P.levels){const d=Object.assign({},L);if(!d.id)d.id=d.group+"-"+pad4(d.serial);await DB.doc("levels/"+d.id).set(d);maxS[d.group]=Math.max(maxS[d.group]||0,d.serial);tick("Level "+d.id)}
+    for(const o of P.orders){await DB.doc(`orders/${o.group}-${o.chunk}`).set({group:o.group,chunk:o.chunk,version:o.version||1,levels:o.levels||[]});tick(`Chunk ${o.group}/${o.chunk}`)}
+    for(const g of P.groups){const d=Object.assign({chunkSize:CHUNK,chunks:[]},g),old=GROUPS[g.id];d.nextSerial=Math.max((maxS[g.id]||0)+1,mode==="merge"&&old&&old.nextSerial||1);await DB.doc("groups/"+g.id).set(d);tick("Group "+g.id)}
+    let m=P.manifest;if(mode==="merge"&&MANIFEST){m=JSON.parse(JSON.stringify(MANIFEST));P.manifest.groups.forEach(r=>{const i=m.groups.findIndex(x=>x.id===r.id);if(i>=0)m.groups[i]=r;else m.groups.push(r)});
+      m.rules=P.manifest.rules||m.rules;m.shapesVersion=Math.max(m.shapesVersion||1,P.manifest.shapesVersion||1)+(P.shapes.length?1:0)}
+    await DB.doc("meta/manifest").set(m);tick("Manifest");
+    st.textContent=`Done: ${P.levels.length} levels, ${P.orders.length} chunks, ${P.shapes.length} shapes${dels.length?`, deleted ${dels.length} old files`:""}.`;
+    gDraft=null;rDraft=null;subscribeOrder();$("#cImpCancel").disabled=false;$("#cImpCancel").textContent="Close";pendingImport=null;
+  }catch(e){st.textContent="Import stopped part way: "+(e.message||e.code)+". Run it again to finish.";$("#cImpCancel").disabled=false}
+};
+
+async function connect(){
+  let db=null;try{db=window.claude?await claude.use("db"):null}catch(_){}
+  if(!db){setStatus("No data store in this view: you can still build and play test, but <b>nothing can be saved</b>.");renderGroups();return}
+  DB=db;let got=false;const timer=setTimeout(()=>{if(!got)setStatus("Data not loaded yet, retrying…")},10000);
+  try{const u=await claude.use("user");if(u&&u.can){const c=await u.can("data.write");if(c===false)canWrite=false}}catch(_){}
+  let first=true;
+  const status=()=>{if(MANIFEST)setStatus(`Data v${MANIFEST.schema||1}: <b>${groups().length}</b> groups · shapesVersion <b>${MANIFEST.shapesVersion}</b>${canWrite?"":" · view only"}`)};
+  db.collection("groups").onSnapshot(q=>{GROUPS={};q.docs.forEach(d=>GROUPS[d.id]=d.data());renderGroups();status();cfgOnData()},()=>{});
+  db.doc("meta/manifest").onSnapshot(s=>{got=true;clearTimeout(timer);
+    if(!s.exists){MANIFEST=null;setStatus('The data store is empty. <button class="btn sm" id="btnInit" type="button">Create starter data</button>');
+      const b=document.getElementById("btnInit");if(b)b.onclick=async()=>{try{const d=groupDetail("cube","Cube");d.enable=true;await db.doc("groups/cube").set(d);await db.doc("meta/manifest").set(DEFAULT_MANIFEST)}catch(e){toast("Could not create: "+(e.message||e.code))}};renderGroups();return}
+    MANIFEST=s.data();status();cfgOnData();
+    const before=S.group;renderGroups();if(first||S.group!==before||!ORDER){first=false;subscribeOrder()}
+    if(!S.level.rev&&S.group&&!$("#lvId").value.startsWith(S.group+"-"))$("#lvId").value=idOf(S.group,nextSerial());
+  },e=>setStatus("Lost the data connection ("+e.code+")."));
+}
+/* ================= boot ================= */
+renderParams();renderColors();swatch();renderBatchShapes();
+setBlocks(PRESETS.cube.build({n:3}),{id:"cube-3",type:"cube",params:{n:3}},true);S.history=[];
+$("#lvId").value="cube-0001";S.group="cube";
+resize();fit();setMode("shape");
+showView(location.hash.slice(1));
+connect();
+})();
+</script>

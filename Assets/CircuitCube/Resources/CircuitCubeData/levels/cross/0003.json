@@ -1,0 +1,26 @@
+{
+    "id": "cross-0003",
+    "serial": 3,
+    "group": "cross",
+    "rev": 1,
+    "shape": "cross-11",
+    "ports": 4,
+    "tiles": "1y0f.0240a.08409.1c.24236.09.0a.05.0c.26.01527.38b01219.35.2141c.09.06.02r07.03.05.01y0c.0",
+    "locked": [],
+    "par": 18,
+    "check": "b2ac4b59",
+    "difficulty": 0.5400000214576721,
+    "tags": [],
+    "gen": {
+        "ver": 1,
+        "seed": 2375795045,
+        "colors": [
+            5,
+            2,
+            4
+        ],
+        "scramble": 0.4320000112056732,
+        "minPar": 8
+    },
+    "hintOrder": []
+}

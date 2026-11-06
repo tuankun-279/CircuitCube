@@ -1,0 +1,17 @@
+{
+    "id": "cross",
+    "name": "Cross",
+    "blurb": "Arms, towers and corners. Wires run into the hollows.",
+    "icon": "cross",
+    "endless": false,
+    "enable": true,
+    "levelCount": 10,
+    "chunkSize": 100,
+    "chunks": [
+        {
+            "index": 0,
+            "version": 1,
+            "count": 10
+        }
+    ]
+}

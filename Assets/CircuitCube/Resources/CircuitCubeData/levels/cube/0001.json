@@ -1,0 +1,26 @@
+{
+    "id": "cube-0001",
+    "serial": 1,
+    "group": "cube",
+    "rev": 1,
+    "shape": "cube-2",
+    "ports": 4,
+    "tiles": "813b.0b.0a.08107.11115.02101r25.08107.05.0c.2d.03.0e.05.15.02105.05.0810",
+    "locked": [],
+    "par": 12,
+    "check": "a8bfb145",
+    "difficulty": 0.3100000023841858,
+    "tags": [
+        "tutorial"
+    ],
+    "gen": {
+        "ver": 1,
+        "seed": 7936,
+        "colors": [
+            1
+        ],
+        "scramble": 0.30000001192092898,
+        "minPar": 6
+    },
+    "hintOrder": []
+}

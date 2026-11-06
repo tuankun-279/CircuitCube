@@ -1,0 +1,51 @@
+{
+    "schema": 3,
+    "minApp": "1.0.0",
+    "shapesVersion": 1,
+    "rules": {
+        "windowBack": 10,
+        "windowAhead": 10,
+        "hintsPerLevel": 3,
+        "hintPenalty": 1,
+        "minScore": 3,
+        "parScore": 6,
+        "overParScore": 5
+    },
+    "groups": [
+        {
+            "id": "cube",
+            "unlock": {
+                "group": "",
+                "cleared": 0
+            }
+        },
+        {
+            "id": "tetra",
+            "unlock": {
+                "group": "cube",
+                "cleared": 10
+            }
+        },
+        {
+            "id": "sphere",
+            "unlock": {
+                "group": "tetra",
+                "cleared": 10
+            }
+        },
+        {
+            "id": "cross",
+            "unlock": {
+                "group": "sphere",
+                "cleared": 10
+            }
+        },
+        {
+            "id": "megamix",
+            "unlock": {
+                "group": "cross",
+                "cleared": 10
+            }
+        }
+    ]
+}
