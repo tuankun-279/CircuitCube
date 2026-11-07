@@ -33,7 +33,7 @@ namespace CircuitCube.Core
     [Serializable] public class ManifestData
     {
         public int schema = 3;
-        public string minApp = "1.0.0";
+        public string minApp = "0.1.0";
         public int shapesVersion = 1;
         public GameRules rules = new GameRules();
         public List<GroupRef> groups = new List<GroupRef>();

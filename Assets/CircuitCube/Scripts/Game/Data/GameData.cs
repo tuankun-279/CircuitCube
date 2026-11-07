@@ -42,6 +42,7 @@ namespace CircuitCube.Game
         {
             _loaded = true;
             _groups.Clear(); _index.Clear(); _chunks.Clear(); _voxels.Clear();
+            DropOlderCache();
             Manifest = ReadJson<ManifestData>("manifest.json");
             Legacy = Manifest == null || Manifest.groups == null || Manifest.groups.Count == 0;
             if (Legacy) { BuildLegacy(); return; }
@@ -55,6 +56,27 @@ namespace CircuitCube.Game
             }
             // keep Manifest.groups aligned with the visible groups
             Manifest.groups.RemoveAll(r => !_index.ContainsKey(r.id));
+        }
+
+        /// <summary>
+        /// Downloads win over the data in the build, so after an app update that ships a newer publish the old
+        /// downloads are thrown away (they would hide the new levels until the next sync).
+        /// </summary>
+        static void DropOlderCache()
+        {
+            try
+            {
+                string cached = Path.Combine(CacheRoot, "manifest.json");
+                if (!File.Exists(cached)) return;
+                var ta = Resources.Load<TextAsset>(ResourceRoot + "manifest");
+                if (ta == null) return;
+                var bundled = JsonUtility.FromJson<ManifestData>(ta.text);
+                var have = JsonUtility.FromJson<ManifestData>(File.ReadAllText(cached));
+                if (bundled == null || have == null || bundled.contentVersion <= have.contentVersion) return;
+                Directory.Delete(CacheRoot, true);
+                Debug.Log("[CircuitCube] The build has content v" + bundled.contentVersion + ", newer than the downloaded v" + have.contentVersion + ": downloads cleared.");
+            }
+            catch (System.Exception e) { Debug.LogWarning("[CircuitCube] Could not compare the downloaded content: " + e.Message); }
         }
 
         static void BuildLegacy()

@@ -956,7 +956,7 @@ function refreshAll(){refreshShape();refreshBoard();draw()}
 // levels/<id>-<serial> · shapes/<shapeId>        (* nextSerial is Level Lab only, dropped on export)
 const PAGE=100,CHUNK=100;let listPage=0,chunkUnsub=null,ORDER=null,CHUNKS=[],GROUPS={};
 const DEFAULT_RULES={windowBack:10,windowAhead:10,hintsPerLevel:3,hintPenalty:1,minScore:3,parScore:6,overParScore:5};
-const DEFAULT_MANIFEST={schema:3,minApp:"1.0.0",shapesVersion:1,rules:DEFAULT_RULES,groups:[{id:"cube",unlock:null}]};
+const DEFAULT_MANIFEST={schema:3,minApp:"0.1.0",shapesVersion:1,rules:DEFAULT_RULES,groups:[{id:"cube",unlock:null}]};
 const groupDetail=(id,name)=>({id,name:name||id,blurb:"",icon:id,endless:false,enable:false,levelCount:0,chunkSize:CHUNK,chunks:[],nextSerial:1});
 const idOf=(g,n)=>g+"-"+pad4(n);
 function setStatus(t){$("#dbStatus").innerHTML=t}
@@ -1362,7 +1362,7 @@ function cfgRender(){
           <label class="chk"><input type="checkbox" data-f="endless" ${g.endless?"checked":""}> Endless (after the data runs out, play continues with generated levels)</label></div>
       </div></div>`}).join("");
   $("#cGroupsDirty").hidden=!gDirty();
-  if(!rDraft)rDraft={rules:Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}),minApp:MANIFEST.minApp||"1.0.0"};
+  if(!rDraft)rDraft={rules:Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}),minApp:MANIFEST.minApp||"0.1.0"};
   $("#cRulesForm").innerHTML=Object.keys(RULE_INFO).map(k=>`<label for="cr-${k}">${RULE_INFO[k][0]}</label><input id="cr-${k}" type="number" min="0" data-k="${k}" value="${rDraft.rules[k]}"><span class="c-help">${RULE_INFO[k][1]}</span>`).join("")+
     `<label for="cr-minApp">minApp</label><input id="cr-minApp" type="text" value="${esc(rDraft.minApp)}"><span class="c-help">Lowest app version that can read this data. schema ${MANIFEST.schema||3} · shapesVersion ${MANIFEST.shapesVersion||1}.</span>`;
   document.querySelectorAll("#cRulesForm input[data-k]").forEach(el=>el.oninput=()=>{rDraft.rules[el.dataset.k]=Math.max(0,parseInt(el.value)||0);rulesChanged()});
@@ -1370,7 +1370,7 @@ function cfgRender(){
   rulesChanged();
 }
 function rulesChanged(){
-  const r=rDraft.rules;$("#cRulesSave").disabled=jeq(r,Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}))&&rDraft.minApp===(MANIFEST.minApp||"1.0.0");
+  const r=rDraft.rules;$("#cRulesSave").disabled=jeq(r,Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}))&&rDraft.minApp===(MANIFEST.minApp||"0.1.0");
   const hs=Array.from({length:Math.min(6,r.hintsPerLevel)+1},(_,i)=>i),pts=(mv,h)=>Math.max(r.minScore,(mv<=5?r.parScore:r.overParScore)-h*r.hintPenalty);
   $("#cScore").innerHTML=`<thead><tr><th></th>${hs.map(h=>`<th>${h} hints</th>`).join("")}</tr></thead><tbody>`+[["At par",5],["Over par",9]].map(([l,mv])=>`<tr><td>${l}</td>${hs.map(h=>{const p=pts(mv,h);return `<td><span class="c-pts${mv===5&&h===0?" top":""}">${p}</span> <span class="note">${p<=0?0:Math.max(1,Math.floor(p/2))}★</span></td>`}).join("")}</tr>`).join("")+"</tbody>";
 }
@@ -1397,7 +1397,7 @@ $("#cGroupsSave").onclick=async()=>{
     if(!jeq(gDraft.manifest,MANIFEST))await DB.doc("meta/manifest").set(gDraft.manifest);gDraft=null;toast("Groups saved.")}
   catch(e){toast("Save failed: "+(e.message||e.code))}finally{btn.disabled=false}
 };
-$("#cRulesSave").onclick=async()=>{if(!DB||!canWrite)return toast("Not saved: no write permission.");const m=JSON.parse(JSON.stringify(MANIFEST));m.rules=rDraft.rules;m.minApp=rDraft.minApp||"1.0.0";
+$("#cRulesSave").onclick=async()=>{if(!DB||!canWrite)return toast("Not saved: no write permission.");const m=JSON.parse(JSON.stringify(MANIFEST));m.rules=rDraft.rules;m.minApp=rDraft.minApp||"0.1.0";
   try{await DB.doc("meta/manifest").set(m);rDraft=null;toast("Rules saved.")}catch(e){toast("Save failed: "+(e.message||e.code))}};
 $("#cAddGroup").onclick=async()=>{
   if(!DB||!canWrite)return toast("Not saved: no write permission.");const id=$("#cNgId").value.trim().toLowerCase(),name=$("#cNgName").value.trim()||id;

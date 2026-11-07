@@ -206,7 +206,7 @@ def main():
     problems, files = [], {}
     used_shapes = set()
     manifest = {
-        "schema": meta.get("schema", 3), "minApp": meta.get("minApp", "1.0.0"), "shapesVersion": meta.get("shapesVersion", 1),
+        "schema": meta.get("schema", 3), "minApp": meta.get("minApp", "0.1.0"), "shapesVersion": meta.get("shapesVersion", 1),
         "rules": dict(RULES, **(meta.get("rules") or {})),
         "groups": [{"id": g["id"], "unlock": g.get("unlock") or {"group": "", "cleared": 0}} for g in meta.get("groups", [])],
         "contentVersion": version,

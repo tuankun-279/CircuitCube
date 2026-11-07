@@ -13,7 +13,7 @@ namespace CircuitCube.Game
         public static Dictionary<string, string> FromGenerator(int perGroup)
         {
             var files = new Dictionary<string, string>();
-            var manifest = new ManifestData { schema = 3, minApp = "1.0.0", shapesVersion = 1 };
+            var manifest = new ManifestData { schema = 3, minApp = "0.1.0", shapesVersion = 1 };
             var catalog = new ShapeCatalogFile { version = 1 };
             var seenShapes = new HashSet<string>();
 
