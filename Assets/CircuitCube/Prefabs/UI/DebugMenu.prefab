@@ -4306,6 +4306,7 @@ GameObject:
   - component: {fileID: 4372734035473356874}
   - component: {fileID: 6804089373695121192}
   - component: {fileID: 2297735939217444119}
+  - component: {fileID: 8364751604107958039}
   m_Layer: 5
   m_Name: DebugMenu
   m_TagString: Untagged
@@ -4429,3 +4430,15 @@ MonoBehaviour:
   ResetButton: {fileID: 7991431481245326908}
   CloseButton: {fileID: 4683550568950444890}
   Status: {fileID: 3085493016170724833}
+--- !u!114 &8364751604107958039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8740121710113435973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d33b2a9b1818703498207704b932524d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

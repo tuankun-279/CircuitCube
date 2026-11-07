@@ -466,8 +466,22 @@ namespace CircuitCube.Game
             FitCamera(_board.Radius, share, interactive);
         }
 
+        float _fitRadius, _fitShare;
+        bool _fitPlaying;
+        Vector2Int _fitScreen;
+
+        /// <summary>Frame the board again when the screen changes (rotation, a foldable opening, the editor's Game view).</summary>
+        void RefitOnResize()
+        {
+            var size = new Vector2Int(Screen.width, Screen.height);
+            if (size == _fitScreen || _board == null || _fitRadius <= 0f) return;
+            FitCamera(_fitRadius, _fitShare, _fitPlaying);
+        }
+
         void FitCamera(float radius, float share, bool playing)
         {
+            _fitRadius = radius; _fitShare = share; _fitPlaying = playing;
+            _fitScreen = new Vector2Int(Screen.width, Screen.height);
             // Keep the whole shape in view however it is turned, with room for the HUD above and below.
             float r = radius + (playing ? 0.2f : 0f);
             float vHalf = Cam.fieldOfView * 0.5f * Mathf.Deg2Rad;
@@ -634,6 +648,7 @@ namespace CircuitCube.Game
 
         void Update()
         {
+            RefitOnResize();
             float dt = Time.unscaledDeltaTime;
             _tw.Tick(dt);
             HandlePointer(dt);

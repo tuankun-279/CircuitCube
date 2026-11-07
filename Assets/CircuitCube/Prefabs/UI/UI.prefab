@@ -16175,6 +16175,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ce742eaecf26e74baa5f9419206675b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  MaxWidth: 1080
 --- !u!1 &7758482459192483745
 GameObject:
   m_ObjectHideFlags: 0
@@ -18715,6 +18716,7 @@ GameObject:
   - component: {fileID: 6885080828823805712}
   - component: {fileID: 331493797943747586}
   - component: {fileID: 4497036933774507423}
+  - component: {fileID: 660008624402316741}
   m_Layer: 5
   m_Name: Dim
   m_TagString: Untagged
@@ -18793,6 +18795,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Role: 12
   Alpha: 1
+--- !u!114 &660008624402316741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8769375315622441368}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6ed33626f507b44bb517e6a541224ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8778007517835526574
 GameObject:
   m_ObjectHideFlags: 0
@@ -19055,6 +19069,7 @@ GameObject:
   - component: {fileID: 2985689920820164849}
   - component: {fileID: 677985420875035529}
   - component: {fileID: 4428012026150643349}
+  - component: {fileID: 7213546201153719305}
   m_Layer: 5
   m_Name: UI
   m_TagString: Untagged
@@ -19167,6 +19182,18 @@ MonoBehaviour:
   Tip: {fileID: 538341823092189869}
   Unlock: {fileID: 4344349161539773491}
   Settings: {fileID: 2365291540661686911}
+--- !u!114 &7213546201153719305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8872294346741321087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d33b2a9b1818703498207704b932524d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8874156353745679062
 GameObject:
   m_ObjectHideFlags: 0

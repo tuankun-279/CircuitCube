@@ -87,6 +87,8 @@ namespace CircuitCube.Game
         const float ContentScale = 0.5f;     // topology tiles are 2 units apart; a tile is 1 world unit wide
         /// <summary>Corner of a face image's outline on the image, as a share of the half width (PolyShapes.Outline).</summary>
         public const float OutlineFill = 0.97f;
+        /// <summary>How far an arm runs past the middle of its side (board units), covering the fold between tiles.</summary>
+        const float ArmOverlap = 0.05f;
 
         public int LitLamps { get; private set; }
         public int TotalLamps { get; private set; }
@@ -601,7 +603,8 @@ namespace CircuitCube.Game
                 float a0 = _sideAngle[s.Side + k0], a1 = _sideAngle[s.Side + k1];
                 float da = Mathf.Repeat(a1 - a0 + Mathf.PI, 2f * Mathf.PI) - Mathf.PI;
                 float a = a0 + da * f;
-                float len = Mathf.Lerp(_sideLength[s.Side + k0], _sideLength[s.Side + k1], f);
+                // a little past the side, so the neighbour's arm overlaps it where the tiles fold and no seam shows
+                float len = Mathf.Lerp(_sideLength[s.Side + k0], _sideLength[s.Side + k1], f) + ArmOverlap;
                 float cs = Mathf.Cos(a), sn = Mathf.Sin(a);
                 Arm(_wire, tw, cs, sn, len, wireZ, _wireWidth, _armUv, s.WireColor);
                 if (s.Powered && _core != null) Arm(_core, tw, cs, sn, len, coreZ, _wireWidth, _armCoreUv, white);
