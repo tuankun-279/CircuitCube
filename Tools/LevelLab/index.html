@@ -1525,7 +1525,7 @@ function renderPublish(){
   else if(p.state==="requested")h=`Publish requested ${ago(p.requestedAt)}: waiting for the task to start (about a minute).`;
   else if(p.state==="running")h=`Publishing… started ${ago(p.startedAt)}.`;
   else if(p.state==="done")h=`Published <b>v${esc(p.version)}</b> ${ago(p.finishedAt)} · ${esc(p.levels)} levels · <a href="${REPO_URL}/commit/${esc(p.commit)}" target="_blank" rel="noopener">commit ${esc(String(p.commit||"").slice(0,7))}</a>. Players get it on their next start.`;
-  else if(p.state==="no-change")h=`Nothing new to publish (checked ${ago(p.finishedAt)}).`;
+  else if(p.state==="no-change")h=`Up to date${p.version?` with <b>v${esc(p.version)}</b>`:""}: nothing new to publish (checked ${ago(p.finishedAt)}).`;
   else if(p.state==="failed")h=`<span style="color:var(--bad)">Publish stopped ${ago(p.finishedAt)}:</span> ${(p.problems||[]).slice(0,4).map(esc).join(" · ")}${(p.problems||[]).length>4?` · and ${p.problems.length-4} more (see Check)`:""}`;
   el.innerHTML=h;$("#btnPublish").disabled=pubBusy||(p&&(p.state==="requested"||p.state==="running")&&Date.now()-Date.parse(p.requestedAt||p.startedAt)<15*60e3);
 }
