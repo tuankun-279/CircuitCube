@@ -338,7 +338,7 @@ table.bt th{color:var(--muted);font-weight:600}
   <div class="c-wrap">
     <div class="panel">
       <h2>Fill every group</h2>
-      <p class="note" style="margin:0 0 8px">Generates new levels for each ticked group from that group's own shapes (set them in <b>Groups &amp; rules</b>, "Shapes"), spread evenly from the first shape to the last and getting harder from the first new level to the last. New levels go after the group's existing ones, so every level lands in the right group.</p>
+      <p class="note" style="margin:0 0 8px">Generates new levels for each ticked group from that group's own shapes. Pick each shape's size (cube edge, triangles per edge, ball size…) and how many levels it gets; levels follow the list in order and get harder from the first new level to the last. New levels go after the group's existing ones, so every level lands in the right group. The list is remembered on the group.</p>
       <div class="btwrap" style="max-height:none"><table class="bt" id="fTable"></table></div>
       <div class="row" style="margin-top:10px"><button class="btn primary" id="fGen" type="button">Generate</button><span class="note" id="fNote" style="margin:0"></span></div>
       <div id="fOut"></div>
@@ -1078,8 +1078,11 @@ $("#ngSave").onclick=async()=>{
 // saving warns when a level's shape is not one of them. "megamix" = a random block shape per level.
 const DEFAULT_SHAPES={cube:"cube-2 cube-3 cube-4 cube-5",tetra:"tetra-3 tetra-4 tetra-5 tetra-6",octa:"octa-2 octa-3 octa-4",
   sphere:"geo-1 geo-2 geo-3 geo-4",cross:"cross-11 cross-21 tower-24 ell-42 cross-31 cross-22",dodeca:"dodeca-2 dodeca-3",megamix:"megamix"};
-function groupShapeList(g){const d=(GROUPS[g]&&GROUPS[g].shapes)||DEFAULT_SHAPES[g]||"";return d.split(/[\s,]+/).filter(Boolean)}
-function shapeTokenType(t){if(t==="megamix")return "voxel";const p=parseShapeId(t);return p?p.type:null}
+// a token is a shape id, optionally with how many Auto fill levels it gets: "cube-3", "cube-3*4", "megamix*10"
+function groupShapeTokens(g){const d=(GROUPS[g]&&GROUPS[g].shapes)||DEFAULT_SHAPES[g]||"";return d.split(/[\s,]+/).filter(Boolean)}
+const tokenId=t=>String(t).split("*")[0],tokenCount=t=>{const m=/\*(\d+)$/.exec(t);return m?+m[1]:0};
+function groupShapeList(g){return groupShapeTokens(g).map(tokenId)}
+function shapeTokenType(t){t=tokenId(t);if(t==="megamix")return "voxel";const p=parseShapeId(t);return p?p.type:null}
 function groupAllows(g,shapeType){const types=groupShapeList(g).map(shapeTokenType).filter(Boolean);return !types.length||types.includes(shapeType)}
 let wrongShapeArmed="";
 // true when the save may go ahead: the shape fits the group, or the designer pressed save twice for the same mix-up
@@ -1189,26 +1192,64 @@ async function saveRows(g,rows,progress){
 /* ---- auto fill: new levels for every group, each from its own shapes ---- */
 let FILL={};
 function shapeFromToken(t,R){if(t==="megamix")return voxelOf(megamixBlocks(R));const p=parseShapeId(t);return p?{id:p.id,type:p.type,params:p.params,blocks:p.blocks}:null}
+// Auto fill plan per group: shapes in order, each with its size (any number the preset allows) and how many levels
+const FPLAN={};
+function planFromGroup(g){
+  const toks=groupShapeTokens(g),plan=toks.map(t=>{const id=tokenId(t);if(id==="megamix")return {v:"megamix",params:{},n:tokenCount(t)};
+    const p=parseShapeId(id);return p?{v:p.type,params:Object.assign({},p.params),n:tokenCount(t)}:null}).filter(Boolean);
+  if(plan.length&&plan.every(x=>!x.n)){const per=Math.floor(10/plan.length),rest=10-per*plan.length;plan.forEach((x,i)=>x.n=per+(i<rest?1:0))}
+  plan.forEach(x=>{if(!x.n)x.n=0});return plan;
+}
+function planItemId(x){if(x.v==="megamix")return "megamix";const pr=PRESETS[x.v],prm={};pr.params.forEach(([k,,v,mn,mx])=>{const y=x.params[k];prm[k]=Math.min(mx,Math.max(mn,isFinite(y)?+y:v))});return pr.id(prm)}
+function planTokens(plan){return plan.map(x=>planItemId(x)+(x.n?"*"+x.n:"")).join(" ")}
+const FILL_TYPES=Object.keys(PRESETS).concat(["megamix"]);
+const PARAM_SHORT={"Triangles per edge":"per edge","2 Kilominx (60) · 3 Megaminx (132)":"2 Kilo · 3 Mega","1 soccer (32) · 2-4 Goldberg (42/92/162)":"size 1–4"};
+function planEditor(g){
+  const plan=FPLAN[g]||(FPLAN[g]=planFromGroup(g));
+  return plan.map((x,i)=>{const pr=PRESETS[x.v];
+    return `<div class="bsrow" style="grid-template-columns:170px auto auto auto;justify-content:start;gap:10px;margin-bottom:4px" data-i="${i}">
+      <select data-p="v" aria-label="Shape">${FILL_TYPES.map(k=>`<option value="${k}"${k===x.v?" selected":""}>${esc(k==="megamix"?"Megamix (random blocks)":SHAPE_LABEL[k]||k)}</option>`).join("")}</select>
+      <span class="bp" style="align-items:center">${pr?pr.params.map(([k,l,v,mn,mx,st])=>`<label class="note" style="margin:0;display:flex;gap:4px;align-items:center">${esc(PARAM_SHORT[l]||l)}<input type="number" data-p="${k}" title="${esc(l)} (${mn}–${mx})" aria-label="${esc(l)}" value="${x.params[k]!=null?x.params[k]:v}" min="${mn}" max="${mx}" step="${st||1}"></label>`).join(""):'<span class="note" style="margin:0">a new block shape each level</span>'}</span>
+      <label class="note" style="margin:0;display:flex;gap:4px;align-items:center">×<input type="number" data-p="count" value="${x.n}" min="0" max="200" style="width:56px" aria-label="Levels with this shape"></label>
+      <button type="button" data-rm="${i}" aria-label="Remove shape">×</button></div>`}).join("")+
+    `<div class="row"><button class="btn sm" type="button" data-addshape="1">+ Shape</button><span class="note mono" style="margin:0" data-total>${plan.reduce((a,x)=>a+(+x.n||0),0)} levels</span></div>`;
+}
 function renderFillTable(){
   const gs=groups();if(!gs.length){$("#fTable").innerHTML='<tr><td class="empty">No groups yet.</td></tr>';return}
-  $("#fTable").innerHTML=`<thead><tr><th></th><th>Group</th><th>Levels now</th><th>Shapes (in order)</th><th>Add</th><th>Difficulty from</th><th>to</th></tr></thead><tbody>`+
+  $("#fTable").innerHTML=`<thead><tr><th></th><th>Group</th><th>Levels now</th><th>Shapes, size and number of new levels (in order)</th><th>Difficulty from</th><th>to</th></tr></thead><tbody>`+
     gs.map(g=>{const n=(ORDER_COUNT[g.id]!=null?ORDER_COUNT[g.id]:g.levelCount)||0,d0=Math.min(9,2+Math.floor(n/20)),d1=Math.min(10,d0+5),opt=v=>Array.from({length:10},(_,i)=>`<option value="${i+1}"${i+1===v?" selected":""}>${i+1}</option>`).join("");
-      return `<tr data-g="${esc(g.id)}"><td><input type="checkbox" data-k="on" ${g.enable?"checked":""} aria-label="Fill ${esc(g.id)}"></td><td><b>${esc(g.name||g.id)}</b> <span class="note mono">${esc(g.id)}</span></td><td>${n}</td>
-        <td class="mono" style="white-space:normal;max-width:320px">${esc(groupShapeList(g.id).join(" ")||"—")}</td>
-        <td><input type="number" data-k="n" value="10" min="1" max="200" style="width:70px"></td><td><select data-k="d0">${opt(d0)}</select></td><td><select data-k="d1">${opt(d1)}</select></td></tr>`}).join("")+"</tbody>";
+      return `<tr data-g="${esc(g.id)}" style="vertical-align:top"><td><input type="checkbox" data-k="on" ${g.enable?"checked":""} aria-label="Fill ${esc(g.id)}"></td><td><b>${esc(g.name||g.id)}</b><br><span class="note mono">${esc(g.id)}</span></td><td>${n}</td>
+        <td class="fplan" style="white-space:normal;min-width:380px">${planEditor(g.id)}</td>
+        <td><select data-k="d0">${opt(d0)}</select></td><td><select data-k="d1">${opt(d1)}</select></td></tr>`}).join("")+"</tbody>";
 }
+$("#fTable").addEventListener("input",e=>{
+  const cell=e.target.closest(".fplan");if(!cell)return;const g=cell.closest("tr").dataset.g,plan=FPLAN[g],row=e.target.closest("[data-i]");
+  if(row){const x=plan[+row.dataset.i],k=e.target.dataset.p;
+    if(k==="v"){x.v=e.target.value;x.params={};cell.innerHTML=planEditor(g);return}
+    if(k==="count")x.n=Math.max(0,Math.min(200,parseInt(e.target.value)||0));else if(k)x.params[k]=+e.target.value}
+  cell.querySelector("[data-total]").textContent=plan.reduce((a,x)=>a+(+x.n||0),0)+" levels";
+});
+$("#fTable").addEventListener("click",e=>{
+  const cell=e.target.closest(".fplan");if(!cell)return;const g=cell.closest("tr").dataset.g,plan=FPLAN[g];
+  const rm=e.target.closest("[data-rm]");if(rm){plan.splice(+rm.dataset.rm,1);cell.innerHTML=planEditor(g);return}
+  if(e.target.closest("[data-addshape]")){const last=plan[plan.length-1];plan.push(last?{v:last.v,params:Object.assign({},last.params),n:last.n||5}:{v:"cube",params:{},n:5});cell.innerHTML=planEditor(g)}
+});
 const ORDER_COUNT={};
-$("#fGen").onclick=()=>{
-  const t0=performance.now(),R=Rng((Math.random()*2**31)>>>0);FILL={};let total=0,fails=0;
+$("#fGen").onclick=async()=>{
+  const t0=performance.now(),R=Rng((Math.random()*2**31)>>>0);FILL={};let total=0,fails=0;const remember=[];
   $("#fTable").querySelectorAll("tbody tr[data-g]").forEach(tr=>{
-    if(!tr.querySelector('[data-k="on"]').checked)return;const g=tr.dataset.g,list=groupShapeList(g);
-    if(!list.length){FILL[g]={rows:[],fails:0,error:"no shapes set for this group"};return}
-    const N=Math.max(1,Math.min(200,+tr.querySelector('[data-k="n"]').value||1)),d0=+tr.querySelector('[data-k="d0"]').value,d1=+tr.querySelector('[data-k="d1"]').value;
-    const rows=[];let f=0;
-    for(let i=0;i<N;i++){const t=N>1?i/(N-1):0,tok=list[Math.min(list.length-1,Math.floor(t*list.length*0.9999))],sh=shapeFromToken(tok,R);
-      const x=sh?genOne(sh,Math.round(lerp(d0,d1,t))):null;if(x)rows.push(x);else f++}
-    FILL[g]={rows,fails:f};total+=rows.length;fails+=f});
-  $("#fNote").textContent=`${total} levels in ${Math.round(performance.now()-t0)} ms${fails?` · ${fails} could not be generated`:""}.`;renderFill();
+    if(!tr.querySelector('[data-k="on"]').checked)return;const g=tr.dataset.g,plan=(FPLAN[g]||planFromGroup(g)).filter(x=>x.n>0);
+    if(!plan.length){FILL[g]={rows:[],fails:0,error:"no shapes with levels set for this group"};return}
+    const N=plan.reduce((a,x)=>a+x.n,0),d0=+tr.querySelector('[data-k="d0"]').value,d1=+tr.querySelector('[data-k="d1"]').value;
+    const rows=[];let f=0,i=0;
+    for(const x of plan)for(let j=0;j<x.n;j++,i++){const t=N>1?i/(N-1):0,sh=shapeFromToken(planItemId(x),R);
+      const r=sh?genOne(sh,Math.round(lerp(d0,d1,t))):null;if(r)rows.push(r);else f++}
+    FILL[g]={rows,fails:f};total+=rows.length;fails+=f;
+    const toks=planTokens(FPLAN[g]||plan);if(toks!==((GROUPS[g]&&GROUPS[g].shapes)||""))remember.push([g,toks]);
+  });
+  $("#fNote").textContent=`${total} levels in ${Math.round(performance.now()-t0)} ms${fails?` · ${fails} could not be generated (shape too small for this difficulty)`:""}.`;renderFill();
+  // the plan is remembered on the group, so next time Auto fill starts from it
+  if(DB&&canWrite)for(const [g,toks] of remember){try{const d=Object.assign({},GROUPS[g]||groupDetail(g),{shapes:toks});await DB.doc("groups/"+g).set(d)}catch(_){}}
 };
 function renderFill(){
   const ids=Object.keys(FILL);if(!ids.length){$("#fOut").innerHTML="";return}
@@ -1316,7 +1357,7 @@ function cfgRender(){
         <label class="f" for="cgu-${i}">Unlock<select id="cgu-${i}" data-u="group">${opts}</select></label>
         <label class="f" for="cgc-${i}">Levels to clear<input id="cgc-${i}" type="number" min="0" data-u="cleared" value="${u&&u.group?u.cleared:0}" ${u&&u.group?"":"disabled"}></label>
         <label class="f wide" for="cgb-${i}">Description<input id="cgb-${i}" type="text" data-f="blurb" value="${esc(g.blurb||"")}"></label>
-        <label class="f wide" for="cgs-${i}">Shapes (ids in order, used by Auto fill and checked on save; "megamix" = random blocks)<input id="cgs-${i}" type="text" class="mono" data-f="shapes" value="${esc(g.shapes||DEFAULT_SHAPES[ref.id]||"")}" placeholder="octa-2 octa-3 octa-4"></label>
+        <label class="f wide" for="cgs-${i}">Shapes (ids in order, *n = levels Auto fill makes with it; checked on save; "megamix" = random blocks)<input id="cgs-${i}" type="text" class="mono" data-f="shapes" value="${esc(g.shapes||DEFAULT_SHAPES[ref.id]||"")}" placeholder="octa-2 octa-3 octa-4"></label>
         <div class="row wide"><label class="chk"><input type="checkbox" data-f="enable" ${g.enable?"checked":""}> Enabled in the game</label>
           <label class="chk"><input type="checkbox" data-f="endless" ${g.endless?"checked":""}> Endless (after the data runs out, play continues with generated levels)</label></div>
       </div></div>`}).join("");
