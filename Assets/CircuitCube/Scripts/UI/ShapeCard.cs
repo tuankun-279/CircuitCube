@@ -21,6 +21,10 @@ namespace CircuitCube.UI
         [Tooltip("Icon id of each entry in IconsDark / IconsLight (cube, tetra, octa, cylinder, dodeca, sphere, megamix, cross).")]
         public string[] IconIds;
         public Sprite[] IconsDark, IconsLight;
+        [Tooltip("\"New levels\" pill, shown when levels were added since the player last opened the group.")]
+        public GameObject NewBadge;
+
+        public void SetNew(bool on) { if (NewBadge != null) NewBadge.SetActive(on); }
 
         /// <summary>The V2 group icon for a group's icon id, in the current theme.</summary>
         public Sprite IconFor(string id)

@@ -13,6 +13,7 @@ namespace CircuitCube.Game
 
     [Serializable] public class SaveSettings { public bool sound = true, music = true, vibration = true; public string theme = "system"; }
     [Serializable] public class GroupUnlock { public string id; public bool unlocked; }
+    [Serializable] public class GroupSeen { public string id; public int levels; }
     [Serializable] public class PlayerProfile
     {
         public int saveVersion = 3;
@@ -22,6 +23,7 @@ namespace CircuitCube.Game
         public List<GroupUnlock> groups = new List<GroupUnlock>();
         public bool seenHowTo, seenMix;
         public List<string> seenShapes = new List<string>();
+        public List<GroupSeen> seenLevels = new List<GroupSeen>();   // level count of each group the player last saw
     }
     [Serializable] public class InProgress
     {
@@ -243,6 +245,35 @@ namespace CircuitCube.Game
         {
             string id = GameData.GroupId(group);
             if (!Profile.seenShapes.Contains(id)) { Profile.seenShapes.Add(id); SaveProfile(); }
+        }
+
+        /// <summary>
+        /// The group has more levels than when the player last opened its level list (new levels were published).
+        /// A group seen for the first time records its count and shows no badge.
+        /// </summary>
+        public static bool HasNewLevels(int group)
+        {
+            if (!GroupOpen(group)) return false;
+            string id = GameData.GroupId(group);
+            int count = GameData.Group(group).levelCount;
+            var seen = SeenLevels.Find(s => s.id == id);
+            if (seen == null) { SeenLevels.Add(new GroupSeen { id = id, levels = count }); SaveProfile(); return false; }
+            // an endless group only counts as new when the player has reached its end
+            if (GameData.Group(group).endless && Beaten(group) < seen.levels) return false;
+            return count > seen.levels;
+        }
+
+        static List<GroupSeen> SeenLevels => Profile.seenLevels ?? (Profile.seenLevels = new List<GroupSeen>());
+
+        public static void MarkLevelsSeen(int group)
+        {
+            string id = GameData.GroupId(group);
+            int count = GameData.Group(group).levelCount;
+            var seen = SeenLevels.Find(s => s.id == id);
+            if (seen == null) SeenLevels.Add(seen = new GroupSeen { id = id });
+            if (seen.levels == count) return;
+            seen.levels = count;
+            SaveProfile();
         }
 
         public static bool SeenMix { get => Profile.seenMix; set { Profile.seenMix = value; SaveProfile(); } }

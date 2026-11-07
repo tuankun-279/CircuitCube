@@ -112,10 +112,22 @@ namespace CircuitCube.Game
             // the data loads in one go; the bar just gives the logo a moment on screen
             _tw.Run(0.9f, p => UI.Splash.SetProgress(Tweener.Ease(p)), () => { if (UI.Splash.gameObject.activeSelf) ShowHome(); });
             if (!string.IsNullOrEmpty(ContentBaseUrl))
-                StartCoroutine(RemoteContent.Sync(ContentBaseUrl, CubeSave.Beaten, () => { if (_state != State.Playing && _state != State.Won) DebugRefresh(); }));
+                StartCoroutine(RemoteContent.Sync(ContentBaseUrl, CubeSave.Beaten, () =>
+                {
+                    if (_state == State.Playing || _state == State.Won) return;
+                    DebugRefresh();
+                    if (RemoteContent.NeedsUpdate && !CardOpen) ShowUpdateTip();
+                }));
         }
 
         void OnApplicationPause(bool paused) { if (paused) SaveInProgress(); }
+
+        // the player may switch the phone between light and dark while the game is in the background
+        void OnApplicationFocus(bool focus)
+        {
+            if (focus && CubeSave.Settings != null && CubeSave.Settings.theme == "system" && Themes.Current != null && Themes.IsDark != SystemTheme.IsDark())
+                SetTheme("system");
+        }
         void OnApplicationQuit() => SaveInProgress();
 
         /// <summary>Remember the board of the level being played, so it continues where it stopped.</summary>
@@ -216,6 +228,9 @@ namespace CircuitCube.Game
             h.GroupFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(CubeSave.Beaten(g) / (float)total), h.GroupFill.anchorMax.y);
             var icon = GroupIcon(g);
             if (icon != null) h.GroupIcon.sprite = icon;
+            bool anyNew = false;
+            for (int i = 0; i < GameData.GroupCount; i++) anyNew |= CubeSave.HasNewLevels(i);
+            if (h.ShapesBadge != null) h.ShapesBadge.SetActive(anyNew);
         }
 
         void ShowShapes()
@@ -241,6 +256,7 @@ namespace CircuitCube.Game
                     total, info.endless, hint, () => ShowLevels(group));
                 else card.Set(IconIndex(g), info.name, info.blurb, open, info.endless ? CubeSave.Beaten(g) : Mathf.Min(CubeSave.Beaten(g), total),
                     total, info.endless, hint, () => ShowLevels(group));
+                card.SetNew(CubeSave.HasNewLevels(g));
             }
             HideRest(s.List, next);
         }
@@ -287,6 +303,7 @@ namespace CircuitCube.Game
             _state = State.Levels;
             _group = group;
             HideAll();
+            CubeSave.MarkLevelsSeen(group);
             var lv = UI.Levels;
             lv.Show();
             var info = GameData.Group(group);
@@ -376,7 +393,8 @@ namespace CircuitCube.Game
             {
                 // Past the levels downloaded to this device and no connection to fetch more.
                 ShowLevels(group);
-                ShowTip("More levels need the internet",
+                if (RemoteContent.NeedsUpdate) ShowUpdateTip();
+                else ShowTip("More levels need the internet",
                     "Levels arrive ten at a time. Connect to the internet and open the game again to unlock the next ones.", "OK", null);
                 return;
             }
@@ -429,6 +447,9 @@ namespace CircuitCube.Game
                     "Got it", () => CubeSave.SeenMix = true);
             }
         }
+
+        void ShowUpdateTip() => ShowTip("Update to play more",
+            "New levels are out, and they need the latest version of Circuit Cube. Update the game from the store to play them.", "OK", null);
 
         void ShowTip(string title, string body, string button, System.Action onClose)
         {
@@ -727,10 +748,11 @@ namespace CircuitCube.Game
 
         // ---------------- Test hooks (used by the editor play-test) ----------------
 
-        /// <summary>"dark", "light" or "system" (system follows dark until the OS theme is read on device).</summary>
+        /// <summary>"dark", "light" or "system" (the phone's own light/dark setting, see <see cref="SystemTheme"/>).</summary>
         public void ApplyTheme(string mode)
         {
-            var t = mode == "light" ? LightTheme : DarkTheme;
+            bool light = mode == "light" || (mode == "system" && !SystemTheme.IsDark());
+            var t = light ? LightTheme : DarkTheme;
             if (t == null) t = DarkTheme != null ? DarkTheme : LightTheme;
             if (t == null) return;
             Themes.Set(t);

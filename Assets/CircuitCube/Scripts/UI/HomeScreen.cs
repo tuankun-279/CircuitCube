@@ -12,5 +12,7 @@ namespace CircuitCube.UI
         public Image GroupIcon;
         public TMP_Text GroupName, GroupProgress;
         public RectTransform GroupFill;     // anchorMax.x shows progress
+        [Tooltip("Dot on the Shapes button: some open group has new levels.")]
+        public GameObject ShapesBadge;
     }
 }

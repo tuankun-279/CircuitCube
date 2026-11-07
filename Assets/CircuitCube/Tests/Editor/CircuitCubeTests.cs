@@ -100,6 +100,28 @@ namespace CircuitCube.Tests
         }
 
         [Test]
+        public void AppVersionsCompareByNumber()
+        {
+            Assert.AreEqual(1, CircuitCube.Game.RemoteContent.CompareVersions("1.2.10", "1.2.9"));
+            Assert.AreEqual(0, CircuitCube.Game.RemoteContent.CompareVersions("1.0", "1.0.0"));
+            Assert.AreEqual(-1, CircuitCube.Game.RemoteContent.CompareVersions("1.0.0", "1.1"));
+            Assert.AreEqual(0, CircuitCube.Game.RemoteContent.CompareVersions("2.0.0-beta", "2.0.0"));
+        }
+
+        [Test]
+        public void NebulaMixesStationShapes()
+        {
+            int stations = 0;
+            for (int l = 1; l <= 100; l++)
+            {
+                string id = LevelPlan.ShapeIdFor(5, l);
+                if (!id.StartsWith("voxel-")) stations++;
+                Assert.Greater(LevelPlan.TopologyFor(5, l).Count, 20, "Nebula level " + l);
+            }
+            Assert.AreEqual(33, stations);
+        }
+
+        [Test]
         public void HexagonTilesRoundTrip()
         {
             var lv = LevelPlan.Build(3, 55);

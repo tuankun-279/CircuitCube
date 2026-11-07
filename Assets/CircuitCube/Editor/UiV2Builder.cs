@@ -43,7 +43,45 @@ namespace CircuitCube.EditorTools
             PrefabUtility.SaveAsPrefabAsset(root, UiPrefab);
             PrefabUtility.UnloadPrefabContents(root);
             AssetDatabase.SaveAssets();
+            NewLevelsAndTablets();
             Debug.Log("[CircuitCube] UI V2 built.");
+        }
+
+        /// <summary>
+        /// "New levels" pill on the shape card, a dot on Home's Shapes button, and the wider level grid on tablets
+        /// (WideColumn on the Levels screen, GridColumns on its grid). Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/Circuit Cube/Art V2/Build New-Level Badges and Tablet Grid")]
+        public static void NewLevelsAndTablets()
+        {
+            const string CardPrefab = "Assets/CircuitCube/Prefabs/UI/ShapeCard.prefab";
+            var card = PrefabUtility.LoadPrefabContents(CardPrefab);
+            try
+            {
+                var pill = Fresh(card.transform, "NewBadge", Vector2.one, Vector2.one, Vector2.one, new Vector2(-24, -24), new Vector2(200, 52));
+                Img(pill, S("ui_pill"), UiRole.Accent, true).raycastTarget = false;
+                Label(pill, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, "New levels", 26, UiRole.OnPrimary).raycastTarget = false;
+                pill.gameObject.SetActive(false);
+                card.GetComponent<ShapeCard>().NewBadge = pill.gameObject;
+                PrefabUtility.SaveAsPrefabAsset(card, CardPrefab);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(card); }
+
+            var root = PrefabUtility.LoadPrefabContents(UiPrefab);
+            try
+            {
+                var ui = root.GetComponent<UIRoot>();
+                var dot = Pic(ui.Home.ShapesButton.transform, "NewDot", Vector2.one, Vector2.one, Half, new Vector2(-26, -26), new Vector2(36, 36), S("ui_circle"), UiRole.Star);
+                dot.gameObject.SetActive(false);
+                ui.Home.ShapesBadge = dot.gameObject;
+                var levels = ui.Levels.gameObject;
+                if (levels.GetComponent<WideColumn>() == null) levels.AddComponent<WideColumn>();
+                if (ui.Levels.Grid.GetComponent<GridColumns>() == null) ui.Levels.Grid.gameObject.AddComponent<GridColumns>();
+                PrefabUtility.SaveAsPrefabAsset(root, UiPrefab);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CircuitCube] New-level badges and tablet grid built.");
         }
 
         // ------------------------------------------------------------------ screens

@@ -17,6 +17,32 @@ namespace CircuitCube.Game
     {
         public static bool Busy { get; private set; }
 
+        /// <summary>
+        /// The published content needs a newer game (manifest minApp above Application.version). The device keeps
+        /// the content it has and the game asks the player to update.
+        /// </summary>
+        public static bool NeedsUpdate { get; private set; }
+
+        /// <summary>Compares dotted versions ("1.2.10" &gt; "1.2.9"); missing parts count as 0, other text is ignored.</summary>
+        public static int CompareVersions(string a, string b)
+        {
+            var x = (a ?? "").Split('.');
+            var y = (b ?? "").Split('.');
+            for (int i = 0; i < Mathf.Max(x.Length, y.Length); i++)
+            {
+                int p = i < x.Length ? Lead(x[i]) : 0, q = i < y.Length ? Lead(y[i]) : 0;
+                if (p != q) return p < q ? -1 : 1;
+            }
+            return 0;
+        }
+
+        static int Lead(string part)
+        {
+            int n = 0;
+            foreach (char c in part) { if (c < '0' || c > '9') break; n = n * 10 + (c - '0'); }
+            return n;
+        }
+
         /// <param name="baseUrl">
         /// Where manifest.json is read (the repo's content folder on raw.githubusercontent.com, so a new publish shows within
         /// minutes). The manifest's <c>cdn</c> then names the immutable copy of that publish (a content-v&lt;n&gt; tag on
@@ -30,11 +56,25 @@ namespace CircuitCube.Game
             baseUrl = baseUrl.TrimEnd('/') + "/";
             string root = GameData.CacheRoot;
 
+            // the new manifest lands next to the old one and replaces it only when this game can play it
             bool ok = false;
-            yield return Fetch(baseUrl, "manifest.json", root, r => ok = r);
+            yield return Fetch(baseUrl, "manifest.json", root, r => ok = r, "manifest.new.json");
+            ManifestData m = null;
+            string staged = Path.Combine(root, "manifest.new.json");
             if (ok)
             {
-                var m = JsonUtility.FromJson<ManifestData>(File.ReadAllText(Path.Combine(root, "manifest.json")));
+                try { m = JsonUtility.FromJson<ManifestData>(File.ReadAllText(staged)); } catch (Exception) { m = null; }
+                NeedsUpdate = m != null && CompareVersions(m.minApp, Application.version) > 0;
+                if (m == null || NeedsUpdate)
+                {
+                    if (NeedsUpdate) Debug.Log("[CircuitCube] Content needs app " + m.minApp + ", this is " + Application.version + ": keeping the old content.");
+                    try { File.Delete(staged); } catch (IOException) { }
+                    ok = false;
+                }
+                else ok = Replace(staged, Path.Combine(root, "manifest.json"));
+            }
+            if (ok)
+            {
                 if (m != null && !string.IsNullOrEmpty(m.cdn)) baseUrl = m.cdn.TrimEnd('/') + "/";
                 foreach (var g in m.groups) yield return Fetch(baseUrl, "groups/" + g.id + ".json", root, null);
                 GameData.Reload();
@@ -96,7 +136,19 @@ namespace CircuitCube.Game
                 if (!keep.Contains(Path.GetFileName(f))) { try { File.Delete(f); } catch (IOException) { } }
         }
 
-        static IEnumerator Fetch(string baseUrl, string rel, string root, Action<bool> result)
+        static bool Replace(string from, string to)
+        {
+            try
+            {
+                if (File.Exists(to)) File.Delete(to);
+                File.Move(from, to);
+                return true;
+            }
+            catch (IOException) { return false; }
+        }
+
+        /// <param name="saveAs">Where to keep the file under <paramref name="root"/> (default: the same relative path).</param>
+        static IEnumerator Fetch(string baseUrl, string rel, string root, Action<bool> result, string saveAs = null)
         {
             using (var req = UnityWebRequest.Get(baseUrl + rel))
             {
@@ -105,7 +157,7 @@ namespace CircuitCube.Game
                 bool ok = req.result == UnityWebRequest.Result.Success && !string.IsNullOrEmpty(req.downloadHandler.text);
                 if (ok)
                 {
-                    string path = Path.Combine(root, rel);
+                    string path = Path.Combine(root, saveAs ?? rel);
                     try
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(path));
