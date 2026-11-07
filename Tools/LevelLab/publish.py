@@ -218,6 +218,7 @@ def main():
         gid = ref["id"]
         g = dict(groups.get(gid) or {"id": gid, "name": gid, "enable": False, "levelCount": 0, "chunkSize": 100, "chunks": []})
         g.pop("nextSerial", None)
+        g.pop("shapes", None)   # Level Lab only: the shapes Auto fill uses for this group
         chunks = sorted((o for o in orders.values() if o.get("group") == gid), key=lambda o: o["chunk"])
         count = 0
         for c in chunks:

@@ -160,6 +160,7 @@ table.bt th{color:var(--muted);font-weight:600}
   <div class="seg" role="tablist" aria-label="Area">
     <button type="button" data-view="design" class="on">Level design</button>
     <button type="button" data-view="groups">Groups &amp; rules</button>
+    <button type="button" data-view="fill">Auto fill</button>
     <button type="button" data-view="check">Check</button>
   </div>
   <button class="btn" id="btnImport" type="button" title="Import a zip exported from Unity (Tools/Circuit Cube/Data/Export Data Zip)">Import zip</button>
@@ -330,6 +331,17 @@ table.bt th{color:var(--muted);font-weight:600}
         <div class="panel"><h2>Add group</h2><div class="grid2"><label class="f" for="cNgId">Id<input id="cNgId" type="text" placeholder="octa" autocomplete="off"></label><label class="f" for="cNgName">Name<input id="cNgName" type="text" placeholder="Octahedron" autocomplete="off"></label></div>
           <div class="row" style="margin-top:8px"><button class="btn" type="button" id="cAddGroup">Add group (hidden)</button></div></div>
       </div>
+    </div>
+  </div>
+</section>
+<section id="viewFill" hidden>
+  <div class="c-wrap">
+    <div class="panel">
+      <h2>Fill every group</h2>
+      <p class="note" style="margin:0 0 8px">Generates new levels for each ticked group from that group's own shapes (set them in <b>Groups &amp; rules</b>, "Shapes"), spread evenly from the first shape to the last and getting harder from the first new level to the last. New levels go after the group's existing ones, so every level lands in the right group.</p>
+      <div class="btwrap" style="max-height:none"><table class="bt" id="fTable"></table></div>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="fGen" type="button">Generate</button><span class="note" id="fNote" style="margin:0"></span></div>
+      <div id="fOut"></div>
     </div>
   </div>
 </section>
@@ -808,8 +820,9 @@ const DIFF_NAME=["","Very easy","Very easy","Easy","Easy","Medium","Medium","Har
 function diffParams(d,topo){
   const t=(Math.max(1,Math.min(10,d))-1)/9,n=topo?topo.count:0,P=topo&&n?topo.cells.reduce((a,c)=>a+(c.ports||4),0)/n:4;
   const colors=Math.max(1,Math.min(3,1+Math.round(t*2.2)+(n<30&&t>0.5?-1:0)));
-  const scramble=+(0.3+0.5*t).toFixed(2);
-  const minPar=Math.max(3,Math.round(n*scramble*(P/2)*(0.4+0.3*t)));
+  const scramble=+((0.3+0.5*t)*(P>4?4/P:1)).toFixed(2);   // fewer turned tiles where each takes up to 5 taps back
+  // pentagons and hexagons take more taps per tile, but a level should not grow past ~150 taps for that alone
+  const minPar=Math.max(3,Math.round(n*scramble*(Math.min(P,4)/2)*(0.4+0.3*t)));
   return {colors,scramble,minPar};
 }
 function colorsFor(c,R){const s=[1,2,4],mx=[3,5,6];R.shuffle(s);R.shuffle(mx);const mixes=c>=2?1+R.range(Math.min(2,c-1)):0;return mx.slice(0,mixes).concat(s.slice(0,c-mixes))}
@@ -975,8 +988,8 @@ function subscribeOrder(){
 }
 const arrEq=(a,b)=>a.length===b.length&&a.every((x,i)=>x===b[i]);
 // Writes only the chunks whose content changed (each gets version+1), then the group detail, then the manifest if needed.
-async function commitGroup(levels,shapesAdded,maxSerial){
-  const g=S.group;const det=JSON.parse(JSON.stringify(GROUPS[g]||groupDetail(g)));const bumped=[];
+async function commitGroup(levels,shapesAdded,maxSerial,g=S.group,CHUNKS_=CHUNKS){
+  const CHUNKS=CHUNKS_;const det=JSON.parse(JSON.stringify(GROUPS[g]||groupDetail(g)));const bumped=[];
   if(levels){
     const parts=[];for(let i=0;i<levels.length;i+=CHUNK)parts.push(levels.slice(i,i+CHUNK));
     for(let k=0;k<parts.length;k++){const old=CHUNKS[k];if(old&&arrEq(old.levels,parts[k]))continue;
@@ -1031,6 +1044,7 @@ async function save(){
   const doc=levelDoc(),m=/^([a-z0-9_]+)-(\d{4,})$/.exec(doc.id);
   if(!m)return toast("The id must look like <group>-<4 digits>, for example cube-0012.");if(m[1]!==S.group)return toast(`The id must start with the selected group's id (${S.group}-).`);
   const errs=boardCheck().filter(x=>x[0]==="b");if(errs.length)return toast("Not saved: "+errs[0][1]);
+  if(!shapeCheck(S.group,S.shape.type,S.shape.id))return;
   const btn=$("#btnSave");btn.disabled=true;$("#saveNote").textContent="Saving…";
   try{
     const prev=await DB.doc("levels/"+doc.id).get();doc.rev=prev.exists?(prev.data().rev||0)+1:1;doc.updatedAt=new Date().toISOString();
@@ -1058,6 +1072,22 @@ $("#ngSave").onclick=async()=>{
   m.groups.push({id,unlock:last?{group:last.id,cleared:100}:null});
   try{await DB.doc("groups/"+id).set(groupDetail(id,name));await DB.doc("meta/manifest").set(m);S.group=id;subscribeOrder();$("#newGroupForm").hidden=true;toast(`Created group ${id} (hidden: enable = false).`)}catch(e){toast("Could not create: "+(e.message||e.code))}
 };
+
+/* ---- which shapes belong to a group ---- */
+// Each group lists the shapes its levels use (Groups & rules → "Shapes"); Auto fill picks from them in order and
+// saving warns when a level's shape is not one of them. "megamix" = a random block shape per level.
+const DEFAULT_SHAPES={cube:"cube-2 cube-3 cube-4 cube-5",tetra:"tetra-3 tetra-4 tetra-5 tetra-6",octa:"octa-2 octa-3 octa-4",
+  sphere:"geo-1 geo-2 geo-3 geo-4",cross:"cross-11 cross-21 tower-24 ell-42 cross-31 cross-22",dodeca:"dodeca-2 dodeca-3",megamix:"megamix"};
+function groupShapeList(g){const d=(GROUPS[g]&&GROUPS[g].shapes)||DEFAULT_SHAPES[g]||"";return d.split(/[\s,]+/).filter(Boolean)}
+function shapeTokenType(t){if(t==="megamix")return "voxel";const p=parseShapeId(t);return p?p.type:null}
+function groupAllows(g,shapeType){const types=groupShapeList(g).map(shapeTokenType).filter(Boolean);return !types.length||types.includes(shapeType)}
+let wrongShapeArmed="";
+// true when the save may go ahead: the shape fits the group, or the designer pressed save twice for the same mix-up
+function shapeCheck(g,shapeType,shapeId){
+  if(groupAllows(g,shapeType)){wrongShapeArmed="";return true}
+  const k=g+"|"+shapeId;if(wrongShapeArmed===k){wrongShapeArmed="";return true}
+  wrongShapeArmed=k;toast(`${shapeId} is not one of group ${g}'s shapes (${groupShapeList(g).join(", ")}). Press save again to save it anyway.`);return false;
+}
 
 /* ---- batch generation along a difficulty curve ---- */
 let BATCH=[];
@@ -1130,21 +1160,80 @@ function renderBatch(){
 async function saveBatch(){
   if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");if(!S.group)return;
   const rows=BATCH.filter(b=>b.sel);if(!rows.length)return toast("No level selected.");
-  const btn=$("#btnBatchSave");btn.disabled=true;const prog=$("#batchProg");let sn=nextSerial(),added=0;const known=new Set(),serials=[];
-  try{
-    for(let i=0;i<rows.length;i++){const b=rows[i];prog.textContent=`Saving ${i+1}/${rows.length}…`;
-      const sd=isPolyType(b.shape.type)?{id:b.shape.id,type:b.shape.type,n:b.shape.params.n}:shapeDocFrom(b.shape);
-      if(await ensureShape(sd,known))added++;
-      const tiles=encodeTiles(b.board),id=idOf(S.group,sn);
-      await DB.doc("levels/"+id).set({id,serial:sn,group:S.group,rev:1,shape:b.shape.id,ports:portsAt(b.topo,0),tiles,locked:[],par:b.par,
-        check:fnv(tiles.replace(/(..)./g,"$1")).toString(16).padStart(8,"0"),difficulty:b.diff,tags:[],gen:b.gen,hintOrder:[],updatedAt:new Date().toISOString()});
-      serials.push(sn);sn++}
-    const v=await commitGroup(ORDER.levels.concat(serials),added,sn-1);
-    prog.textContent="";toast(`Saved ${rows.length} levels (${idOf(S.group,serials[0])} → ${idOf(S.group,serials[serials.length-1])}) · order chunks ${v.join(", ")}${added?` · ${added} new shapes`:""}.`);
-    BATCH=[];renderBatch();
-  }catch(e){prog.textContent="";toast(`Stopped at level ${serials.length+1}: ${e.message||e.code}. ${serials.length} levels were written but are not in the order yet; press save again to continue.`)}
+  const bad=rows.find(b=>!groupAllows(S.group,b.shape.type));if(bad&&!shapeCheck(S.group,bad.shape.type,bad.shape.id))return;
+  const btn=$("#btnBatchSave");btn.disabled=true;const prog=$("#batchProg");
+  try{const r=await saveRows(S.group,rows,t=>prog.textContent=t);prog.textContent="";
+    toast(`Saved ${rows.length} levels (${r.first} → ${r.last}) · order chunks ${r.chunks.join(", ")}${r.added?` · ${r.added} new shapes`:""}.`);BATCH=[];renderBatch()}
+  catch(e){prog.textContent="";toast(e.message||e.code)}
   finally{if(btn)btn.disabled=false}
 }
+// Append generated levels to any group: reads that group's order, writes the levels, then the order chunks.
+async function saveRows(g,rows,progress){
+  let chunks=[],order=[];
+  if(g===S.group&&ORDER&&ORDER.group===g){chunks=CHUNKS;order=ORDER.levels}
+  else{(await DB.collection("orders").where("group","==",g).get()).docs.forEach(d=>{const c=d.data();chunks[c.chunk]=c});order=[].concat(...chunks.map(c=>c?c.levels:[]))}
+  let sn=Math.max((GROUPS[g]&&GROUPS[g].nextSerial)||1,order.length?Math.max(...order)+1:1),added=0;const known=new Set(),serials=[];
+  try{
+    for(let i=0;i<rows.length;i++){const b=rows[i];if(progress)progress(`Saving ${g} ${i+1}/${rows.length}…`);
+      const sd=isPolyType(b.shape.type)?{id:b.shape.id,type:b.shape.type,n:b.shape.params.n}:shapeDocFrom(b.shape);
+      if(await ensureShape(sd,known))added++;
+      const tiles=encodeTiles(b.board),id=idOf(g,sn);
+      await DB.doc("levels/"+id).set({id,serial:sn,group:g,rev:1,shape:b.shape.id,ports:portsAt(b.topo,0),tiles,locked:[],par:b.par,
+        check:fnv(tiles.replace(/(..)./g,"$1")).toString(16).padStart(8,"0"),difficulty:b.diff,tags:[],gen:b.gen,hintOrder:[],updatedAt:new Date().toISOString()});
+      serials.push(sn);sn++}
+  }catch(e){throw new Error(`Stopped at ${g} level ${serials.length+1}: ${e.message||e.code}. ${serials.length} levels were written but are not in the order yet; save again to continue.`)}
+  const chunksOut=await commitGroup(order.concat(serials),added,sn-1,g,chunks);
+  return {first:idOf(g,serials[0]),last:idOf(g,serials[serials.length-1]),chunks:chunksOut,added};
+}
+
+/* ---- auto fill: new levels for every group, each from its own shapes ---- */
+let FILL={};
+function shapeFromToken(t,R){if(t==="megamix")return voxelOf(megamixBlocks(R));const p=parseShapeId(t);return p?{id:p.id,type:p.type,params:p.params,blocks:p.blocks}:null}
+function renderFillTable(){
+  const gs=groups();if(!gs.length){$("#fTable").innerHTML='<tr><td class="empty">No groups yet.</td></tr>';return}
+  $("#fTable").innerHTML=`<thead><tr><th></th><th>Group</th><th>Levels now</th><th>Shapes (in order)</th><th>Add</th><th>Difficulty from</th><th>to</th></tr></thead><tbody>`+
+    gs.map(g=>{const n=(ORDER_COUNT[g.id]!=null?ORDER_COUNT[g.id]:g.levelCount)||0,d0=Math.min(9,2+Math.floor(n/20)),d1=Math.min(10,d0+5),opt=v=>Array.from({length:10},(_,i)=>`<option value="${i+1}"${i+1===v?" selected":""}>${i+1}</option>`).join("");
+      return `<tr data-g="${esc(g.id)}"><td><input type="checkbox" data-k="on" ${g.enable?"checked":""} aria-label="Fill ${esc(g.id)}"></td><td><b>${esc(g.name||g.id)}</b> <span class="note mono">${esc(g.id)}</span></td><td>${n}</td>
+        <td class="mono" style="white-space:normal;max-width:320px">${esc(groupShapeList(g.id).join(" ")||"—")}</td>
+        <td><input type="number" data-k="n" value="10" min="1" max="200" style="width:70px"></td><td><select data-k="d0">${opt(d0)}</select></td><td><select data-k="d1">${opt(d1)}</select></td></tr>`}).join("")+"</tbody>";
+}
+const ORDER_COUNT={};
+$("#fGen").onclick=()=>{
+  const t0=performance.now(),R=Rng((Math.random()*2**31)>>>0);FILL={};let total=0,fails=0;
+  $("#fTable").querySelectorAll("tbody tr[data-g]").forEach(tr=>{
+    if(!tr.querySelector('[data-k="on"]').checked)return;const g=tr.dataset.g,list=groupShapeList(g);
+    if(!list.length){FILL[g]={rows:[],fails:0,error:"no shapes set for this group"};return}
+    const N=Math.max(1,Math.min(200,+tr.querySelector('[data-k="n"]').value||1)),d0=+tr.querySelector('[data-k="d0"]').value,d1=+tr.querySelector('[data-k="d1"]').value;
+    const rows=[];let f=0;
+    for(let i=0;i<N;i++){const t=N>1?i/(N-1):0,tok=list[Math.min(list.length-1,Math.floor(t*list.length*0.9999))],sh=shapeFromToken(tok,R);
+      const x=sh?genOne(sh,Math.round(lerp(d0,d1,t))):null;if(x)rows.push(x);else f++}
+    FILL[g]={rows,fails:f};total+=rows.length;fails+=f});
+  $("#fNote").textContent=`${total} levels in ${Math.round(performance.now()-t0)} ms${fails?` · ${fails} could not be generated`:""}.`;renderFill();
+};
+function renderFill(){
+  const ids=Object.keys(FILL);if(!ids.length){$("#fOut").innerHTML="";return}
+  $("#fOut").innerHTML=`<table class="bt" style="margin-top:10px"><thead><tr><th>Group</th><th>New levels</th><th>Shapes used</th><th>Par</th><th>Tiles</th><th></th></tr></thead><tbody>${ids.map(g=>{const F=FILL[g],r=F.rows;
+      if(F.error)return `<tr><td class="mono">${esc(g)}</td><td colspan="5" style="color:var(--bad)">${esc(F.error)}</td></tr>`;
+      const cnt={};r.forEach(x=>cnt[x.shape.id.startsWith("voxel-")?"megamix":x.shape.id]=(cnt[x.shape.id.startsWith("voxel-")?"megamix":x.shape.id]||0)+1);
+      const pars=r.map(x=>x.par),tiles=r.map(x=>x.tiles);
+      return `<tr><td class="mono">${esc(g)}</td><td>${r.length}${F.fails?` <span style="color:var(--warn)">(${F.fails} failed)</span>`:""}</td><td class="mono" style="white-space:normal">${Object.entries(cnt).map(([k,v])=>esc(k)+"×"+v).join(" ")}</td>
+        <td>${r.length?Math.min(...pars)+"–"+Math.max(...pars):"—"}</td><td>${r.length?Math.min(...tiles)+"–"+Math.max(...tiles):"—"}</td>
+        <td><button class="re" type="button" data-review="${esc(g)}" ${r.length?"":"disabled"}>Review one by one</button></td></tr>`}).join("")}</tbody></table>
+    <div class="row" style="margin-top:10px"><button class="btn primary" id="fSave" type="button">Save all into their groups</button><span class="note" id="fProg" style="margin:0">Each group's new levels go after its existing ones. Publish to game afterwards.</span></div>`;
+  $("#fOut").querySelectorAll("[data-review]").forEach(b=>b.onclick=()=>{const g=b.dataset.review;
+    BATCH=FILL[g].rows;delete FILL[g];location.hash="design";S.group=g;$("#groupSel").value=g;subscribeOrder();renderBatch();
+    toast(`The ${g} levels are in Batch generate (right column): untick or regenerate any, then save them there.`)});
+  $("#fSave").onclick=async()=>{
+    if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");
+    const btn=$("#fSave");btn.disabled=true;const done=[];
+    try{for(const g of Object.keys(FILL)){const r=FILL[g].rows;if(!r.length)continue;const x=await saveRows(g,r,t=>$("#fProg").textContent=t);done.push(`${g} ${x.first.split("-")[1]}–${x.last.split("-")[1]}`);delete FILL[g]}
+      toast("Saved: "+(done.join(" · ")||"nothing")+". Press Publish to game to send them to players.");$("#fNote").textContent="";renderFill();renderFillCounts()}
+    catch(e){toast((done.length?"Saved "+done.join(", ")+". ":"")+(e.message||e.code));renderFill()}
+    finally{if(btn)btn.disabled=false}};
+}
+async function renderFillCounts(){if(!DB)return;
+  for(const g of groups()){const q=await DB.collection("orders").where("group","==",g.id).get();let n=0;q.docs.forEach(d=>n+=(d.data().levels||[]).length);ORDER_COUNT[g.id]=n}
+  if(!$("#viewFill").hidden)renderFillTable()}
 $("#btnBatch").onclick=runBatch;
 
 /* ---- export in the CDN folder layout ---- */
@@ -1190,16 +1279,16 @@ $("#btnDelete").onclick=async()=>{
 };
 
 /* ================= views ================= */
-const VIEWS=["design","groups","check"];
+const VIEWS=["design","groups","fill","check"];
 function showView(v){if(!VIEWS.includes(v))v="design";
-  $("#viewDesign").hidden=v!=="design";$("#viewGroups").hidden=v!=="groups";$("#viewCheck").hidden=v!=="check";
+  $("#viewDesign").hidden=v!=="design";$("#viewGroups").hidden=v!=="groups";$("#viewCheck").hidden=v!=="check";$("#viewFill").hidden=v!=="fill";
   document.querySelectorAll(".top .seg button").forEach(b=>b.classList.toggle("on",b.dataset.view===v));
-  if(v==="groups")cfgRender();if(v==="design")requestAnimationFrame(resize)}
+  if(v==="groups")cfgRender();if(v==="fill"){renderFillTable();renderFillCounts()}if(v==="design")requestAnimationFrame(resize)}
 document.querySelectorAll(".top .seg button").forEach(b=>b.onclick=()=>{location.hash=b.dataset.view});
 addEventListener("hashchange",()=>showView(location.hash.slice(1)));
 
 /* ================= groups & rules ================= */
-const ICONS=["cube","tetra","sphere","cross","megamix"];
+const ICONS=["cube","tetra","octa","sphere","cross","dodeca","megamix"];
 const RULE_INFO={windowBack:["Keep behind","Levels already played kept on the device (X − n)."],windowAhead:["Download ahead","Levels ahead downloaded for offline play (X + n)."],
   hintsPerLevel:["Hints per level","Free hints in one level."],hintPenalty:["Points per hint","Points taken off for each hint."],
   minScore:["Minimum points","A win always gives at least this."],parScore:["Points at par","Moves ≤ par."],overParScore:["Points over par","Moves > par."]};
@@ -1207,7 +1296,8 @@ let gDraft=null,rDraft=null;
 const jeq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 function gDirty(){return !!gDraft&&(!jeq(gDraft.manifest,MANIFEST)||!jeq(gDraft.groups,GROUPS))}
 function unlockText(u){return !u||!u.group?"Open from the start.":`Opens after ${u.cleared} levels of group ${u.group}.`}
-function cfgOnData(){if(!gDirty())gDraft=null;rDraft=null;if(!$("#viewGroups").hidden)cfgRender()}
+function cfgOnData(){if(!gDirty())gDraft=null;rDraft=null;if(!$("#viewGroups").hidden)cfgRender();
+  if(!$("#viewFill").hidden&&!Object.keys(FILL).length){renderFillTable();clearTimeout(cfgOnData._t);cfgOnData._t=setTimeout(renderFillCounts,300)}}
 function cfgRender(){
   if(!MANIFEST){$("#cGroupCards").innerHTML='<div class="empty">No data yet. Press <b>Import zip</b> to load data exported from Unity.</div>';return}
   if(!gDraft)gDraft={manifest:JSON.parse(JSON.stringify(MANIFEST)),groups:JSON.parse(JSON.stringify(GROUPS))};
@@ -1226,6 +1316,7 @@ function cfgRender(){
         <label class="f" for="cgu-${i}">Unlock<select id="cgu-${i}" data-u="group">${opts}</select></label>
         <label class="f" for="cgc-${i}">Levels to clear<input id="cgc-${i}" type="number" min="0" data-u="cleared" value="${u&&u.group?u.cleared:0}" ${u&&u.group?"":"disabled"}></label>
         <label class="f wide" for="cgb-${i}">Description<input id="cgb-${i}" type="text" data-f="blurb" value="${esc(g.blurb||"")}"></label>
+        <label class="f wide" for="cgs-${i}">Shapes (ids in order, used by Auto fill and checked on save; "megamix" = random blocks)<input id="cgs-${i}" type="text" class="mono" data-f="shapes" value="${esc(g.shapes||DEFAULT_SHAPES[ref.id]||"")}" placeholder="octa-2 octa-3 octa-4"></label>
         <div class="row wide"><label class="chk"><input type="checkbox" data-f="enable" ${g.enable?"checked":""}> Enabled in the game</label>
           <label class="chk"><input type="checkbox" data-f="endless" ${g.endless?"checked":""}> Endless (after the data runs out, play continues with generated levels)</label></div>
       </div></div>`}).join("");
@@ -1257,7 +1348,10 @@ $("#cGroupCards").addEventListener("click",e=>{
 });
 $("#cGroupsRevert").onclick=()=>{gDraft=null;cfgRender()};
 $("#cGroupsSave").onclick=async()=>{
-  if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");const btn=$("#cGroupsSave");btn.disabled=true;
+  if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");
+  for(const id in gDraft.groups){const bad=String(gDraft.groups[id].shapes||"").split(/[\s,]+/).filter(t=>t&&!shapeTokenType(t));
+    if(bad.length)return toast(`Group ${id}: unknown shape ${bad[0]}. Use ids like cube-3, octa-2, geo-3, dodeca-2, cross-21 or megamix.`)}
+  const btn=$("#cGroupsSave");btn.disabled=true;
   try{for(const id in gDraft.groups)if(!jeq(gDraft.groups[id],GROUPS[id]))await DB.doc("groups/"+id).set(gDraft.groups[id]);
     if(!jeq(gDraft.manifest,MANIFEST))await DB.doc("meta/manifest").set(gDraft.manifest);gDraft=null;toast("Groups saved.")}
   catch(e){toast("Save failed: "+(e.message||e.code))}finally{btn.disabled=false}
