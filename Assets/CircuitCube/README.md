@@ -25,6 +25,8 @@ clips. The tile turn is the one animation in code, because it depends on the mov
 ## Shape groups
 
 Seven groups of 100 levels. Beating level 100 of a group opens the next one; Megamix keeps going after 100.
+Players see space names (ids stay the shape names): Moonbase (cube), Pyramid (tetra), Star Gem (octa), Planet
+(sphere), Space Station (cross), Galaxy (dodeca), Nebula (megamix). Names and blurbs are edited in Level Lab.
 
 | Group | Shapes |
 |---|---|

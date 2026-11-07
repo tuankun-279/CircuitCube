@@ -20,15 +20,16 @@ namespace CircuitCube.Core
             public bool Endless;
         }
 
+        // Player-facing names follow a space theme; ids (data files, saves, card art) keep the shape names.
         public static readonly Group[] Groups =
         {
-            new Group { Index = 0, Name = "Cube", Blurb = "Six faces, wires wrap over every edge." },
-            new Group { Index = 1, Name = "Tetra", Blurb = "A four-sided pyramid of triangle tiles. One tap turns a tile a third of a turn." },
-            new Group { Index = 2, Name = "Octa", Blurb = "Eight triangle faces meeting four at a corner." },
-            new Group { Index = 3, Name = "Sphere", Blurb = "A ball of pentagons and hexagons. Six ways out of most tiles." },
-            new Group { Index = 4, Name = "Cross", Blurb = "Arms, towers and corners. Wires run into the hollows." },
-            new Group { Index = 5, Name = "Dodeca", Blurb = "Twelve pentagon faces, cut like a Kilominx, then a Megaminx." },
-            new Group { Index = 6, Name = "Megamix", Blurb = "A new shape every level, mixed from the block shapes.", Endless = true },
+            new Group { Index = 0, Name = "Moonbase", Blurb = "Six square faces. Wires wrap over every edge of the base." },
+            new Group { Index = 1, Name = "Pyramid", Blurb = "Four triangle faces. One tap turns a tile a third of a turn." },
+            new Group { Index = 2, Name = "Star Gem", Blurb = "Eight triangle faces, four meeting at every point." },
+            new Group { Index = 3, Name = "Planet", Blurb = "A world of pentagons and hexagons. Six ways out of most tiles." },
+            new Group { Index = 4, Name = "Space Station", Blurb = "Arms, towers and docks. Wires run into the hollows." },
+            new Group { Index = 5, Name = "Galaxy", Blurb = "Twelve pentagon faces, cut finer and finer, up to 132 tiles." },
+            new Group { Index = 6, Name = "Nebula", Blurb = "A new shape every level, drifting together from blocks. Never ends.", Endless = true },
         };
 
         /// <summary>Group id used by the data files for a generator group (also the card art order).</summary>
