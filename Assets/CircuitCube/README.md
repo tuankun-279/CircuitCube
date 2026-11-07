@@ -24,9 +24,9 @@ clips. The tile turn is the one animation in code, because it depends on the mov
 
 ## Shape groups
 
-Seven groups of 100 levels. Beating level 100 of a group opens the next one; Megamix keeps going after 100.
+Six groups of 100 levels. Beating level 100 of a group opens the next one; Megamix keeps going after 100.
 Players see space names (ids stay the shape names): Moonbase (cube), Pyramid (tetra), Star Gem (octa), Planet
-(sphere), Space Station (cross), Galaxy (dodeca), Nebula (megamix). Names and blurbs are edited in Level Lab.
+(sphere), Galaxy (dodeca), Nebula (megamix). Names and blurbs are edited in Level Lab.
 
 | Group | Shapes |
 |---|---|
@@ -34,9 +34,8 @@ Players see space names (ids stay the shape names): Moonbase (cube), Pyramid (te
 | Tetra | regular tetrahedron, every face cut into n x n triangle tiles (36 to 144 tiles); one tap turns a tile a third of a turn |
 | Octa | regular octahedron, n x n triangles per face (32, 72, 128 tiles) |
 | Sphere | soccer ball (32 tiles), then Goldberg balls of 42, 92 and 162 tiles: 12 pentagons, the rest hexagons |
-| Cross | 3D plus signs, towers, L shapes |
 | Dodeca | dodecahedron cut like a Kilominx (60 kites), from level 41 and on big levels like a Megaminx (132 tiles) |
-| Megamix | a new mix of small cubes, pyramids, balls, bars and slabs every level |
+| Megamix | the place for unusual shapes: every third level a station (3D plus sign, tower or L shape, bigger as levels go on), the others a new mix of small cubes, pyramids, balls, bars and slabs |
 
 In each group the first 10 levels are small and lightly scrambled, then boards grow and colours go up to four;
 every 10th level from 30 is a big board. The first level of a new group shows an introduction card.
