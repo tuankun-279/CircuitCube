@@ -1,5 +1,5 @@
 {
-  "blurb": "A ball of pentagons and hexagons. Six ways out of most tiles.",
+  "blurb": "A world of pentagons and hexagons. Six ways out of most tiles.",
   "chunkSize": 100,
   "chunks": [
     {
@@ -13,5 +13,5 @@
   "icon": "sphere",
   "id": "sphere",
   "levelCount": 10,
-  "name": "Sphere"
+  "name": "Planet"
 }

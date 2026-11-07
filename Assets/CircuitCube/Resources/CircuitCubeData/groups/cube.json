@@ -1,5 +1,5 @@
 {
-  "blurb": "Six faces, wires wrap over every edge.",
+  "blurb": "Six square faces. Wires wrap over every edge of the base.",
   "chunkSize": 100,
   "chunks": [
     {
@@ -13,5 +13,5 @@
   "icon": "cube",
   "id": "cube",
   "levelCount": 10,
-  "name": "Cube"
+  "name": "Moonbase"
 }
