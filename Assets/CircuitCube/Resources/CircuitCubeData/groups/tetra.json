@@ -3,15 +3,15 @@
   "chunkSize": 100,
   "chunks": [
     {
-      "count": 11,
+      "count": 100,
       "index": 0,
-      "version": 2
+      "version": 3
     }
   ],
   "enable": true,
   "endless": false,
   "icon": "tetra",
   "id": "tetra",
-  "levelCount": 11,
+  "levelCount": 100,
   "name": "Pyramid"
 }

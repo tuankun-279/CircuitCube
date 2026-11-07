@@ -1,17 +1,17 @@
 {
-  "blurb": "A new shape every level, drifting together from blocks. Never ends.",
+  "blurb": "Stations, towers and shapes nobody has seen. A new one every level, never ends.",
   "chunkSize": 100,
   "chunks": [
     {
-      "count": 10,
+      "count": 100,
       "index": 0,
-      "version": 1
+      "version": 2
     }
   ],
   "enable": true,
   "endless": true,
   "icon": "megamix",
   "id": "megamix",
-  "levelCount": 10,
+  "levelCount": 100,
   "name": "Nebula"
 }

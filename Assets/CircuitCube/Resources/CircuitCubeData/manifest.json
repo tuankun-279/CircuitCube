@@ -1,7 +1,7 @@
 {
   "schema": 3,
-  "minApp": "1.0.0",
-  "shapesVersion": 3,
+  "minApp": "0.1.0",
+  "shapesVersion": 4,
   "rules": {
     "windowBack": 10,
     "windowAhead": 10,
@@ -22,46 +22,39 @@
     {
       "id": "tetra",
       "unlock": {
-        "cleared": 10,
-        "group": "cube"
+        "group": "cube",
+        "cleared": 100
       }
     },
     {
       "id": "octa",
       "unlock": {
-        "cleared": 10,
-        "group": "tetra"
+        "group": "tetra",
+        "cleared": 100
       }
     },
     {
       "id": "sphere",
       "unlock": {
-        "cleared": 10,
-        "group": "octa"
-      }
-    },
-    {
-      "id": "cross",
-      "unlock": {
-        "cleared": 10,
-        "group": "sphere"
+        "group": "octa",
+        "cleared": 100
       }
     },
     {
       "id": "dodeca",
       "unlock": {
-        "cleared": 10,
-        "group": "cross"
+        "group": "sphere",
+        "cleared": 100
       }
     },
     {
       "id": "megamix",
       "unlock": {
-        "cleared": 10,
-        "group": "dodeca"
+        "group": "dodeca",
+        "cleared": 100
       }
     }
   ],
-  "contentVersion": 2,
-  "cdn": "https://cdn.jsdelivr.net/gh/tuankun-279/CircuitCube@83f499ef0b4ae51ca3cf5767bd4fd10126e0fa56/content/"
+  "contentVersion": 4,
+  "cdn": "https://cdn.jsdelivr.net/gh/tuankun-279/CircuitCube@0bd98c96650cd2f764f6caaeb0015854e3a4f85d/content/"
 }

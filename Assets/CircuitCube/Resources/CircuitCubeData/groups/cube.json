@@ -3,15 +3,15 @@
   "chunkSize": 100,
   "chunks": [
     {
-      "count": 10,
+      "count": 100,
       "index": 0,
-      "version": 1
+      "version": 2
     }
   ],
   "enable": true,
   "endless": false,
   "icon": "cube",
   "id": "cube",
-  "levelCount": 10,
+  "levelCount": 100,
   "name": "Moonbase"
 }
