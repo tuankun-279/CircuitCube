@@ -1077,7 +1077,7 @@ $("#ngSave").onclick=async()=>{
 // Each group lists the shapes its levels use (Groups & rules → "Shapes"); Auto fill picks from them in order and
 // saving warns when a level's shape is not one of them. "megamix" = a random block shape per level.
 const DEFAULT_SHAPES={cube:"cube-2 cube-3 cube-4 cube-5",tetra:"tetra-3 tetra-4 tetra-5 tetra-6",octa:"octa-2 octa-3 octa-4",
-  sphere:"geo-1 geo-2 geo-3 geo-4",cross:"cross-11 cross-21 tower-24 ell-42 cross-31 cross-22",dodeca:"dodeca-2 dodeca-3",megamix:"megamix"};
+  sphere:"geo-1 geo-2 geo-3 geo-4",dodeca:"dodeca-2 dodeca-3",megamix:"megamix cross-11 cross-21 tower-24 ell-42 cross-31 tower-34 cross-22"};
 // a token is a shape id, optionally with how many Auto fill levels it gets: "cube-3", "cube-3*4", "megamix*10"
 function groupShapeTokens(g){const d=(GROUPS[g]&&GROUPS[g].shapes)||DEFAULT_SHAPES[g]||"";return d.split(/[\s,]+/).filter(Boolean)}
 const tokenId=t=>String(t).split("*")[0],tokenCount=t=>{const m=/\*(\d+)$/.exec(t);return m?+m[1]:0};

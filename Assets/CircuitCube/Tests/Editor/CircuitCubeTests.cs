@@ -128,7 +128,7 @@ namespace CircuitCube.Tests
         }
 
         [Test]
-        public void EveryGroupLevelIsSolvableAndScrambled([Values(0, 1, 2, 3, 4, 5, 6)] int group)
+        public void EveryGroupLevelIsSolvableAndScrambled([Values(0, 1, 2, 3, 4, 5)] int group)
         {
             for (int l = 1; l <= LevelPlan.LevelsPerGroup; l++)
             {
@@ -151,7 +151,7 @@ namespace CircuitCube.Tests
         }
 
         [Test]
-        public void SameLevelGivesSameBoard([Values(0, 1, 2, 3, 4, 5, 6)] int group)
+        public void SameLevelGivesSameBoard([Values(0, 1, 2, 3, 4, 5)] int group)
         {
             var a = LevelPlan.Build(group, 37);
             var topo = LevelPlan.TopologyFor(group, 37);

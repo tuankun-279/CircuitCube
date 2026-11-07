@@ -42,9 +42,7 @@ namespace CircuitCube.EditorTools
             new Size("CC iPad Air 1640x2360", 1640, 2360),
             new Size("CC iPad Pro 12.9 2048x2732", 2048, 2732),
             new Size("CC Foldable open 1812x2176", 1812, 2176),
-            // landscape
-            new Size("CC Landscape 1920x1080", 1920, 1080),
-            new Size("CC Landscape phone 2400x1080", 2400, 1080),
+            // no landscape: the game is locked to portrait (Player Settings)
         };
 
         static readonly Type SizesType = Type.GetType("UnityEditor.GameViewSizes,UnityEditor");

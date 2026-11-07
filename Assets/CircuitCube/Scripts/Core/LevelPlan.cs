@@ -4,7 +4,7 @@ namespace CircuitCube.Core
 {
     /// <summary>
     /// Level groups. Each group has its own shape family and 100 levels; beating level 100 of a group unlocks the
-    /// next one. The last group (Megamix) keeps going after 100. Levels are deterministic: group 2 level 37 is the
+    /// next one. The last group (Nebula, id megamix) keeps going after 100. Levels are deterministic: group 2 level 37 is the
     /// same board for every player.
     /// </summary>
     public static class LevelPlan
@@ -27,13 +27,12 @@ namespace CircuitCube.Core
             new Group { Index = 1, Name = "Pyramid", Blurb = "Four triangle faces. One tap turns a tile a third of a turn." },
             new Group { Index = 2, Name = "Star Gem", Blurb = "Eight triangle faces, four meeting at every point." },
             new Group { Index = 3, Name = "Planet", Blurb = "A world of pentagons and hexagons. Six ways out of most tiles." },
-            new Group { Index = 4, Name = "Space Station", Blurb = "Arms, towers and docks. Wires run into the hollows." },
-            new Group { Index = 5, Name = "Galaxy", Blurb = "Twelve pentagon faces, cut finer and finer, up to 132 tiles." },
-            new Group { Index = 6, Name = "Nebula", Blurb = "A new shape every level, drifting together from blocks. Never ends.", Endless = true },
+            new Group { Index = 4, Name = "Galaxy", Blurb = "Twelve pentagon faces, cut finer and finer, up to 132 tiles." },
+            new Group { Index = 5, Name = "Nebula", Blurb = "Stations, towers and shapes nobody has seen. A new one every level, never ends.", Endless = true },
         };
 
         /// <summary>Group id used by the data files for a generator group (also the card art order).</summary>
-        public static readonly string[] GroupIds = { "cube", "tetra", "octa", "sphere", "cross", "dodeca", "megamix" };
+        public static readonly string[] GroupIds = { "cube", "tetra", "octa", "sphere", "dodeca", "megamix" };
 
         /// <summary>Group order of the first releases (before Octa and Dodeca), for moving old PlayerPrefs saves.</summary>
         public static readonly string[] OldGroupIds = { "cube", "tetra", "sphere", "cross", "megamix" };
@@ -86,27 +85,36 @@ namespace CircuitCube.Core
         // Kilominx (60 kites), Megaminx (132) from level 41 and on the big levels.
         static int DodecaSize(int level) => level <= 40 && !Big(level) ? 2 : 3;
 
-        /// <summary>Block shape for the groups built from blocks (Cube, Cross, Megamix).</summary>
+        // Nebula (Megamix) is where the unusual shapes live: every third level is a station shape (crosses, towers,
+        // L shapes) taking turns, bigger ones as the levels go on; the others are a new mix of blocks.
+        static readonly string[] SmallStations = { "cross-11", "cross-21" };
+        static readonly string[] MidStations = { "cross-21", "tower-24", "ell-42", "cross-31" };
+        static readonly string[] BigStations = { "tower-24", "ell-42", "cross-31", "tower-34", "cross-22" };
+
+        static string StationFor(int level)
+        {
+            if (level % 3 != 0) return null;
+            if (Big(level)) return "cross-22";
+            var list = level <= 20 ? SmallStations : level <= 50 ? MidStations : BigStations;
+            return list[(level / 3) % list.Length];
+        }
+
+        /// <summary>Block shape for the groups built from blocks (Cube, Nebula).</summary>
         public static List<Vec3i> ShapeFor(int group, int level)
         {
             bool big = Big(level);
             switch (GroupIds[group])
             {
                 case "cube": return ShapeLibrary.Cube(CubeSize(level));
-                case "cross":
-                {
-                    if (level <= 10) return ShapeLibrary.Cross(1, 1);
-                    if (big) return ShapeLibrary.Cross(2, 2);
-                    switch (level % 4)
-                    {
-                        case 0: return ShapeLibrary.Cross(2, 1);
-                        case 1: return ShapeLibrary.Tower(2, 4);
-                        case 2: return ShapeLibrary.Ell(4, 2);
-                        default: return ShapeLibrary.Cross(3, 1);
-                    }
-                }
                 default:
                 {
+                    string station = StationFor(level);
+                    if (station != null)
+                    {
+                        string d = station.Substring(station.IndexOf('-') + 1);
+                        int a = d[0] - '0', b = d[1] - '0';
+                        return station.StartsWith("tower") ? ShapeLibrary.Tower(a, b) : station.StartsWith("ell") ? ShapeLibrary.Ell(a, b) : ShapeLibrary.Cross(a, b);
+                    }
                     int min = level <= 10 ? 50 : 70, max = level <= 10 ? 90 : big ? 180 : 140;
                     return ShapeLibrary.Megamix(SeedFor(group, level) ^ 0x2545f491u, min, max);
                 }
@@ -114,8 +122,8 @@ namespace CircuitCube.Core
         }
 
         /// <summary>
-        /// Shape id of a level in the v3 data format (see ShapeResolver). Megamix levels get their own voxel shape id;
-        /// the blocks come from <see cref="ShapeFor"/>.
+        /// Shape id of a level in the v3 data format (see ShapeResolver). Nebula's mixed levels get their own voxel shape
+        /// id; the blocks come from <see cref="ShapeFor"/>.
         /// </summary>
         public static string ShapeIdFor(int group, int level)
         {
@@ -126,11 +134,7 @@ namespace CircuitCube.Core
                 case "octa": return "octa-" + OctaSize(level);
                 case "sphere": return "geo-" + SphereSize(level);
                 case "dodeca": return "dodeca-" + DodecaSize(level);
-                case "cross":
-                    if (level <= 10) return "cross-11";
-                    if (Big(level)) return "cross-22";
-                    switch (level % 4) { case 0: return "cross-21"; case 1: return "tower-24"; case 2: return "ell-42"; default: return "cross-31"; }
-                default: return "voxel-mega-" + level.ToString("D4");
+                default: return StationFor(level) ?? "voxel-mega-" + level.ToString("D4");
             }
         }
 
