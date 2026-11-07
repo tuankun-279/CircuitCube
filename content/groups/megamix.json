@@ -1,5 +1,5 @@
 {
-  "blurb": "A new shape every level, mixed from all the others.",
+  "blurb": "A new shape every level, drifting together from blocks. Never ends.",
   "chunkSize": 100,
   "chunks": [
     {
@@ -13,5 +13,5 @@
   "icon": "megamix",
   "id": "megamix",
   "levelCount": 10,
-  "name": "Megamix"
+  "name": "Nebula"
 }

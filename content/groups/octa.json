@@ -1,5 +1,5 @@
 {
-  "blurb": "Eight triangle faces meeting four at a corner.",
+  "blurb": "Eight triangle faces, four meeting at every point.",
   "chunkSize": 100,
   "chunks": [
     {
@@ -13,5 +13,5 @@
   "icon": "octa",
   "id": "octa",
   "levelCount": 10,
-  "name": "Octa"
+  "name": "Star Gem"
 }

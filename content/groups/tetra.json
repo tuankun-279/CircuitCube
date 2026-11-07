@@ -1,5 +1,5 @@
 {
-  "blurb": "A four-sided pyramid of triangle tiles. One tap turns a tile a third of a turn.",
+  "blurb": "Four triangle faces. One tap turns a tile a third of a turn.",
   "chunkSize": 100,
   "chunks": [
     {
@@ -13,5 +13,5 @@
   "icon": "tetra",
   "id": "tetra",
   "levelCount": 11,
-  "name": "Tetra"
+  "name": "Pyramid"
 }

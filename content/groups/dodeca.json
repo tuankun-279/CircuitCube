@@ -1,5 +1,5 @@
 {
-  "blurb": "Twelve pentagon faces, cut like a Kilominx, then a Megaminx.",
+  "blurb": "Twelve pentagon faces, cut finer and finer, up to 132 tiles.",
   "chunkSize": 100,
   "chunks": [
     {
@@ -13,5 +13,5 @@
   "icon": "dodeca",
   "id": "dodeca",
   "levelCount": 10,
-  "name": "Dodeca"
+  "name": "Galaxy"
 }
