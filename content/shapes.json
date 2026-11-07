@@ -1,9 +1,24 @@
 {
-  "version": 3,
+  "version": 4,
   "cross": [
     {
       "id": "cross-11",
       "arm": 1,
+      "thick": 1
+    },
+    {
+      "id": "cross-21",
+      "arm": 2,
+      "thick": 1
+    },
+    {
+      "id": "cross-22",
+      "arm": 2,
+      "thick": 2
+    },
+    {
+      "id": "cross-31",
+      "arm": 3,
       "thick": 1
     }
   ],
@@ -15,37 +30,93 @@
     {
       "id": "cube-3",
       "n": 3
+    },
+    {
+      "id": "cube-4",
+      "n": 4
+    },
+    {
+      "id": "cube-5",
+      "n": 5
     }
   ],
   "dodeca": [
     {
       "id": "dodeca-2",
       "n": 2
+    },
+    {
+      "id": "dodeca-3",
+      "n": 3
+    }
+  ],
+  "ell": [
+    {
+      "id": "ell-42",
+      "len": 4,
+      "thick": 2
     }
   ],
   "geo": [
     {
       "id": "geo-1",
       "n": 1
+    },
+    {
+      "id": "geo-2",
+      "n": 2
+    },
+    {
+      "id": "geo-3",
+      "n": 3
+    },
+    {
+      "id": "geo-4",
+      "n": 4
     }
   ],
   "octa": [
     {
       "id": "octa-2",
       "n": 2
-    }
-  ],
-  "slab": [
+    },
     {
-      "id": "slab-33",
-      "w": 3,
-      "d": 3
+      "id": "octa-3",
+      "n": 3
+    },
+    {
+      "id": "octa-4",
+      "n": 4
     }
   ],
   "tetra": [
     {
       "id": "tetra-3",
       "n": 3
+    },
+    {
+      "id": "tetra-4",
+      "n": 4
+    },
+    {
+      "id": "tetra-5",
+      "n": 5
+    },
+    {
+      "id": "tetra-6",
+      "n": 6
+    }
+  ],
+  "tower": [
+    {
+      "id": "tower-24",
+      "w": 2,
+      "h": 4
+    },
+    {
+      "id": "tower-34",
+      "w": 3,
+      "h": 4
     }
   ]
 }
