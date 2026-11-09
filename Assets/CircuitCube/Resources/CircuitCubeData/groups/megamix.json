@@ -13,5 +13,6 @@
   "icon": "megamix",
   "id": "megamix",
   "levelCount": 100,
-  "name": "Nebula"
+  "name": "Nebula",
+  "expertSlackPercent": 16
 }

@@ -13,5 +13,6 @@
   "icon": "octa",
   "id": "octa",
   "levelCount": 100,
-  "name": "Star Gem"
+  "name": "Star Gem",
+  "expertSlackPercent": 15
 }
