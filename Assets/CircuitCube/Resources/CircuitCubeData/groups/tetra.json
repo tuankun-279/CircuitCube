@@ -13,6 +13,5 @@
   "icon": "tetra",
   "id": "tetra",
   "levelCount": 100,
-  "name": "Pyramid",
-  "expertSlackPercent": 13
+  "name": "Pyramid"
 }
