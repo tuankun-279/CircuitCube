@@ -57,20 +57,20 @@ namespace CircuitCube.Tests
         public void ScoreRule()
         {
             var r = new GameRules();
-            // slack: at least 5 taps, 15% of par for big boards
-            Assert.AreEqual(10 + 5, LevelScore.ExpertLimit(10, r));
+            // slack: 15% of par, rounded up
+            Assert.AreEqual(10 + 2, LevelScore.ExpertLimit(10, r));
             Assert.AreEqual(70 + 11, LevelScore.ExpertLimit(70, r));
             Assert.AreEqual(100 + 15, LevelScore.ExpertLimit(100, r));
             Assert.AreEqual(6, LevelScore.Points(5, 5, 0, r));
-            Assert.AreEqual(6, LevelScore.Points(10, 5, 0, r));     // within the slack
-            Assert.AreEqual(5, LevelScore.Points(11, 5, 0, r));
+            Assert.AreEqual(6, LevelScore.Points(6, 5, 0, r));      // within the slack
+            Assert.AreEqual(5, LevelScore.Points(7, 5, 0, r));
             Assert.AreEqual(6, LevelScore.Points(81, 70, 0, r));
             Assert.AreEqual(5, LevelScore.Points(82, 70, 0, r));
             Assert.AreEqual(5, LevelScore.Points(4, 5, 1, r));
             Assert.AreEqual(3, LevelScore.Points(20, 5, 3, r));
             var sphere = new GroupData { expertSlackPercent = 20 };      // a group's own slack wins, its min falls back to the rule
             Assert.AreEqual(100 + 20, LevelScore.ExpertLimit(100, r, sphere));
-            Assert.AreEqual(10 + 5, LevelScore.ExpertLimit(10, r, sphere));
+            Assert.AreEqual(10 + 2, LevelScore.ExpertLimit(10, r, sphere));
             Assert.AreEqual(100 + 15, LevelScore.ExpertLimit(100, r, new GroupData()));
             r.expertSlackPercent = 0; r.expertSlackMin = 0;        // strict par still possible from the manifest
             Assert.AreEqual(5, LevelScore.Points(6, 5, 0, r));

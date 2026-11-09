@@ -13,6 +13,5 @@
   "icon": "sphere",
   "id": "sphere",
   "levelCount": 100,
-  "name": "Planet",
-  "expertSlackPercent": 20
+  "name": "Planet"
 }

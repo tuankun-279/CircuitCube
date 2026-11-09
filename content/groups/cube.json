@@ -13,6 +13,5 @@
   "icon": "cube",
   "id": "cube",
   "levelCount": 100,
-  "name": "Moonbase",
-  "expertSlackPercent": 16
+  "name": "Moonbase"
 }
