@@ -674,10 +674,8 @@ namespace CircuitCube.Game
                 r.Stats[1].text = _level.Par.ToString();
                 r.Stats[2].text = _board.LitLamps + "/" + _board.TotalLamps;
                 r.Badge.SetActive(points >= GameData.Rules.parScore);
-                string line = "Score " + points + " / " + GameData.Rules.parScore;
-                if (_hintsUsed > 0) line += "  ·  " + _hintsUsed + (_hintsUsed == 1 ? " hint" : " hints") + " (−" + GameData.Rules.hintPenalty + " each)";
-                if (unlocksNext) line += "\nNew shape unlocked: " + GameData.Group(newGroup).name + "!";
-                r.Body.text = line;
+                // the stars say how well it went; the points and hint rule stay behind the scenes
+                r.Body.text = unlocksNext ? "New shape unlocked: " + GameData.Group(newGroup).name + "!" : "";
                 r.Stars.SetPoints(points);
                 r.PrimaryLabel.text = "Next level";
                 UI.Dim.SetActive(true);
