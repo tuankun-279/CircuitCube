@@ -66,6 +66,18 @@ namespace CircuitCube.Game
         [Tooltip("Overshoot at the end of a turn, like a click into place.")]
         public float TurnOvershoot = 0.12f;
 
+        [Header("Win: the box breaks open")]
+        [Tooltip("How long each piece flies (seconds).")]
+        public float ShatterTime = 0.9f;
+        [Tooltip("Pieces start one after another over this time, the ones facing the camera first (seconds).")]
+        public float ShatterStagger = 0.14f;
+        [Tooltip("How far a piece flies, in board radii.")]
+        public float ShatterDistance = 1.6f;
+        [Tooltip("Most a piece spins while it flies (degrees).")]
+        public float ShatterSpin = 540f;
+        [Tooltip("Size of the light left where the box was, in board radii (0 = none).")]
+        public float ShatterCore = 1.3f;
+
         public TileShape ShapeFor(int ports)
         {
             foreach (var s in Shapes) if (s.Ports == ports) return s;

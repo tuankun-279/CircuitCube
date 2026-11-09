@@ -48,6 +48,9 @@ namespace CircuitCube.Game
             public Vector4 WireColor, RingColor, CoreOnColor, HaloColor, OutlineColor, SourceHaloColor, BurstColor;
             public bool Lit, LitAnimated, OffAnimated, Hint, HintAnimated;
             public float LitStart, OffStart, HintStart, BurstStart;
+            public Vector3 FlyTo, SpinAxis;    // where the piece ends up when the box breaks (offset, content space)
+            public float SpinAngle, FlyDelay;
+            public int FaceStart;              // first vertex of this tile in the face mesh
         }
 
         CubeLevel _level;
@@ -67,6 +70,9 @@ namespace CircuitCube.Game
         bool _interactive;
         Mesh _faces;
         Material _faceMat;
+        Vector3[] _faceBase, _faceBaseNrm, _faceVerts, _faceNrms;   // face mesh at rest and as drawn while it breaks
+        float _shatterStart = -1f;
+        bool _shattered;
 
         static readonly Dictionary<(int queue, int tex), Material> Materials = new Dictionary<(int, int), Material>();
         static readonly Dictionary<int, Material> FaceMaterials = new Dictionary<int, Material>();
@@ -97,6 +103,8 @@ namespace CircuitCube.Game
         /// <summary>Radius of the shape in world units.</summary>
         public float Radius => _level.Topo.Radius * ContentScale;
         public int TileCount => _t != null ? _t.Length : 0;
+        /// <summary>True from <see cref="Shatter"/> until every piece has flown off.</summary>
+        public bool Shattering => _shatterStart >= 0f && !_shattered;
         /// <summary>Draw calls the board issued last frame (the face mesh plus one per layer in use).</summary>
         public int LastDrawCalls { get; private set; }
 
@@ -190,8 +198,10 @@ namespace CircuitCube.Game
             var nrm = new Vector3[verts];
             var idx = new int[tris];
             int v = 0, t = 0;
-            foreach (var c in topo.Cells)
+            for (int ci = 0; ci < topo.Cells.Count; ci++)
             {
+                var c = topo.Cells[ci];
+                _t[ci].FaceStart = v;
                 Vector3 n = W(c.Normal);
                 int centre = v;
                 pos[v] = W(c.Center); nrm[v++] = n;
@@ -211,6 +221,12 @@ namespace CircuitCube.Game
             _faces.uv = new Vector2[verts];
             _faces.triangles = idx;
             _faces.RecalculateBounds();
+            _faceBase = pos;
+            _faceBaseNrm = nrm;
+            _faceVerts = new Vector3[verts];
+            _faceNrms = new Vector3[verts];
+            _shatterStart = -1f;
+            _shattered = false;
         }
 
         /// <summary>Point the face mesh UVs at the current theme's face images.</summary>
@@ -444,12 +460,52 @@ namespace CircuitCube.Game
             for (int i = 0; i < _t.Length; i++) if (_t[i].Kind == TileKind.Lamp) _t[i].BurstStart = now;
         }
 
+        /// <summary>
+        /// Break the solved box open: every tile flies off along its face, spinning and shrinking, the ones facing the
+        /// camera first, and a light grows where the box was. Tuned in BoardLook (ShatterTime and the rest).
+        /// </summary>
+        public void Shatter()
+        {
+            if (_t == null) return;
+            var rnd = new System.Random(_level.Number * 7919 + _t.Length);
+            float R(float a, float b) => a + (float)rnd.NextDouble() * (b - a);
+            Vector3 toCam = transform.InverseTransformDirection((_cam.transform.position - transform.position).normalized);
+            float reach = _level.Topo.Radius * _look.ShatterDistance;
+            for (int i = 0; i < _t.Length; i++)
+            {
+                ref var s = ref _t[i];
+                Vector3 n = s.Normal;
+                Vector3 side = Vector3.Cross(n, new Vector3(R(-1, 1), R(-1, 1), R(-1, 1))).normalized;
+                s.FlyTo = (n * R(0.8f, 1.25f) + side * R(0f, 0.45f)) * reach;
+                s.SpinAxis = new Vector3(R(-1, 1), R(-1, 1), R(-1, 1)).normalized;
+                if (s.SpinAxis == Vector3.zero) s.SpinAxis = Vector3.up;
+                s.SpinAngle = R(0.35f, 1f) * _look.ShatterSpin * (rnd.Next(2) == 0 ? -1f : 1f);
+                // the side facing the camera cracks first
+                s.FlyDelay = (1f - (Vector3.Dot(n, toCam) + 1f) * 0.5f) * _look.ShatterStagger + R(0f, 0.04f);
+            }
+            _shatterStart = Time.unscaledTime;
+            _shattered = false;
+        }
+
+        /// <summary>Progress 0-1 of a piece's flight, or -1 when the box is whole.</summary>
+        float FlyProgress(in TileState s, float unscaled) =>
+            _shatterStart < 0f ? -1f : Mathf.Clamp01((unscaled - _shatterStart - s.FlyDelay) / Mathf.Max(0.01f, _look.ShatterTime));
+
+        /// <summary>Where a flying piece is: moved out, turned about its own centre and shrunk (content space).</summary>
+        static Matrix4x4 Flight(in TileState s, float t)
+        {
+            float e = 1f - (1f - t) * (1f - t) * (1f - t);          // fast start, slow end
+            float size = 1f - t * t;                                // shrinks away at the end
+            return Matrix4x4.TRS(s.Center + s.FlyTo * e, Quaternion.AngleAxis(s.SpinAngle * e, s.SpinAxis), new Vector3(size, size, size))
+                   * Matrix4x4.Translate(-s.Center);
+        }
+
         public Vector3 NormalWorld(int index) => transform.TransformDirection(_t[index].Normal);
 
         /// <summary>The visible tile a screen ray hits first, or -1. No colliders: ray against each tile's polygon.</summary>
         public int Pick(Ray ray)
         {
-            if (_t == null || !_interactive) return -1;
+            if (_t == null || !_interactive || _shatterStart >= 0f) return -1;
             var toContent = (transform.localToWorldMatrix * Matrix4x4.Scale(Vector3.one * ContentScale)).inverse;
             Vector3 o = toContent.MultiplyPoint3x4(ray.origin), d = toContent.MultiplyVector(ray.direction);
             int best = -1;
@@ -480,8 +536,10 @@ namespace CircuitCube.Game
         /// <summary>Advance the tile animations and draw every visible tile. Allocates nothing.</summary>
         public void Draw()
         {
-            if (_level == null || _cam == null || _t == null) return;
+            if (_level == null || _cam == null || _t == null || _shattered) return;
             foreach (var g in _groups) g.N = 0;
+            bool flying = _shatterStart >= 0f;
+            bool anyLeft = false;
 
             Matrix4x4 board = transform.localToWorldMatrix * Matrix4x4.Scale(Vector3.one * ContentScale);
             Vector3 camPos = _cam.transform.position;
@@ -498,8 +556,24 @@ namespace CircuitCube.Game
             for (int i = 0; i < _t.Length; i++)
             {
                 ref var s = ref _t[i];
-                Matrix4x4 tw = board * s.Local;
-                Vector3 nW = board.MultiplyVector(s.Normal).normalized;
+                Matrix4x4 local = s.Local;
+                Vector3 normal = s.Normal;
+                if (flying)
+                {
+                    float ft = FlyProgress(s, unscaled);
+                    if (ft < 1f) anyLeft = true;
+                    var fl = Flight(s, ft);
+                    local = fl * s.Local;
+                    normal = fl.MultiplyVector(s.Normal);
+                    for (int v = s.FaceStart, end = s.FaceStart + s.Ports + 1; v < end; v++)
+                    {
+                        _faceVerts[v] = fl.MultiplyPoint3x4(_faceBase[v]);
+                        _faceNrms[v] = fl.MultiplyVector(_faceBaseNrm[v]);
+                    }
+                    if (ft >= 1f) { s.Visible = false; continue; }
+                }
+                Matrix4x4 tw = board * local;
+                Vector3 nW = board.MultiplyVector(normal).normalized;
                 Vector3 pW = tw.MultiplyPoint3x4(Vector3.zero);
                 s.Visible = Vector3.Dot(nW, camPos - pW) > 0f;
                 if (!s.Visible) continue;
@@ -558,7 +632,15 @@ namespace CircuitCube.Game
                 }
             }
 
-            var bounds = new Bounds(transform.position, Vector3.one * (Radius * 2f + 2f));
+            if (flying)
+            {
+                _faces.SetVertices(_faceVerts);
+                _faces.SetNormals(_faceNrms);
+                CoreLight(board, unscaled, camPos);
+                if (!anyLeft && unscaled - _shatterStart > _look.ShatterTime + _look.ShatterStagger + 0.6f) { _shattered = true; LastDrawCalls = 0; return; }
+            }
+            float reachOut = flying ? _look.ShatterDistance * 1.3f + 1f : 1f;
+            var bounds = new Bounds(transform.position, Vector3.one * (Radius * 2f * reachOut + 2f));
             int layer = gameObject.layer, calls = 0;
             if (_faceMat != null)
             {
@@ -584,6 +666,26 @@ namespace CircuitCube.Game
                 Graphics.RenderMeshInstanced(rp, mesh, 0, g.M, g.N);
             }
             LastDrawCalls = calls;
+        }
+
+        /// <summary>The light where the box was: a lamp halo facing the camera, growing then fading.</summary>
+        void CoreLight(in Matrix4x4 board, float unscaled, Vector3 camPos)
+        {
+            if (_look.ShatterCore <= 0f) return;
+            int lamp = -1;
+            for (int i = 0; i < _t.Length && lamp < 0; i++) if (_t[i].Kind == TileKind.Lamp && _groupOf[i, (int)Lyr.Halo] != null) lamp = i;
+            if (lamp < 0) return;
+            var g = _groupOf[lamp, (int)Lyr.Halo];
+            if (g.N >= g.M.Length) return;
+            float t = Mathf.Clamp01((unscaled - _shatterStart) / Mathf.Max(0.01f, _look.ShatterTime + _look.ShatterStagger + 0.6f));
+            float grow = Mathf.Sin(Mathf.Min(1f, t * 2.2f) * Mathf.PI * 0.5f);   // quick swell
+            float fade = 1f - t * t;
+            Vector3 centre = board.MultiplyPoint3x4(Vector3.zero);
+            float size = Radius * 2f * _look.ShatterCore * grow;
+            g.M[g.N] = Matrix4x4.TRS(centre, Quaternion.LookRotation(camPos - centre), new Vector3(size, size, 1f));
+            g.C[g.N] = new Vector4(1f, 1f, 1f, fade);
+            g.UV[g.N] = _uvOf[lamp, (int)Lyr.Halo];
+            g.N++;
         }
 
         /// <summary>

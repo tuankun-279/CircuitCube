@@ -30,6 +30,8 @@ namespace CircuitCube.Game
         public UnityEngine.Rendering.Volume BloomVolume;
         [Tooltip("Lowest quality level (Edit > Project Settings > Quality, 0 = first) that gets bloom; lower levels keep the sprite glow only.")]
         public int MinBloomQuality = 2;
+        [Tooltip("After the box starts to break, how long until the result card slides in (seconds).")]
+        public float ResultDelay = 0.5f;
         [Tooltip("Themes/Theme_Dark.asset")] public GameTheme DarkTheme;
         [Tooltip("Themes/Theme_Light.asset")] public GameTheme LightTheme;
 
@@ -660,12 +662,18 @@ namespace CircuitCube.Game
             _board.Celebrate();
             GameAudio.Play(Sfx.Win);
             GameAudio.Duck(3f);
-#if UNITY_ANDROID || UNITY_IOS
-            if (CubeSave.Settings.vibration) Handheld.Vibrate();
-#endif
+            // the solved box winds up with a half turn, then breaks open and the result card comes up through the pieces
             var tr = _board.transform;
             Quaternion from = tr.rotation;
-            _tw.Run(1.1f, p => tr.rotation = Quaternion.AngleAxis(360f * p, Vector3.up) * from, () =>
+            var board = _board;
+            _tw.Run(0.55f, p => tr.rotation = Quaternion.AngleAxis(200f * p * p, Vector3.up) * from, () =>
+            {
+                board.Shatter();
+#if UNITY_ANDROID || UNITY_IOS
+                if (CubeSave.Settings.vibration) Handheld.Vibrate();
+#endif
+            }, tr);
+            _tw.Run(0.55f + ResultDelay, p => { }, () =>
             {
                 _busy = false;
                 var r = UI.Result;
@@ -683,7 +691,7 @@ namespace CircuitCube.Game
                 r.Open();
                 // one rising chime per whole star, after the card has slid in
                 for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);
-            }, tr);
+            }, UI.Result);   // its own owner: a second run on the board's transform would cancel the wind-up
         }
 
         // ---------------- Loop and input ----------------
