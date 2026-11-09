@@ -100,6 +100,19 @@ namespace CircuitCube.Tests
         }
 
         [Test]
+        public void SoundBankHasEverySound()
+        {
+            var bank = UnityEditor.AssetDatabase.LoadAssetAtPath<CircuitCube.Game.SoundBank>("Assets/CircuitCube/Audio/SoundBank.asset");
+            Assert.IsNotNull(bank, "Run Tools/Circuit Cube/Audio/Build Audio");
+            foreach (CircuitCube.Game.Sfx id in System.Enum.GetValues(typeof(CircuitCube.Game.Sfx)))
+                Assert.IsNotNull(bank.Get(id)?.Clip, "no clip for " + id);
+            Assert.IsNotNull(bank.MenuMusic);
+            Assert.IsNotNull(bank.PlayMusic);
+            Assert.AreEqual(41.14f, bank.MenuMusic.length, 0.05f, "menu loop length");
+            Assert.AreEqual(7, bank.LampPitch.Length, "one pitch per lamp colour");
+        }
+
+        [Test]
         public void AppVersionsCompareByNumber()
         {
             Assert.AreEqual(1, CircuitCube.Game.RemoteContent.CompareVersions("1.2.10", "1.2.9"));

@@ -92,6 +92,8 @@ namespace CircuitCube.Game
 
         public int LitLamps { get; private set; }
         public int TotalLamps { get; private set; }
+        /// <summary>Colour of a lamp the last <see cref="Refresh"/> turned on (0 = none came on), for its sound.</summary>
+        public int NewlyLitColor { get; private set; }
         /// <summary>Radius of the shape in world units.</summary>
         public float Radius => _level.Topo.Radius * ContentScale;
         public int TileCount => _t != null ? _t.Length : 0;
@@ -387,6 +389,7 @@ namespace CircuitCube.Game
             var sets = _sets;
             int lit = 0, total = 0;
             float now = Time.time;
+            NewlyLitColor = 0;
             for (int i = 0; i < _t.Length; i++)
             {
                 var tile = _level.Tiles[i];
@@ -408,6 +411,7 @@ namespace CircuitCube.Game
                 s.Lit = good;
                 if (good)
                 {
+                    if (NewlyLitColor == 0) NewlyLitColor = tile.Color;
                     s.LitStart = now;
                     s.LitAnimated = animate;
                     if (animate) s.BurstStart = now;

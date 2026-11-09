@@ -182,12 +182,14 @@ namespace CircuitCube.Game
 
         void OpenSettings(bool paused)
         {
+            GameAudio.Play(Sfx.PanelOpen);
             UI.Dim.SetActive(true);
             UI.Settings.Open(paused);
         }
 
         void CloseSettings()
         {
+            if (UI.Settings.gameObject.activeSelf) GameAudio.Play(Sfx.PanelClose);
             UI.Settings.gameObject.SetActive(false);
             if (!UI.Result.gameObject.activeSelf && !UI.Tip.gameObject.activeSelf) UI.Dim.SetActive(false);
         }
@@ -203,6 +205,7 @@ namespace CircuitCube.Game
         {
             _state = State.Home;
             _busy = false;
+            GameAudio.Music(MusicTrack.Menu);
             _tw.Clear();
             HideAll();
             int g = CubeSave.CurrentGroup;
@@ -237,6 +240,7 @@ namespace CircuitCube.Game
         {
             _state = State.Shapes;
             HideAll();
+            GameAudio.Music(MusicTrack.Menu);
             var s = UI.Shapes;
             s.Show();
             s.StarsLabel.text = CubeSave.TotalStars.ToString();
@@ -303,6 +307,7 @@ namespace CircuitCube.Game
             _state = State.Levels;
             _group = group;
             HideAll();
+            GameAudio.Music(MusicTrack.Menu);
             CubeSave.MarkLevelsSeen(group);
             var lv = UI.Levels;
             lv.Show();
@@ -359,6 +364,7 @@ namespace CircuitCube.Game
                 var icon = GroupIcon(_unlockedGroup);
                 if (icon != null) u.Art.sprite = icon;
                 UI.Dim.SetActive(true);
+                GameAudio.Play(Sfx.Unlock);
                 u.Open();
                 return;
             }
@@ -410,6 +416,7 @@ namespace CircuitCube.Game
             _busy = false;
             _state = State.Playing;
             HideAll();
+            GameAudio.Music(MusicTrack.Play);
             SetBoard(_level, true, PlayScreenShare);
             _board.transform.rotation = StartRotation(_level.Topo, -28f, 38f);
             _spin = Vector2.zero;
@@ -459,11 +466,13 @@ namespace CircuitCube.Game
             t.PrimaryLabel.text = button;
             _tipClosed = onClose;
             UI.Dim.SetActive(true);
+            GameAudio.Play(Sfx.PanelOpen);
             t.Open();
         }
 
         void CloseTip()
         {
+            if (UI.Tip.gameObject.activeSelf) GameAudio.Play(Sfx.PanelClose);
             UI.Tip.gameObject.SetActive(false);
             if (!UI.Result.gameObject.activeSelf) UI.Dim.SetActive(false);
             var cb = _tipClosed; _tipClosed = null;
@@ -560,13 +569,15 @@ namespace CircuitCube.Game
         {
             if (_state != State.Playing || _busy || CardOpen) return;
             var tile = _level.Tiles[index];
-            if (tile.Locked) return;
+            if (tile.Locked) { GameAudio.Play(Sfx.Blocked); return; }   // a hint fixed this tile
+            GameAudio.Play(Sfx.Rotate);
             tile.Rot++;
             _moves++;
             _undo.Push(index);
             if (_moves == 4 && !CubeSave.SeenHowTo) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = ""; }
             _board.AnimateRotation(index, 1);
             bool solved = _board.Refresh();
+            if (!solved && _board.NewlyLitColor != 0) GameAudio.Lamp(_board.NewlyLitColor);
             UpdateHud();
             if (solved) Win();
         }
@@ -582,6 +593,7 @@ namespace CircuitCube.Game
                 if (tile.Locked) continue;              // a hint fixed this tile since
                 tile.Rot += tile.Ports - 1;             // one step back, kept non-negative
                 _moves = Mathf.Max(0, _moves - 1);
+                GameAudio.Play(Sfx.Undo);
                 _board.AnimateRotation(index, -1);
                 _board.Refresh();
                 break;
@@ -616,8 +628,10 @@ namespace CircuitCube.Game
             tile.Locked = true;
             _hintsLeft--;
             _hintsUsed++;
+            GameAudio.Play(Sfx.Hint);
             _board.AnimateRotation(pick, turns, 0.3f);
             bool solved = _board.Refresh();
+            if (!solved && _board.NewlyLitColor != 0) GameAudio.Lamp(_board.NewlyLitColor);
             UpdateHud();
             if (solved) Win();
         }
@@ -639,6 +653,8 @@ namespace CircuitCube.Game
             bool unlocksNext = newGroup >= 0;
             _unlockedGroup = newGroup;
             _board.Celebrate();
+            GameAudio.Play(Sfx.Win);
+            GameAudio.Duck(3f);
 #if UNITY_ANDROID || UNITY_IOS
             if (CubeSave.Settings.vibration) Handheld.Vibrate();
 #endif
@@ -662,6 +678,8 @@ namespace CircuitCube.Game
                 r.PrimaryLabel.text = "Next level";
                 UI.Dim.SetActive(true);
                 r.Open();
+                // one rising chime per whole star, after the card has slid in
+                for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);
             }, tr);
         }
 

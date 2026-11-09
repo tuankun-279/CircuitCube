@@ -1,0 +1,84 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1bb8052aa084ec7aecf3c6f1d368b11, type: 3}
+  m_Name: SoundBank
+  m_EditorClassIdentifier: 
+  Sounds:
+  - Id: 0
+    Clip: {fileID: 8300000, guid: cdb4d5b0a60449c43a4091b8596a0d17, type: 3}
+    Volume: 1
+    PitchJitter: 0.05
+    MinGap: 0.03
+  - Id: 1
+    Clip: {fileID: 8300000, guid: 9911109bbd535cd46a19e693587f629b, type: 3}
+    Volume: 1
+    PitchJitter: 0
+    MinGap: 0.05
+  - Id: 2
+    Clip: {fileID: 8300000, guid: 5292153b83cdc2041bc4ef90cc3de845, type: 3}
+    Volume: 1
+    PitchJitter: 0
+    MinGap: 0.3
+  - Id: 3
+    Clip: {fileID: 8300000, guid: 79145bc8ce5cf5440b0113b20940271a, type: 3}
+    Volume: 1
+    PitchJitter: 0
+    MinGap: 0.05
+  - Id: 4
+    Clip: {fileID: 8300000, guid: 12a2fbb32d33efc47b3354fea20b44b8, type: 3}
+    Volume: 1
+    PitchJitter: 0
+    MinGap: 0.3
+  - Id: 5
+    Clip: {fileID: 8300000, guid: 612ec1e9c5f2ca24dbb069ae4a519580, type: 3}
+    Volume: 1
+    PitchJitter: 0
+    MinGap: 0.1
+  - Id: 6
+    Clip: {fileID: 8300000, guid: 7a91ffa0ff6f8c44d8655ffbf3c27db0, type: 3}
+    Volume: 1
+    PitchJitter: 0.04
+    MinGap: 0.03
+  - Id: 7
+    Clip: {fileID: 8300000, guid: c0be4a314d04ac246b3d2150bc31f3cb, type: 3}
+    Volume: 1
+    PitchJitter: 0
+    MinGap: 0.15
+  - Id: 8
+    Clip: {fileID: 8300000, guid: 734b2788075cc164b9bf1f8fa71efdd1, type: 3}
+    Volume: 1
+    PitchJitter: 0.03
+    MinGap: 0.03
+  - Id: 9
+    Clip: {fileID: 8300000, guid: bd308a11fe1ce404dbdf5927e37e78a9, type: 3}
+    Volume: 1
+    PitchJitter: 0
+    MinGap: 0.1
+  - Id: 10
+    Clip: {fileID: 8300000, guid: f2f32500b04700945828bda6a008d375, type: 3}
+    Volume: 1
+    PitchJitter: 0
+    MinGap: 0.1
+  MenuMusic: {fileID: 8300000, guid: b43d34649ffc6ec4a807f438a64cfc99, type: 3}
+  PlayMusic: {fileID: 8300000, guid: cadcf831a215c4c4a81d1916a0ccdcf2, type: 3}
+  MenuVolume: 0.62
+  PlayVolume: 0.35
+  FadeSeconds: 1.2
+  WinDuck: 0.35
+  LampPitch:
+  - 1
+  - 1.122
+  - 1.335
+  - 1.26
+  - 1.498
+  - 1.682
+  - 2

@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8186551299787776441}
   - component: {fileID: 7910156028821908783}
   - component: {fileID: 1653215227857966997}
+  - component: {fileID: 8770963668044977858}
   m_Layer: 5
   m_Name: ShapeCard
   m_TagString: Untagged
@@ -218,6 +219,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Role: 2
   Alpha: 1
+--- !u!114 &8770963668044977858
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 292379363400192319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e381dbf66584047a178deae5d4a2220, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &368823365370587862
 GameObject:
   m_ObjectHideFlags: 0
