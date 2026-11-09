@@ -56,6 +56,8 @@ namespace CircuitCube.Core
         public bool endless, enable;
         public int levelCount;
         public int chunkSize = 100;
+        // this group's own par slack (see GameRules); -1 = use the manifest rule
+        public int expertSlackPercent = -1, expertSlackMin = -1;
         public List<ChunkInfo> chunks = new List<ChunkInfo>();
     }
 

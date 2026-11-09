@@ -957,7 +957,8 @@ function refreshAll(){refreshShape();refreshBoard();draw()}
 const PAGE=100,CHUNK=100;let listPage=0,chunkUnsub=null,ORDER=null,CHUNKS=[],GROUPS={};
 const DEFAULT_RULES={windowBack:10,windowAhead:10,hintsPerLevel:3,hintPenalty:1,minScore:3,parScore:6,overParScore:5,expertSlackPercent:15,expertSlackMin:5};
 // moves that still count as par (the game's LevelScore.ExpertLimit): par + max(min, ceil(par × percent / 100))
-const expertLimit=(par,r)=>par+Math.max(r.expertSlackMin??5,Math.ceil(par*(r.expertSlackPercent??15)/100));
+const slackOf=(r,g,k,d)=>g&&g[k]!=null&&g[k]>=0?g[k]:(r[k]??d);
+const expertLimit=(par,r,g)=>par+Math.max(slackOf(r,g,"expertSlackMin",5),Math.ceil(par*slackOf(r,g,"expertSlackPercent",15)/100));
 const DEFAULT_MANIFEST={schema:3,minApp:"0.1.0",shapesVersion:1,rules:DEFAULT_RULES,groups:[{id:"cube",unlock:null}]};
 const groupDetail=(id,name)=>({id,name:name||id,blurb:"",icon:id,endless:false,enable:false,levelCount:0,chunkSize:CHUNK,chunks:[],nextSerial:1});
 const idOf=(g,n)=>g+"-"+pad4(n);
@@ -1339,6 +1340,7 @@ const RULE_INFO={windowBack:["Keep behind","Levels already played kept on the de
 let gDraft=null,rDraft=null;
 const jeq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 function gDirty(){return !!gDraft&&(!jeq(gDraft.manifest,MANIFEST)||!jeq(gDraft.groups,GROUPS))}
+function parLine(g){const r=Object.assign({},DEFAULT_RULES,MANIFEST.rules||{});return "PAR in game: "+[20,45,70,100].map(p=>`${p} → ${expertLimit(p,r,g)}`).join(" · ")}
 function unlockText(u){return !u||!u.group?"Open from the start.":`Opens after ${u.cleared} levels of group ${u.group}.`}
 function cfgOnData(){if(!gDirty())gDraft=null;rDraft=null;if(!$("#viewGroups").hidden)cfgRender();
   if(!$("#viewFill").hidden&&!Object.keys(FILL).length){renderFillTable();clearTimeout(cfgOnData._t);cfgOnData._t=setTimeout(renderFillCounts,300)}}
@@ -1359,6 +1361,9 @@ function cfgRender(){
         <label class="f" for="cgi-${i}">Icon<select id="cgi-${i}" data-f="icon">${ICONS.map(x=>`<option${g.icon===x?" selected":""}>${x}</option>`).join("")}${ICONS.includes(g.icon)?"":`<option selected>${esc(g.icon||"")}</option>`}</select></label>
         <label class="f" for="cgu-${i}">Unlock<select id="cgu-${i}" data-u="group">${opts}</select></label>
         <label class="f" for="cgc-${i}">Levels to clear<input id="cgc-${i}" type="number" min="0" data-u="cleared" value="${u&&u.group?u.cleared:0}" ${u&&u.group?"":"disabled"}></label>
+        <label class="f" for="cgp-${i}">Par slack % (empty = rule)<input id="cgp-${i}" type="number" min="0" max="100" data-f="expertSlackPercent" data-n="1" value="${g.expertSlackPercent!=null&&g.expertSlackPercent>=0?g.expertSlackPercent:""}" placeholder="${MANIFEST.rules?.expertSlackPercent??15}"></label>
+        <label class="f" for="cgm-${i}">Par slack, at least<input id="cgm-${i}" type="number" min="0" data-f="expertSlackMin" data-n="1" value="${g.expertSlackMin!=null&&g.expertSlackMin>=0?g.expertSlackMin:""}" placeholder="${MANIFEST.rules?.expertSlackMin??5}"></label>
+        <span class="note c-par" style="margin:0;align-self:end">${parLine(g)}</span>
         <label class="f wide" for="cgb-${i}">Description<input id="cgb-${i}" type="text" data-f="blurb" value="${esc(g.blurb||"")}"></label>
         <label class="f wide" for="cgs-${i}">Shapes (ids in order, *n = levels Auto fill makes with it; checked on save; "megamix" = random blocks)<input id="cgs-${i}" type="text" class="mono" data-f="shapes" value="${esc(g.shapes||DEFAULT_SHAPES[ref.id]||"")}" placeholder="octa-2 octa-3 octa-4"></label>
         <div class="row wide"><label class="chk"><input type="checkbox" data-f="enable" ${g.enable?"checked":""}> Enabled in the game</label>
@@ -1380,7 +1385,8 @@ function rulesChanged(){
 $("#cGroupCards").addEventListener("input",e=>{
   const card=e.target.closest(".c-card");if(!card)return;const id=card.dataset.gid,ref=gDraft.manifest.groups.find(x=>x.id===id);
   const g=gDraft.groups[id]||(gDraft.groups[id]=groupDetail(id));const f=e.target.dataset.f,u=e.target.dataset.u;
-  if(f)g[f]=e.target.type==="checkbox"?e.target.checked:e.target.value;
+  if(f&&e.target.dataset.n){const v=e.target.value.trim();if(v==="")delete g[f];else g[f]=Math.max(0,parseInt(v)||0);card.querySelector(".c-par").textContent=parLine(g)}
+  else if(f)g[f]=e.target.type==="checkbox"?e.target.checked:e.target.value;
   if(u==="group"){ref.unlock=e.target.value?{group:e.target.value,cleared:(ref.unlock&&ref.unlock.cleared)||10}:null;cfgRender();return}
   if(u==="cleared"&&ref.unlock)ref.unlock.cleared=Math.max(0,parseInt(e.target.value)||0);
   if(e.target.type==="checkbox")cfgRender();else{$("#cGroupsDirty").hidden=!gDirty();card.querySelector(".c-ul").textContent=unlockText(ref.unlock)}

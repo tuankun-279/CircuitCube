@@ -540,7 +540,7 @@ namespace CircuitCube.Game
         void UpdateHud()
         {
             var hud = UI.Hud;
-            int target = LevelScore.ExpertLimit(_level.Par, GameData.Rules);   // the par players see includes the slack
+            int target = LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group));   // the par players see includes the slack
             if (_moves != _shownMoves || target != _shownPar)
             {
                 _shownMoves = _moves;
@@ -642,7 +642,7 @@ namespace CircuitCube.Game
         }
 
         /// <summary>6 at par, at most 5 over par, minus one per hint, never below 3 (rules come from the manifest).</summary>
-        int PointsFor() => LevelScore.Points(_moves, _level.Par, _hintsUsed, GameData.Rules);
+        int PointsFor() => LevelScore.Points(_moves, _level.Par, _hintsUsed, GameData.Rules, GameData.Group(_group));
 
         void Win()
         {
@@ -672,7 +672,7 @@ namespace CircuitCube.Game
                 r.Caption.text = GameData.Group(_group).name.ToUpperInvariant() + "  ·  LEVEL " + _level.Number;
                 r.Title.text = "Level complete";
                 r.Stats[0].text = _moves.ToString();
-                r.Stats[1].text = LevelScore.ExpertLimit(_level.Par, GameData.Rules).ToString();
+                r.Stats[1].text = LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group)).ToString();
                 r.Stats[2].text = _board.LitLamps + "/" + _board.TotalLamps;
                 r.Badge.SetActive(points >= GameData.Rules.parScore);
                 // the stars say how well it went; the points and hint rule stay behind the scenes

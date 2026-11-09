@@ -93,12 +93,18 @@ namespace CircuitCube.Core
         /// <see cref="GameRules.expertSlackMin"/> taps and <see cref="GameRules.expertSlackPercent"/>% of par
         /// (rounded up). This is the "par" the player sees.
         /// </summary>
-        public static int ExpertLimit(int par, GameRules r) =>
-            par + Math.Max(r.expertSlackMin, (int)Math.Ceiling(par * r.expertSlackPercent / 100.0));
-
-        public static int Points(int moves, int par, int hintsUsed, GameRules r)
+        /// A group may set its own slack (<see cref="GroupData.expertSlackPercent"/>, -1 = the rule's), so every
+        /// shape can be tuned to the same chance of Expert.
+        public static int ExpertLimit(int par, GameRules r, GroupData group = null)
         {
-            int baseScore = moves <= ExpertLimit(par, r) ? r.parScore : r.overParScore;
+            int pct = group != null && group.expertSlackPercent >= 0 ? group.expertSlackPercent : r.expertSlackPercent;
+            int min = group != null && group.expertSlackMin >= 0 ? group.expertSlackMin : r.expertSlackMin;
+            return par + Math.Max(min, (int)Math.Ceiling(par * pct / 100.0));
+        }
+
+        public static int Points(int moves, int par, int hintsUsed, GameRules r, GroupData group = null)
+        {
+            int baseScore = moves <= ExpertLimit(par, r, group) ? r.parScore : r.overParScore;
             return Math.Max(r.minScore, baseScore - hintsUsed * r.hintPenalty);
         }
 
