@@ -26,6 +26,10 @@ namespace CircuitCube.Game
         public BoardLook Look;
 
         [Header("Look")]
+        [Tooltip("Global bloom volume (scene object Bloom, built by Tools/Circuit Cube/Board/Build Bloom). On only in the dark theme: on light backgrounds it washes the board out.")]
+        public UnityEngine.Rendering.Volume BloomVolume;
+        [Tooltip("Lowest quality level (Edit > Project Settings > Quality, 0 = first) that gets bloom; lower levels keep the sprite glow only.")]
+        public int MinBloomQuality = 2;
         [Tooltip("Themes/Theme_Dark.asset")] public GameTheme DarkTheme;
         [Tooltip("Themes/Theme_Light.asset")] public GameTheme LightTheme;
 
@@ -775,6 +779,11 @@ namespace CircuitCube.Game
             if (t == null) return;
             Themes.Set(t);
             if (Cam != null) Cam.backgroundColor = t.CameraBackground;
+            // bloom: dark theme on medium quality and up; off, the camera skips post-processing altogether
+            bool bloom = t.Dark && BloomVolume != null && QualitySettings.GetQualityLevel() >= MinBloomQuality;
+            if (BloomVolume != null) BloomVolume.enabled = bloom;
+            var camData = Cam != null ? Cam.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>() : null;
+            if (camData != null) camData.renderPostProcessing = bloom;
             if (_board != null) _board.ApplyTheme();
         }
 

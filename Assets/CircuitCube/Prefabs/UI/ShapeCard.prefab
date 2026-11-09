@@ -137,7 +137,6 @@ MonoBehaviour:
   - cube
   - tetra
   - octa
-  - cylinder
   - dodeca
   - sphere
   - megamix
@@ -146,7 +145,6 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 2ffe16e2a59c7be43982759cc482babd, type: 3}
   - {fileID: 21300000, guid: 7c87f7a602687d3468f26daf4c38f0f0, type: 3}
   - {fileID: 21300000, guid: 2e58191ce2b9f9d49b66082283e78c69, type: 3}
-  - {fileID: 21300000, guid: 226032944c159db4dbdb17c698853b1f, type: 3}
   - {fileID: 21300000, guid: dfc986fb8e699d842a5e5c7aabfdd206, type: 3}
   - {fileID: 21300000, guid: 27460a04b8145d94facbf7a3eab9d7c7, type: 3}
   - {fileID: 21300000, guid: 14b36ae7a835fcc4da536f45add19202, type: 3}
@@ -155,7 +153,6 @@ MonoBehaviour:
   - {fileID: 21300000, guid: ef84d869dc6bd7748a926459f5f21dd1, type: 3}
   - {fileID: 21300000, guid: 32231c0ccee74e846a565df00a53e395, type: 3}
   - {fileID: 21300000, guid: fbb0aed66c3e33440b715b07efdbfb61, type: 3}
-  - {fileID: 21300000, guid: e4efeb5cc8bde21488118ec8de133781, type: 3}
   - {fileID: 21300000, guid: 0e08cb489ed338846b547165912436f8, type: 3}
   - {fileID: 21300000, guid: e7e8bd4178a799c4d9d69bd35127bca0, type: 3}
   - {fileID: 21300000, guid: ece74f4555ed3ae44a4c773732ad2d84, type: 3}

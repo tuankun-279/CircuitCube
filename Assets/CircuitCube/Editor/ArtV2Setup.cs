@@ -25,8 +25,8 @@ namespace CircuitCube.EditorTools
         // wire images are in ArtRef/legacy_v2.
         static readonly string[] SquareWires = new string[0];
         static readonly string[] TriWires = new string[0];
-        static readonly string[] IconIds = { "cube", "tetra", "octa", "cylinder", "dodeca", "sphere", "megamix", "cross" };
-        static readonly string[] IconFiles = { "shape_cube", "shape_tetra", "shape_octa", "shape_cylinder", "shape_dodeca", "shape_sphere", "shape_megamix", "shape_megamix" };
+        static readonly string[] IconIds = { "cube", "tetra", "octa", "dodeca", "sphere", "megamix", "cross" };
+        static readonly string[] IconFiles = { "shape_cube", "shape_tetra", "shape_octa", "shape_dodeca", "shape_sphere", "shape_megamix", "shape_megamix" };
 
         [MenuItem("Tools/Circuit Cube/Art V2/Apply Art V2")]
         public static void ApplyAll()

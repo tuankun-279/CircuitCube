@@ -18,7 +18,7 @@ namespace CircuitCube.UI
         public Button Button;
         [Tooltip("Old shape illustrations by index (used when the V2 lists below are empty).")]
         public Sprite[] Icons;
-        [Tooltip("Icon id of each entry in IconsDark / IconsLight (cube, tetra, octa, cylinder, dodeca, sphere, megamix, cross).")]
+        [Tooltip("Icon id of each entry in IconsDark / IconsLight (cube, tetra, octa, dodeca, sphere, megamix, cross).")]
         public string[] IconIds;
         public Sprite[] IconsDark, IconsLight;
         [Tooltip("\"New levels\" pill, shown when levels were added since the player last opened the group.")]
