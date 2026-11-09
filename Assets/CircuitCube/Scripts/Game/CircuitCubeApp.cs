@@ -181,6 +181,7 @@ namespace CircuitCube.Game
             UI.Unlock.gameObject.SetActive(false);
             UI.Settings.gameObject.SetActive(false);
             UI.Dim.SetActive(false);
+            if (UI.FlyingStars != null) foreach (var st in UI.FlyingStars) if (st != null) st.gameObject.SetActive(false);
         }
 
         bool CardOpen => UI.Result.gameObject.activeSelf || UI.Tip.gameObject.activeSelf
@@ -669,6 +670,7 @@ namespace CircuitCube.Game
             _tw.Run(0.55f, p => tr.rotation = Quaternion.AngleAxis(200f * p * p, Vector3.up) * from, () =>
             {
                 board.Shatter();
+                EmergeStars(points / 2);
 #if UNITY_ANDROID || UNITY_IOS
                 if (CubeSave.Settings.vibration) Handheld.Vibrate();
 #endif
@@ -685,13 +687,90 @@ namespace CircuitCube.Game
                 r.Badge.SetActive(points >= GameData.Rules.parScore);
                 // the stars say how well it went; the points and hint rule stay behind the scenes
                 r.Body.text = unlocksNext ? "New shape unlocked: " + GameData.Group(newGroup).name + "!" : "";
-                r.Stars.SetPoints(points);
+                bool flying = _flyingStars > 0;
+                if (flying) r.Stars.Set(0);     // the flying stars fill the row one by one
+                else r.Stars.SetPoints(points);
                 r.PrimaryLabel.text = "Next level";
                 UI.Dim.SetActive(true);
                 r.Open();
+                if (flying) FlyStarsHome(r.Stars);
                 // one rising chime per whole star, after the card has slid in
-                for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);
+                else for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);
             }, UI.Result);   // its own owner: a second run on the board's transform would cancel the wind-up
+        }
+
+        // ---------------- Stars flying from the box to the result card ----------------
+
+        int _flyingStars;
+
+        /// <summary>The earned stars burst out of the breaking box and hang around where it was.</summary>
+        void EmergeStars(int count)
+        {
+            var fs = UI.FlyingStars;
+            _flyingStars = 0;
+            if (fs == null || fs.Length == 0 || fs[0] == null || _board == null) return;
+            count = Mathf.Min(count, fs.Length);
+            if (count <= 0) return;
+            var parent = (RectTransform)fs[0].parent;
+            var canvas = parent.GetComponentInParent<Canvas>().rootCanvas;
+            var uiCam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+            Vector2 screen = Cam.WorldToScreenPoint(_board.transform.position);
+            if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(parent, screen, uiCam, out var core)) return;
+            float unit = 170f * parent.lossyScale.x;   // spread in canvas units
+            for (int i = 0; i < count; i++)
+            {
+                var st = fs[i];
+                float x = count == 1 ? 0f : -1f + 2f * i / (count - 1);
+                Vector3 target = core + new Vector3(x * unit, (0.35f - 0.25f * Mathf.Abs(x)) * unit, 0f);
+                st.gameObject.SetActive(true);
+                st.position = core;
+                st.localScale = Vector3.zero;
+                st.localRotation = Quaternion.identity;
+                Vector3 from = core;
+                _tw.Run(0.45f, p =>
+                {
+                    st.position = Vector3.LerpUnclamped(from, target, p);
+                    st.localScale = Vector3.one * (1.15f * Mathf.Sin(Mathf.Min(1f, p * 1.4f) * Mathf.PI * 0.5f));
+                    st.localRotation = Quaternion.Euler(0f, 0f, (1f - p) * 180f * (x >= 0f ? -1f : 1f));
+                }, null, st);
+            }
+            _flyingStars = count;
+        }
+
+        /// <summary>Once the card is in, each star flies on an arc into its place in the star row, which then fills.</summary>
+        void FlyStarsHome(StarRow row)
+        {
+            var fs = UI.FlyingStars;
+            int count = _flyingStars;
+            _flyingStars = 0;
+            for (int i = 0; i < count; i++)
+            {
+                int k = i;
+                var st = fs[k];
+                var slot = row.Stars[k].rectTransform;
+                _tw.Run(0.35f + 0.18f * k, p => { }, () =>
+                {
+                    if (!UI.Result.gameObject.activeSelf) { st.gameObject.SetActive(false); return; }
+                    Vector3 from = st.position;
+                    float lift = 220f * st.lossyScale.x;
+                    _tw.Run(0.45f, p =>
+                    {
+                        Vector3 to = slot.position;                      // the card may still be settling
+                        Vector3 mid = (from + to) * 0.5f + Vector3.up * lift;
+                        float q = 1f - p;
+                        st.position = q * q * from + 2f * q * p * mid + p * p * to;
+                        st.localScale = Vector3.one * Mathf.Lerp(1.15f, 0.9f, p);
+                    }, () =>
+                    {
+                        st.gameObject.SetActive(false);
+                        if (!UI.Result.gameObject.activeSelf) return;
+                        row.Set(k + 1);
+                        GameAudio.Play(Sfx.Star, 1f + 0.12f * k);
+                        var pop = slot.transform;
+                        _tw.Run(0.25f, p => pop.localScale = Vector3.one * (1.35f - 0.35f * p), null, pop);
+                    }, st);
+                }, row.Stars[k]);
+            }
         }
 
         // ---------------- Loop and input ----------------

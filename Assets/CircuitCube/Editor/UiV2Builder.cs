@@ -44,7 +44,37 @@ namespace CircuitCube.EditorTools
             PrefabUtility.UnloadPrefabContents(root);
             AssetDatabase.SaveAssets();
             NewLevelsAndTablets();
+            FlyingStars();
             Debug.Log("[CircuitCube] UI V2 built.");
+        }
+
+        /// <summary>
+        /// Three star images above every card (hidden): on a win they burst out of the breaking box and fly into the
+        /// result card's stars. Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/Circuit Cube/Art V2/Build Flying Stars")]
+        public static void FlyingStars()
+        {
+            var root = PrefabUtility.LoadPrefabContents(UiPrefab);
+            try
+            {
+                var ui = root.GetComponent<UIRoot>();
+                var safe = root.transform.Find("SafeArea");
+                var layer = Fresh(safe, "FlyingStars", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero);
+                var stars = new RectTransform[3];
+                for (int i = 0; i < stars.Length; i++)
+                {
+                    var img = Pic(layer, "Star" + i, Half, Half, Half, Vector2.zero, new Vector2(120, 120), Icon("icon_star_full"), UiRole.Star);
+                    img.gameObject.SetActive(false);
+                    stars[i] = img.rectTransform;
+                }
+                layer.SetAsLastSibling();   // over the dim and the cards
+                ui.FlyingStars = stars;
+                PrefabUtility.SaveAsPrefabAsset(root, UiPrefab);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CircuitCube] Flying stars built.");
         }
 
         /// <summary>

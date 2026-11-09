@@ -16,5 +16,7 @@ namespace CircuitCube.UI
         public GameObject Dim;        // shown under any open card
         public Card Result, Tip, Unlock;
         public SettingsCard Settings;
+        [Tooltip("Stars that burst out of the solved box and fly into the result card's star row (above every card).")]
+        public RectTransform[] FlyingStars = new RectTransform[0];
     }
 }
