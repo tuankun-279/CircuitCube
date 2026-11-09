@@ -88,9 +88,17 @@ namespace CircuitCube.Core
     /// <summary>Score of a won level: 6 at par, at most 5 over par, minus hints, never below the minimum.</summary>
     public static class LevelScore
     {
+        /// <summary>
+        /// Most moves that still score as par: the level's par plus a margin for a few slips, at least
+        /// <see cref="GameRules.expertSlackMin"/> taps and <see cref="GameRules.expertSlackPercent"/>% of par
+        /// (rounded up). This is the "par" the player sees.
+        /// </summary>
+        public static int ExpertLimit(int par, GameRules r) =>
+            par + Math.Max(r.expertSlackMin, (int)Math.Ceiling(par * r.expertSlackPercent / 100.0));
+
         public static int Points(int moves, int par, int hintsUsed, GameRules r)
         {
-            int baseScore = moves <= par ? r.parScore : r.overParScore;
+            int baseScore = moves <= ExpertLimit(par, r) ? r.parScore : r.overParScore;
             return Math.Max(r.minScore, baseScore - hintsUsed * r.hintPenalty);
         }
 

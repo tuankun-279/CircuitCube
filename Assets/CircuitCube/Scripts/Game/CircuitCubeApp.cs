@@ -540,11 +540,12 @@ namespace CircuitCube.Game
         void UpdateHud()
         {
             var hud = UI.Hud;
-            if (_moves != _shownMoves || _level.Par != _shownPar)
+            int target = LevelScore.ExpertLimit(_level.Par, GameData.Rules);   // the par players see includes the slack
+            if (_moves != _shownMoves || target != _shownPar)
             {
                 _shownMoves = _moves;
-                _shownPar = _level.Par;
-                hud.Status.text = string.Concat("MOVES ", Num(_moves), "  ·  PAR ", Num(_level.Par));
+                _shownPar = target;
+                hud.Status.text = string.Concat("MOVES ", Num(_moves), "  ·  PAR ", Num(target));
             }
             if (_hintsLeft != _shownHints)
             {
@@ -671,7 +672,7 @@ namespace CircuitCube.Game
                 r.Caption.text = GameData.Group(_group).name.ToUpperInvariant() + "  ·  LEVEL " + _level.Number;
                 r.Title.text = "Level complete";
                 r.Stats[0].text = _moves.ToString();
-                r.Stats[1].text = _level.Par.ToString();
+                r.Stats[1].text = LevelScore.ExpertLimit(_level.Par, GameData.Rules).ToString();
                 r.Stats[2].text = _board.LitLamps + "/" + _board.TotalLamps;
                 r.Badge.SetActive(points >= GameData.Rules.parScore);
                 // the stars say how well it went; the points and hint rule stay behind the scenes
