@@ -388,7 +388,13 @@ namespace CircuitCube.Game
         {
             var key = (queue, tex.GetInstanceID());
             if (Materials.TryGetValue(key, out var m) && m != null) return m;
-            m = new Material(_look.Shader) { name = "Board_" + tex.name + "_" + queue, mainTexture = tex, renderQueue = queue, enableInstancing = true };
+            // copy the instanced asset when there is one: a material made only from the shader would miss the
+            // instancing variant in a player build and draw nothing
+            m = _look.SpriteMaterial != null ? new Material(_look.SpriteMaterial) : new Material(_look.Shader);
+            m.name = "Board_" + tex.name + "_" + queue;
+            m.mainTexture = tex;
+            m.renderQueue = queue;
+            m.enableInstancing = true;
             m.SetFloat(SrcBlendId, (float)BlendMode.SrcAlpha);
             m.SetFloat(DstBlendId, (float)BlendMode.OneMinusSrcAlpha);
             m.SetFloat(ZWriteId, 0f);

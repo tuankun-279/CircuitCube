@@ -39,6 +39,9 @@ namespace CircuitCube.Game
 
         public Mesh Quad;
         public Shader Shader;
+        [Tooltip("Instanced material the board copies for its wires, lamps and glows. Being an asset with GPU instancing on, " +
+                 "it also keeps the shader's instancing variant in player builds, which strip variants no asset uses.")]
+        public Material SpriteMaterial;
         [Tooltip("Draws the tile faces of a board as one mesh (BoardFace.shader).")]
         public Shader FaceShader;
         public Texture HintTexture;

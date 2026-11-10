@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Quad: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
   Shader: {fileID: 4800000, guid: 5cfce240b310c254099e70453a450a3b, type: 3}
+  SpriteMaterial: {fileID: 2100000, guid: 8177b1284a7cce743981fa7ca5777a4f, type: 2}
   FaceShader: {fileID: 4800000, guid: 4367e2f1db6624447a446cfb26ac3eed, type: 3}
   HintTexture: {fileID: 2800000, guid: 3a91a26736b3a5b4e8540c428d5cc71a, type: 3}
   Shapes:
@@ -410,3 +411,8 @@ MonoBehaviour:
     m_RotationOrder: 4
   TurnTime: 0.18
   TurnOvershoot: 0.12
+  ShatterTime: 0.9
+  ShatterStagger: 0.14
+  ShatterDistance: 1.6
+  ShatterSpin: 540
+  ShatterCore: 1.3
