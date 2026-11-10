@@ -38,6 +38,7 @@ crashlytics-build.properties
 /raw_*.png
 /ArtRef/raw*.png
 /cc_push.zip
+/_to_delete/
 /circuitcube-data.zip
 /Assets/Screenshots/
 /Assets/Screenshots.meta
