@@ -82,6 +82,7 @@ namespace CircuitCube.Tests
         public void UndoLimitRule()
         {
             Assert.AreEqual(5, new GameRules().undosPerLevel);
+            Assert.AreEqual(1, new GameRules().adsOn);           // ads stay on unless a manifest says 0
             // a manifest published before the rule existed keeps the default
             var old = JsonUtility.FromJson<ManifestData>("{\"schema\":3,\"rules\":{\"hintsPerLevel\":3}}");
             Assert.AreEqual(5, old.rules.undosPerLevel);

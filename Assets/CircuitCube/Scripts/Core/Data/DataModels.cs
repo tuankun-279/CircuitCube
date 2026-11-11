@@ -29,6 +29,8 @@ namespace CircuitCube.Core
         public int hintsPerLevel = 3, hintPenalty = 1;
         // each undo costs a rewarded ad; a level allows this many
         public int undosPerLevel = 5;
+        // 1 = a hint or an undo plays a rewarded ad first; 0 = free for everyone (closed test), switched from Level Lab
+        public int adsOn = 1;
         public int minScore = 3, parScore = 6, overParScore = 5;
         // moves up to par + expertSlackPercent% of par (rounded up, at least expertSlackMin) still count as par (3 stars, Expert)
         public int expertSlackPercent = 15, expertSlackMin = 0;

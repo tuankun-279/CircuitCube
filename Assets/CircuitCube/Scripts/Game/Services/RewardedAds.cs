@@ -157,9 +157,10 @@ namespace CircuitCube.Game
         {
             string name = placement == AdPlacement.Hint ? "hint" : "undo";
             Loaded.TryGetValue(placement, out var ad);
-            if (SkipAds || ad == null || !ad.CanShowAd())
+            bool off = GameData.Rules.adsOn == 0;   // switched off in the content manifest (closed test)
+            if (off || SkipAds || ad == null || !ad.CanShowAd())
             {
-                GameAnalytics.Log("ad_unavailable", ("placement", name), ("reason", SkipAds ? "skipped" : _sdkReady ? "not_loaded" : "no_sdk"));
+                GameAnalytics.Log("ad_unavailable", ("placement", name), ("reason", off ? "off" : SkipAds ? "skipped" : _sdkReady ? "not_loaded" : "no_sdk"));
                 Load(placement);
                 granted?.Invoke();
                 return;
