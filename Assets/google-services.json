@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "6185798786",
+    "project_id": "circuit-cube",
+    "storage_bucket": "circuit-cube.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:6185798786:android:e5347d77177218053ab89b",
+        "android_client_info": {
+          "package_name": "com.zyerkun.circuitcube"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6Q5h5H066MojKu1XSo52zo6Ov5WoBLq8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

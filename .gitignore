@@ -50,3 +50,8 @@ Thumbs.db
 # Firebase Android libraries the dependency resolver copies out of those packages
 /Assets/GeneratedLocalRepo/
 /Assets/GeneratedLocalRepo.meta
+# made by Firebase from Assets/google-services.json on every import
+/Assets/Plugins/Android/FirebaseApp.androidlib/
+/Assets/Plugins/Android/FirebaseApp.androidlib.meta
+/Assets/StreamingAssets/google-services-desktop.json
+/Assets/StreamingAssets/google-services-desktop.json.meta
