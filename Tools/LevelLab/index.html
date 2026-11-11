@@ -955,7 +955,7 @@ function refreshAll(){refreshShape();refreshBoard();draw()}
 // orders/<id>-<k> {group, chunk:k, version, levels:[serial…]}  ← 100 positions per chunk
 // levels/<id>-<serial> · shapes/<shapeId>        (* nextSerial is Level Lab only, dropped on export)
 const PAGE=100,CHUNK=100;let listPage=0,chunkUnsub=null,ORDER=null,CHUNKS=[],GROUPS={};
-const DEFAULT_RULES={windowBack:10,windowAhead:10,hintsPerLevel:3,hintPenalty:1,minScore:3,parScore:6,overParScore:5,expertSlackPercent:15,expertSlackMin:0};
+const DEFAULT_RULES={windowBack:10,windowAhead:10,hintsPerLevel:3,hintPenalty:1,undosPerLevel:5,minScore:3,parScore:6,overParScore:5,expertSlackPercent:15,expertSlackMin:0};
 // moves that still count as par (the game's LevelScore.ExpertLimit): par + max(min, ceil(par × percent / 100))
 const slackOf=(r,g,k,d)=>g&&g[k]!=null&&g[k]>=0?g[k]:(r[k]??d);
 const expertLimit=(par,r,g)=>par+Math.max(slackOf(r,g,"expertSlackMin",0),Math.ceil(par*slackOf(r,g,"expertSlackPercent",15)/100));

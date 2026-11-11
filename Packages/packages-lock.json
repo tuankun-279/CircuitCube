@@ -1,5 +1,38 @@
 {
   "dependencies": {
+    "com.google.ads.mobile": {
+      "version": "11.6.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.external-dependency-manager": "2.1.0",
+        "com.unity.modules.androidjni": "1.0.0"
+      },
+      "url": "https://package.openupm.com"
+    },
+    "com.google.external-dependency-manager": {
+      "version": "1.2.190",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
+    "com.google.firebase.analytics": {
+      "version": "file:../GooglePackages/com.google.firebase.analytics-14.1.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.firebase.app": "14.1.0"
+      }
+    },
+    "com.google.firebase.app": {
+      "version": "file:../GooglePackages/com.google.firebase.app-14.1.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.external-dependency-manager": "1.2.190"
+      }
+    },
     "com.unity.2d.animation": {
       "version": "10.2.2",
       "depth": 1,
@@ -166,6 +199,15 @@
       "depth": 1,
       "source": "builtin",
       "dependencies": {}
+    },
+    "com.unity.external-dependency-manager": {
+      "version": "2.1.0",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.uielements": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.feature.2d": {
       "version": "2.0.1",

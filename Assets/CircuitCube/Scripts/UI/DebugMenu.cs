@@ -47,6 +47,13 @@ namespace CircuitCube.UI
             if (kb != null && kb.f1Key.wasPressedThisFrame) Panel.SetActive(!Panel.activeSelf);
             // F2 switches dark / light mode
             if (kb != null && kb.f2Key.wasPressedThisFrame && App != null) App.SetTheme(App.ThemeMode == "light" ? "dark" : "light");
+            // F3 skips the rewarded ads in front of hints and undos
+            if (kb != null && kb.f3Key.wasPressedThisFrame)
+            {
+                RewardedAds.SkipAds = !RewardedAds.SkipAds;
+                Debug.Log("[CircuitCube] ads " + (RewardedAds.SkipAds ? "skipped" : "on"));
+                if (Status != null) Status.text = RewardedAds.SkipAds ? "Ads skipped (F3)" : "Ads on (F3)";
+            }
         }
 
         void Select(int g)

@@ -682,7 +682,7 @@ PlayerSettings:
   webGLCloseOnQuit: 0
   webWasm2023: 0
   scriptingDefineSymbols:
-    Android: SENTIS_ANALYTICS_ENABLED
+    Android: SENTIS_ANALYTICS_ENABLED;UNITY_EDM_DISABLED
     Standalone: SENTIS_ANALYTICS_ENABLED
   additionalCompilerArguments: {}
   platformArchitecture: {}

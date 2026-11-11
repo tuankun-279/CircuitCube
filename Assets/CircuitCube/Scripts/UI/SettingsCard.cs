@@ -23,6 +23,10 @@ namespace CircuitCube.UI
         public Button[] ThemeButtons = new Button[3];
         public GameObject PauseActions;
         public Button Resume, Restart, Home;
+        [Tooltip("Opens Google's privacy options form. Shown only where the law asks for it.")]
+        public Button Privacy;
+        [Tooltip("Extra panel height while the Privacy button shows.")]
+        public float PrivacyHeight = 80f;
 
         static readonly string[] Modes = { "system", "light", "dark" };
 
@@ -46,7 +50,9 @@ namespace CircuitCube.UI
             gameObject.SetActive(true);
             Title.text = paused ? "Paused" : "Settings";
             PauseActions.SetActive(paused);
-            if (Panel != null) Panel.sizeDelta = new Vector2(Panel.sizeDelta.x, paused ? PausedHeight : SettingsHeight);
+            bool privacy = Privacy != null && RewardedAds.PrivacyOptionsRequired;
+            if (Privacy != null) Privacy.gameObject.SetActive(privacy);
+            if (Panel != null) Panel.sizeDelta = new Vector2(Panel.sizeDelta.x, (paused ? PausedHeight : SettingsHeight) + (privacy ? PrivacyHeight : 0f));
             var s = CubeSave.Settings;
             Sound.Set(s.sound);
             Music.Set(s.music);

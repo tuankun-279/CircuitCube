@@ -45,7 +45,47 @@ namespace CircuitCube.EditorTools
             AssetDatabase.SaveAssets();
             NewLevelsAndTablets();
             FlyingStars();
+            AdsUi();
             Debug.Log("[CircuitCube] UI V2 built.");
+        }
+
+        /// <summary>
+        /// UI for the rewarded ads: a badge with the undos left on the Undo button (a copy of the hint count badge), and a
+        /// "Privacy options" link in the settings card for players whose region needs one. Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/Circuit Cube/Art V2/Build Ads UI")]
+        public static void AdsUi()
+        {
+            var root = PrefabUtility.LoadPrefabContents(UiPrefab);
+            try
+            {
+                var ui = root.GetComponent<UIRoot>();
+                var hud = ui.Hud;
+                var undo = hud.UndoButton.transform;
+                var old = undo.Find("Count");
+                if (old != null) Object.DestroyImmediate(old.gameObject);
+                var count = Object.Instantiate(hud.HintButton.transform.Find("Count").gameObject, undo, false);
+                count.name = "Count";
+                ((RectTransform)count.transform).anchoredPosition = new Vector2(-14, 14);
+                foreach (var g in count.GetComponentsInChildren<Graphic>(true)) g.raycastTarget = false;
+                hud.UndoCount = count.GetComponentInChildren<TMP_Text>(true);
+                hud.UndoCount.text = "5";
+
+                var st = ui.Settings;
+                var panel = st.Panel;
+                var link = Fresh(panel, "Privacy", TopC, TopC, TopC, new Vector2(0, -700), new Vector2(760, 64));
+                Img(link, null, UiRole.None).color = new Color(1, 1, 1, 0);   // invisible hit area
+                var label = Label(link, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, "<u>Privacy options</u>", 30, UiRole.TextMuted);
+                label.raycastTarget = false;
+                st.Privacy = link.gameObject.AddComponent<Button>();
+                link.gameObject.AddComponent<UiClickSound>();
+                link.gameObject.SetActive(false);
+
+                PrefabUtility.SaveAsPrefabAsset(root, UiPrefab);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CircuitCube] Ads UI built.");
         }
 
         /// <summary>

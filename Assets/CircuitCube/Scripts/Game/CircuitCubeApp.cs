@@ -17,6 +17,7 @@ namespace CircuitCube.Game
         enum State { Home, Shapes, Levels, Playing, Won }
 
         public static int HintsPerLevel => GameData.Rules.hintsPerLevel;
+        public static int UndosPerLevel => GameData.Rules.undosPerLevel;
 
         [Header("Scene")]
         public Camera Cam;
@@ -49,7 +50,8 @@ namespace CircuitCube.Game
 
         CubeLevel _level;
         CubeBoardView _board;
-        int _moves, _hintsLeft, _hintsUsed;
+        int _moves, _hintsLeft, _hintsUsed, _undosLeft, _undosUsed;
+        float _levelStartTime;
         bool _busy, _cheat;
         System.Action _tipClosed;
         readonly Stack<int> _undo = new Stack<int>();   // tiles the player turned, newest first
@@ -79,7 +81,12 @@ namespace CircuitCube.Game
             UI.Levels.BackButton.onClick.AddListener(Back);
             var hud = UI.Hud;
             hud.BackButton.onClick.AddListener(() => { if (_state == State.Playing && !_busy && !CardOpen) OpenSettings(true); });
-            hud.RestartButton.onClick.AddListener(() => { if (_state == State.Playing && !_busy && !CardOpen) StartLevel(_group, _level.Number); });
+            hud.RestartButton.onClick.AddListener(() =>
+            {
+                if (_state != State.Playing || _busy || CardOpen) return;
+                GameAnalytics.Log("level_restart", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("moves", _moves));
+                StartLevel(_group, _level.Number);
+            });
             hud.HintButton.onClick.AddListener(UseHint);
             hud.UndoButton.onClick.AddListener(Undo);
             hud.HelpButton.onClick.AddListener(() => { if (_state == State.Playing && !CardOpen) ShowHowTo(); });
@@ -106,10 +113,13 @@ namespace CircuitCube.Game
             st.Restart.onClick.AddListener(() => { CloseSettings(); StartLevel(_group, _level.Number); });
             st.Home.onClick.AddListener(() => { CloseSettings(); SaveInProgress(); ShowHome(); });
             st.ThemePicked += SetTheme;
+            if (st.Privacy != null) st.Privacy.onClick.AddListener(() => RewardedAds.ShowPrivacyOptions());
         }
 
         void Start()
         {
+            GameAnalytics.Init();
+            RewardedAds.Init();
             HideAll();
             UI.Splash.Show();
             UI.Splash.SetProgress(0f);
@@ -142,7 +152,7 @@ namespace CircuitCube.Game
             if (_state != State.Playing || _level == null || _cheat) return;
             int serial = GameData.SerialAt(_group, _level.Number);
             if (serial <= 0) return;
-            var ip = new InProgress { serial = serial, position = _level.Number, moves = _moves, hintsUsed = _hintsUsed };
+            var ip = new InProgress { serial = serial, position = _level.Number, moves = _moves, hintsUsed = _hintsUsed, undosUsed = _undosUsed };
             var sb = new System.Text.StringBuilder(_level.Tiles.Length);
             for (int i = 0; i < _level.Tiles.Length; i++)
             {
@@ -164,6 +174,8 @@ namespace CircuitCube.Game
             _moves = ip.moves;
             _hintsUsed = ip.hintsUsed;
             _hintsLeft = Mathf.Max(0, HintsPerLevel - _hintsUsed);
+            _undosUsed = ip.undosUsed;
+            _undosLeft = Mathf.Max(0, UndosPerLevel - _undosUsed);
         }
 
         // ---------------- Screens ----------------
@@ -417,10 +429,14 @@ namespace CircuitCube.Game
             _moves = 0;
             _hintsUsed = 0;
             _hintsLeft = HintsPerLevel;
+            _undosUsed = 0;
+            _undosLeft = UndosPerLevel;
             _undo.Clear();
             _unlockedGroup = -1;
-            _shownMoves = _shownPar = _shownLit = _shownTotal = _shownHints = -1;
+            _shownMoves = _shownPar = _shownLit = _shownTotal = _shownHints = _shownUndos = -1;
             if (!cheat) RestoreInProgress();
+            _levelStartTime = Time.realtimeSinceStartup;
+            GameAnalytics.Log("level_start", ("shape", GameData.Group(group).id), ("level", number), ("resumed", _moves > 0));
             _busy = false;
             _state = State.Playing;
             HideAll();
@@ -533,7 +549,7 @@ namespace CircuitCube.Game
 
         // ---------------- Play ----------------
 
-        int _shownMoves = -1, _shownPar = -1, _shownLit = -1, _shownTotal = -1, _shownHints = -1;
+        int _shownMoves = -1, _shownPar = -1, _shownLit = -1, _shownTotal = -1, _shownHints = -1, _shownUndos = -1;
 
         /// <summary>Numbers as text without allocating for the values a level actually shows.</summary>
         static readonly string[] Numbers = BuildNumbers(1000);
@@ -556,8 +572,13 @@ namespace CircuitCube.Game
                 _shownHints = _hintsLeft;
                 hud.HintCount.text = Num(_hintsLeft);
             }
+            if (_undosLeft != _shownUndos)
+            {
+                _shownUndos = _undosLeft;
+                if (hud.UndoCount != null) hud.UndoCount.text = Num(_undosLeft);
+            }
             hud.HintButton.interactable = _hintsLeft > 0;
-            hud.UndoButton.interactable = _undo.Count > 0;
+            hud.UndoButton.interactable = _undosLeft > 0 && _undo.Count > 0;
             int lit = _board.LitLamps, total = _board.TotalLamps;
             if (lit == _shownLit && total == _shownTotal) return;
             _shownLit = lit;
@@ -591,10 +612,26 @@ namespace CircuitCube.Game
             if (solved) Win();
         }
 
-        /// <summary>Turn the last tile the player turned back one step. Takes the move back too.</summary>
+        /// <summary>
+        /// Turn the last tile the player turned back one step and take the move back. Each undo costs a rewarded ad
+        /// and a level allows <see cref="UndosPerLevel"/> of them.
+        /// </summary>
         void Undo()
         {
-            if (_state != State.Playing || _busy || CardOpen) return;
+            if (_state != State.Playing || _busy || CardOpen || _undosLeft <= 0 || !CanUndo()) return;
+            WithAd(AdPlacement.Undo, DoUndo);
+        }
+
+        /// <summary>There is a turn to take back (tiles a hint fixed since are skipped).</summary>
+        bool CanUndo()
+        {
+            foreach (int index in _undo) if (!_level.Tiles[index].Locked) return true;
+            return false;
+        }
+
+        void DoUndo()
+        {
+            if (_state != State.Playing || _undosLeft <= 0) return;
             while (_undo.Count > 0)
             {
                 int index = _undo.Pop();
@@ -602,12 +639,27 @@ namespace CircuitCube.Game
                 if (tile.Locked) continue;              // a hint fixed this tile since
                 tile.Rot += tile.Ports - 1;             // one step back, kept non-negative
                 _moves = Mathf.Max(0, _moves - 1);
+                _undosLeft--;
+                _undosUsed++;
                 GameAudio.Play(Sfx.Undo);
                 _board.AnimateRotation(index, -1);
                 _board.Refresh();
+                GameAnalytics.Log("undo_used", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("left", _undosLeft));
                 break;
             }
             UpdateHud();
+        }
+
+        /// <summary>
+        /// Show the rewarded ad for <paramref name="placement"/>, then run <paramref name="reward"/>. The board takes no
+        /// input while the ad is up; closing the ad early gives nothing, and no ad to show gives the reward for free.
+        /// </summary>
+        void WithAd(AdPlacement placement, System.Action reward)
+        {
+            _busy = true;
+            RewardedAds.Show(placement,
+                () => { _busy = false; reward(); },
+                () => { _busy = false; });
         }
 
         void ShowHowTo() => ShowTip("How to play",
@@ -615,9 +667,22 @@ namespace CircuitCube.Game
             + "When two sources share a wire their colours mix: Red + Blue = Purple, Red + Yellow = Orange, Blue + Yellow = Green.\n\n"
             + "Solve it in the fewest moves (par) for three stars.", "Got it", null);
 
+        /// <summary>Fix one wrong tile. Each hint costs a rewarded ad; a level allows <see cref="HintsPerLevel"/> of them.</summary>
         void UseHint()
         {
-            if (_state != State.Playing || _busy || _hintsLeft <= 0 || CardOpen) return;
+            if (_state != State.Playing || _busy || _hintsLeft <= 0 || CardOpen || !HasHintTile()) return;
+            WithAd(AdPlacement.Hint, DoHint);
+        }
+
+        bool HasHintTile()
+        {
+            foreach (var t in _level.Tiles) if (!t.Locked && Circuit.TapsToSolve(t) > 0) return true;
+            return false;
+        }
+
+        void DoHint()
+        {
+            if (_state != State.Playing || _hintsLeft <= 0) return;
             var candidates = new List<int>();
             var visibleFirst = new List<int>();
             Vector3 toCam = (Cam.transform.position - _board.transform.position).normalized;
@@ -638,6 +703,7 @@ namespace CircuitCube.Game
             _hintsLeft--;
             _hintsUsed++;
             GameAudio.Play(Sfx.Hint);
+            GameAnalytics.Log("hint_used", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("left", _hintsLeft));
             _board.AnimateRotation(pick, turns, 0.3f);
             bool solved = _board.Refresh();
             if (!solved && _board.NewlyLitColor != 0) GameAudio.Lamp(_board.NewlyLitColor);
@@ -661,6 +727,10 @@ namespace CircuitCube.Game
             for (int g = 0; g < wasOpen.Length && newGroup < 0; g++) if (!wasOpen[g] && CubeSave.GroupOpen(g)) newGroup = g;
             bool unlocksNext = newGroup >= 0;
             _unlockedGroup = newGroup;
+            GameAnalytics.Log("level_complete", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("moves", _moves),
+                ("par", LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group))), ("stars", points / 2),
+                ("hints", _hintsUsed), ("undos", _undosUsed), ("seconds", Mathf.RoundToInt(Time.realtimeSinceStartup - _levelStartTime)));
+            if (unlocksNext) GameAnalytics.Log("shape_unlocked", ("shape", GameData.Group(newGroup).id));
             _board.Celebrate();
             GameAudio.Play(Sfx.Win);
             GameAudio.Duck(3f);
@@ -784,6 +854,7 @@ namespace CircuitCube.Game
         {
             RefitOnResize();
             float dt = Time.unscaledDeltaTime;
+            RewardedAds.Tick();
             _tw.Tick(dt);
             HandlePointer(dt);
 

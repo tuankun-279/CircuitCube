@@ -10,6 +10,8 @@ namespace CircuitCube.UI
         public Button BackButton;
         public Button RestartButton, HintButton, HelpButton, UndoButton;
         public TMP_Text Title, Status, Tip, HintCount;
+        [Tooltip("Undos left in this level, on a badge at the corner of the Undo button.")]
+        public TMP_Text UndoCount;
         public RectTransform Legend;
         public LegendChip ChipPrefab;
         [Header("Lamp progress")]

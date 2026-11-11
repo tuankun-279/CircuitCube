@@ -30,7 +30,7 @@ namespace CircuitCube.Game
         public int serial;                 // 0 = nothing in progress
         public int position;
         public string rotations = "";      // one digit per tile
-        public int moves, hintsUsed;
+        public int moves, hintsUsed, undosUsed;
         public List<int> hintedTiles = new List<int>();
     }
     [Serializable] public class GroupProgress

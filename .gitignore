@@ -44,3 +44,9 @@ crashlytics-build.properties
 /Assets/Screenshots.meta
 .DS_Store
 Thumbs.db
+
+# Firebase packages are too big for git: Tools/GetGooglePackages.ps1 downloads them
+/GooglePackages/*.tgz
+# Firebase Android libraries the dependency resolver copies out of those packages
+/Assets/GeneratedLocalRepo/
+/Assets/GeneratedLocalRepo.meta

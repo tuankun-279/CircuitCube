@@ -79,6 +79,20 @@ namespace CircuitCube.Tests
         }
 
         [Test]
+        public void UndoLimitRule()
+        {
+            Assert.AreEqual(5, new GameRules().undosPerLevel);
+            // a manifest published before the rule existed keeps the default
+            var old = JsonUtility.FromJson<ManifestData>("{\"schema\":3,\"rules\":{\"hintsPerLevel\":3}}");
+            Assert.AreEqual(5, old.rules.undosPerLevel);
+            var set = JsonUtility.FromJson<ManifestData>("{\"schema\":3,\"rules\":{\"undosPerLevel\":2}}");
+            Assert.AreEqual(2, set.rules.undosPerLevel);
+            // a level left half way keeps the undos it used
+            var ip = JsonUtility.FromJson<InProgress>(JsonUtility.ToJson(new InProgress { serial = 7, undosUsed = 3 }));
+            Assert.AreEqual(3, ip.undosUsed);
+        }
+
+        [Test]
         public void SaveRoundTrip()
         {
             string old = CubeSave.Root;
