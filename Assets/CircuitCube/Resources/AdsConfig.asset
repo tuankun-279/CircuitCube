@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: AdsConfig
   m_EditorClassIdentifier: 
   UseTestAds: 1
-  AndroidHint: 
-  AndroidUndo: 
+  AndroidHint: ca-app-pub-4504308919035764/8611338283
+  AndroidUndo: ca-app-pub-4504308919035764/6311498066
   IosHint: 
   IosUndo: 
