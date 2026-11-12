@@ -1,0 +1,33 @@
+App name (max 30):
+Circuit Cube
+
+Short description (max 80):
+Turn tiles on a glowing 3D puzzle until every lamp lights up in its colour.
+
+Full description (max 4000):
+Circuit Cube is a calm, glowing puzzle game on a 3D shape you can spin in your hand.
+
+Every face is covered in tiles with neon wires. Tap a tile to turn it, connect the wires, and light every lamp in exactly its own colour. Wires run over the edges and around the whole shape, so turn the shape and look at it from every side.
+
+HOW TO PLAY
+• Tap a tile to rotate it.
+• Drag to spin the shape and see the other faces.
+• Each lamp must get exactly its colour: no more, no less.
+• Light every lamp to finish the level.
+
+SIX SHAPES TO MASTER
+• Moonbase – a cube whose wires wrap over every edge.
+• Pyramid – triangle tiles that turn a third at a time.
+• Star Gem – eight faces, four meeting at every point.
+• Planet – pentagons and hexagons with six ways out.
+• Galaxy – twelve faces cut finer and finer.
+• Nebula – a mix of everything you have learned.
+
+FEATURES
+• Hundreds of levels that grow from easy to brain-bending.
+• Earn up to three stars, and go for Expert by finishing close to par.
+• Stuck? Use a hint, or undo a move.
+• Dark and light themes, relaxing music and soft sounds.
+• Play offline. New level packs arrive automatically.
+
+Turn the tiles. Light every lamp.
