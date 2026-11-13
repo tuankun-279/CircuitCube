@@ -100,6 +100,11 @@ namespace CircuitCube.Tests
             Assert.AreEqual(5, LevelScore.Points(6, 5, 0, r));
             Assert.AreEqual(3, LevelScore.WholeStars(6));
             Assert.AreEqual(2, LevelScore.WholeStars(5));
+            Assert.AreEqual(5, LevelScore.HalfStars(5));         // 2½ stars
+            Assert.AreEqual(0, LevelScore.HalfStars(0));
+            Assert.AreEqual("2½", LevelScore.StarText(5));
+            Assert.AreEqual("3", LevelScore.StarText(6));
+            Assert.AreEqual("0", LevelScore.StarText(0));
         }
 
         [Test]

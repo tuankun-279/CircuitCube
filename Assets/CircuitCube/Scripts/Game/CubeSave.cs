@@ -172,10 +172,8 @@ namespace CircuitCube.Game
             return i < c.points.Length ? c.points[i] - '0' : 0;
         }
 
-        /// <summary>Whole stars for the current art (see LevelScore.WholeStars).</summary>
-        public static int Stars(int group, int position) => LevelScore.WholeStars(Points(group, position));
-
-        public static int TotalStars
+        /// <summary>Stars of every level won, counted in halves (a 5-point win is 2½ stars).</summary>
+        public static int TotalStarHalves
         {
             get
             {
@@ -187,7 +185,7 @@ namespace CircuitCube.Game
                     foreach (var f in Directory.GetFiles(dir, "stars-*.json"))
                     {
                         if (!int.TryParse(Path.GetFileNameWithoutExtension(f).Substring(6), out int k)) continue;
-                        foreach (char ch in Chunk(GameData.GroupId(g), k).points) sum += LevelScore.WholeStars(ch - '0');
+                        foreach (char ch in Chunk(GameData.GroupId(g), k).points) sum += LevelScore.HalfStars(ch - '0');
                     }
                 }
                 return sum;

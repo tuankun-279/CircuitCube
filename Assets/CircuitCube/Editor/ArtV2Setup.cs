@@ -375,6 +375,7 @@ namespace CircuitCube.EditorTools
             {
                 row.Full = Icon("icon_star_full");
                 row.Empty = Icon("icon_star_empty");
+                row.Half = Icon("icon_star_half");
                 foreach (var s in row.Stars) if (s != null) Role(s, UiRole.Star);
             }
         }

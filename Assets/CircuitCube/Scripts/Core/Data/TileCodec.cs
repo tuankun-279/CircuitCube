@@ -108,7 +108,13 @@ namespace CircuitCube.Core
             return Math.Max(r.minScore, baseScore - hintsUsed * r.hintPenalty);
         }
 
-        /// <summary>Whole stars shown until the half-star / Expert art exists: 6 → 3, 5/4 → 2, 3 → 1.</summary>
+        /// <summary>Whole stars of a score, half stars left out: 6 → 3, 5/4 → 2, 3 → 1.</summary>
         public static int WholeStars(int points) => points <= 0 ? 0 : Math.Max(1, points / 2);
+
+        /// <summary>Stars of a score counted in halves: 6 → 6 (3 stars), 5 → 5 (2½), 4 → 4, 3 → 3 (1½), 0 → 0.</summary>
+        public static int HalfStars(int points) => points <= 0 ? 0 : points;
+
+        /// <summary>A star count given in halves, as players read it: "12", "12½".</summary>
+        public static string StarText(int halves) => (halves / 2).ToString() + (halves % 2 == 1 ? "½" : "");
     }
 }

@@ -262,7 +262,7 @@ namespace CircuitCube.Game
             int next = CubeSave.Unlocked(g);
             h.PlayLabel.text = "Play";
             h.GroupLabel.text = info.name;
-            h.StarsLabel.text = CubeSave.TotalStars.ToString();
+            h.StarsLabel.text = LevelScore.StarText(CubeSave.TotalStarHalves);
             h.GroupName.text = info.name;
             h.GroupProgress.text = info.endless ? "Level " + next : "Level " + Mathf.Min(next, total) + " / " + total;
             h.GroupFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(CubeSave.Beaten(g) / (float)total), h.GroupFill.anchorMax.y);
@@ -280,7 +280,7 @@ namespace CircuitCube.Game
             GameAudio.Music(MusicTrack.Menu);
             var s = UI.Shapes;
             s.Show();
-            s.StarsLabel.text = CubeSave.TotalStars.ToString();
+            s.StarsLabel.text = LevelScore.StarText(CubeSave.TotalStarHalves);
             int next = 0;
             for (int g = 0; g < GameData.GroupCount; g++)
             {
@@ -353,10 +353,10 @@ namespace CircuitCube.Game
             int unlocked = CubeSave.Unlocked(group);
             int total = Mathf.Max(1, info.levelCount);
             lv.Subtitle.text = info.blurb;   // hidden in the V2 layout; kept for older prefabs
-            lv.StarsLabel.text = CubeSave.TotalStars.ToString();
-            int beaten = CubeSave.Beaten(group), groupStars = 0;
-            for (int l = 1; l <= beaten; l++) groupStars += CubeSave.Stars(group, l);
-            lv.ProgressValue.text = (info.endless ? beaten.ToString() : Mathf.Min(beaten, total) + " / " + total) + "  ·  " + groupStars + (groupStars == 1 ? " star" : " stars");
+            lv.StarsLabel.text = LevelScore.StarText(CubeSave.TotalStarHalves);
+            int beaten = CubeSave.Beaten(group), groupHalves = 0;
+            for (int l = 1; l <= beaten; l++) groupHalves += LevelScore.HalfStars(CubeSave.Points(group, l));
+            lv.ProgressValue.text = (info.endless ? beaten.ToString() : Mathf.Min(beaten, total) + " / " + total) + "  ·  " + LevelScore.StarText(groupHalves) + (groupHalves == 2 ? " star" : " stars");
             lv.ProgressFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(beaten / (float)total), lv.ProgressFill.anchorMax.y);
             int next = 0;
             int count = info.endless ? Mathf.Max(total, ((unlocked + 11) / 4 + 1) * 4) : total;
@@ -364,7 +364,7 @@ namespace CircuitCube.Game
             {
                 int level = l;
                 var node = Slot(lv.Grid, lv.NodePrefab, ref next);
-                node.Set(l, l <= unlocked, CubeSave.Stars(group, l), () => StartLevel(group, level), l == unlocked);
+                node.Set(l, l <= unlocked, CubeSave.Points(group, l), () => StartLevel(group, level), l == unlocked);
             }
             HideRest(lv.Grid, next);
             // Scroll so the next level to play is in view.
@@ -833,7 +833,7 @@ namespace CircuitCube.Game
             _tw.Run(0.55f, p => tr.rotation = Quaternion.AngleAxis(200f * p * p, Vector3.up) * from, () =>
             {
                 board.Shatter();
-                LaunchStars(points / 2);
+                LaunchStars(points);
 #if UNITY_ANDROID || UNITY_IOS
                 if (CubeSave.Settings.vibration) Handheld.Vibrate();
 #endif
@@ -878,10 +878,12 @@ namespace CircuitCube.Game
 
         /// <summary>
         /// The earned stars burst out of the breaking box and, in one unbroken curve, fly into their slots
-        /// on the result card, which comes up while they are in the air. Each slot fills as its star lands.
+        /// on the result card, which comes up while they are in the air. Each slot fills as its star lands;
+        /// a half star (an odd score) pops into the next slot after the last whole one.
         /// </summary>
-        void LaunchStars(int count)
+        void LaunchStars(int points)
         {
+            int count = points / 2;
             var fs = UI.FlyingStars;
             var row = UI.Result.Stars;
             _starsInFlight = 0;
@@ -935,6 +937,17 @@ namespace CircuitCube.Game
                         GameAudio.Play(Sfx.Star, 1f + 0.12f * k);
                         var pop = slot.transform;
                         _tw.Run(0.3f, p => pop.localScale = Vector3.one * (1f + 0.35f * Mathf.Sin(p * Mathf.PI) * (1f - p * 0.5f)), () => pop.localScale = Vector3.one, pop);
+                        if (k == count - 1 && points % 2 == 1 && count < row.Stars.Length)
+                        {
+                            var halfSlot = row.Stars[count].transform;
+                            _tw.Run(0.18f, p => { }, () =>
+                            {
+                                if (!UI.Result.gameObject.activeSelf) return;
+                                row.SetPoints(points);
+                                GameAudio.Play(Sfx.Star, 1f + 0.12f * count);
+                                _tw.Run(0.3f, p => halfSlot.localScale = Vector3.one * (1f + 0.3f * Mathf.Sin(p * Mathf.PI)), () => halfSlot.localScale = Vector3.one, halfSlot);
+                            }, row);
+                        }
                     }, st);
                 }, row.Stars[k]);
             }

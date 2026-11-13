@@ -174,7 +174,7 @@ MonoBehaviour:
   - {fileID: 7266097022358567605}
   Full: {fileID: 21300000, guid: e56226557651d444baaf4188e483d562, type: 3}
   Empty: {fileID: 21300000, guid: 64e6cf7310c6ece468d3adf61f6d47e0, type: 3}
-  Half: {fileID: 0}
+  Half: {fileID: 21300000, guid: 0f8e630acd6d27440b8250080ffda597, type: 3}
 --- !u!1 &2553830998629093858
 GameObject:
   m_ObjectHideFlags: 0
