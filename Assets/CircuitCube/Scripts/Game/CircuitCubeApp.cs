@@ -12,7 +12,7 @@ namespace CircuitCube.Game
     /// event system, the background and the UI prefab; this component only drives them. No UI is created or drawn
     /// here: screens, cards, the Tile prefab and their animations are all assets set up in the editor.
     /// </summary>
-    public sealed class CircuitCubeApp : MonoBehaviour
+    public sealed partial class CircuitCubeApp : MonoBehaviour
     {
         enum State { Home, Shapes, Levels, Playing, Won }
 
@@ -44,6 +44,12 @@ namespace CircuitCube.Game
         [Range(0.3f, 1f)] public float PlayScreenShare = 0.72f;
         [Range(0.3f, 1f)] public float HomeScreenShare = 0.55f;
 
+        [Header("Zoom")]
+        [Tooltip("How far a pinch (or the mouse wheel) can zoom into the board, against the framed view.")]
+        [Range(1.5f, 5f)] public float MaxZoom = 3f;
+        [Tooltip("Two taps on empty space within this many seconds zoom back out.")]
+        public float DoubleTapTime = 0.32f;
+
         readonly Tweener _tw = new Tweener();
         State _state;
         int _group;
@@ -65,11 +71,20 @@ namespace CircuitCube.Game
         readonly List<RaycastResult> _uiHits = new List<RaycastResult>();
         PointerEventData _ped;
 
+        // Zoom: a narrower field of view plus a sideways camera shift (pan), both on top of the framed view
+        float _baseFov, _zoom = 1f;
+        Vector2 _pan;                 // camera offset from the framed position, world units in the camera plane
+        Vector3 _camFramed;           // camera position FitCamera chose
+        bool _pinching, _zoomLogged, _rightPanning;
+        float _pinchDist, _lastEmptyTap = -1f;
+        Vector2 _pinchMid, _lastEmptyTapPos, _rightLast;
+
         void Awake()
         {
             Application.targetFrameRate = 60;
             _dragThreshold = Mathf.Max(10f, Screen.dpi > 0 ? Screen.dpi * 0.06f : 10f);
             if (Cam == null) Cam = Camera.main;
+            _baseFov = Cam.fieldOfView;
             ApplyTheme(CubeSave.Settings.theme);
 
             var home = UI.Home;
@@ -90,6 +105,7 @@ namespace CircuitCube.Game
             hud.HintButton.onClick.AddListener(UseHint);
             hud.UndoButton.onClick.AddListener(Undo);
             hud.HelpButton.onClick.AddListener(() => { if (_state == State.Playing && !CardOpen) ShowHowTo(); });
+            if (hud.ZoomResetButton != null) hud.ZoomResetButton.onClick.AddListener(() => ResetZoom(true));
 
             var r = UI.Result;
             r.Primary.onClick.AddListener(NextLevel);
@@ -114,6 +130,7 @@ namespace CircuitCube.Game
             st.Home.onClick.AddListener(() => { CloseSettings(); SaveInProgress(); ShowHome(); });
             st.ThemePicked += SetTheme;
             if (st.Privacy != null) st.Privacy.onClick.AddListener(() => RewardedAds.ShowPrivacyOptions());
+            WireTutorial();
         }
 
         void Start()
@@ -436,6 +453,7 @@ namespace CircuitCube.Game
             _shownMoves = _shownPar = _shownLit = _shownTotal = _shownHints = _shownUndos = -1;
             if (!cheat) RestoreInProgress();
             _levelStartTime = Time.realtimeSinceStartup;
+            _zoomLogged = false;
             GameAnalytics.Log("level_start", ("shape", GameData.Group(group).id), ("level", number), ("resumed", _moves > 0));
             _busy = false;
             _state = State.Playing;
@@ -464,6 +482,7 @@ namespace CircuitCube.Game
             for (int i = 0; i < _board.TotalLamps; i++) Slot(hud.LampDots, hud.DotTemplate, ref dots, template);
             HideRest(hud.LampDots, dots, template);
             UpdateHud();
+            StartLesson(group, number, cheat);
 
             if (!CubeSave.SeenShape(group))
             {
@@ -538,13 +557,77 @@ namespace CircuitCube.Game
             _fitScreen = new Vector2Int(Screen.width, Screen.height);
             // Keep the whole shape in view however it is turned, with room for the HUD above and below.
             float r = radius + (playing ? 0.2f : 0f);
-            float vHalf = Cam.fieldOfView * 0.5f * Mathf.Deg2Rad;
+            float vHalf = _baseFov * 0.5f * Mathf.Deg2Rad;
             float hHalf = Mathf.Atan(Mathf.Tan(vHalf) * Mathf.Max(0.3f, Cam.aspect));
             float fit = Mathf.Min(Mathf.Atan(Mathf.Tan(vHalf) * share), hHalf * 0.96f);
             float dist = r / Mathf.Sin(fit);
             float lift = playing ? 0.03f : 0.01f;
-            Cam.transform.position = new Vector3(0, lift * dist, -dist);
+            _camFramed = new Vector3(0, lift * dist, -dist);
             Cam.transform.rotation = Quaternion.identity;
+            _tw.Stop(Cam);
+            _zoom = 1f;
+            _pan = Vector2.zero;
+            ApplyZoom();
+        }
+
+        // ---------------- Zoom ----------------
+
+        /// <summary>Field of view and camera shift from <see cref="_zoom"/> and <see cref="_pan"/>.</summary>
+        void ApplyZoom()
+        {
+            Cam.fieldOfView = 2f * Mathf.Atan(Mathf.Tan(_baseFov * 0.5f * Mathf.Deg2Rad) / _zoom) * Mathf.Rad2Deg;
+            // the zoomed view may move at most as far as the board reaches past the narrower frame
+            float reach = _fitRadius * (1f - 1f / _zoom) * 1.15f;
+            _pan = Vector2.ClampMagnitude(_pan, reach);
+            Cam.transform.position = _camFramed + new Vector3(_pan.x, _pan.y, 0f);
+            var reset = UI.Hud.ZoomResetButton;
+            if (reset != null && reset.gameObject.activeSelf != (_zoom > 1.02f)) reset.gameObject.SetActive(_zoom > 1.02f);
+            if (!_zoomLogged && _zoom > 1.25f && _state == State.Playing && _level != null)
+            {
+                _zoomLogged = true;
+                GameAnalytics.Log("zoom_used", ("shape", GameData.Group(_group).id), ("level", _level.Number));
+            }
+        }
+
+        /// <summary>World units per screen pixel in the plane through the board's centre.</summary>
+        float WorldPerPixel => 2f * -_camFramed.z * Mathf.Tan(Cam.fieldOfView * 0.5f * Mathf.Deg2Rad) / Mathf.Max(1, Screen.height);
+
+        /// <summary>Zoom to <paramref name="zoom"/> keeping the board point under <paramref name="screen"/> where it is.</summary>
+        void ZoomAt(Vector2 screen, float zoom)
+        {
+            zoom = Mathf.Clamp(zoom, 1f, MaxZoom);
+            if (Mathf.Approximately(zoom, _zoom)) return;
+            _tw.Stop(Cam);
+            Vector2 fromCentre = screen - new Vector2(Screen.width, Screen.height) * 0.5f;
+            Vector2 before = fromCentre * WorldPerPixel;
+            _zoom = zoom;
+            Cam.fieldOfView = 2f * Mathf.Atan(Mathf.Tan(_baseFov * 0.5f * Mathf.Deg2Rad) / _zoom) * Mathf.Rad2Deg;
+            Vector2 after = fromCentre * WorldPerPixel;
+            _pan += before - after;
+            ApplyZoom();
+        }
+
+        /// <summary>Move the zoomed view with the fingers (the board follows them).</summary>
+        void PanPixels(Vector2 delta)
+        {
+            if (_zoom <= 1.001f) return;
+            _pan -= delta * WorldPerPixel;
+            ApplyZoom();
+        }
+
+        /// <summary>Back to the framed view: at once, or with a short ease.</summary>
+        void ResetZoom(bool animate)
+        {
+            _tw.Stop(Cam);
+            if (!animate || _zoom <= 1.001f) { _zoom = 1f; _pan = Vector2.zero; ApplyZoom(); return; }
+            float z0 = _zoom;
+            Vector2 p0 = _pan;
+            _tw.Run(0.25f, p =>
+            {
+                _zoom = Mathf.Lerp(z0, 1f, p);     // p arrives eased
+                _pan = Vector2.Lerp(p0, Vector2.zero, p);
+                ApplyZoom();
+            }, null, Cam);
         }
 
         // ---------------- Play ----------------
@@ -604,6 +687,7 @@ namespace CircuitCube.Game
             tile.Rot++;
             _moves++;
             _undo.Push(index);
+            LessonTapped();
             if (_moves == 4 && !CubeSave.SeenHowTo) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = ""; }
             _board.AnimateRotation(index, 1);
             bool solved = _board.Refresh();
@@ -671,6 +755,12 @@ namespace CircuitCube.Game
         void UseHint()
         {
             if (_state != State.Playing || _busy || _hintsLeft <= 0 || CardOpen || !HasHintTile()) return;
+            if (LessonFreeHint)
+            {
+                DoHint();
+                LessonLearned("A hint turns one tile the right way. Each level has " + HintsPerLevel);
+                return;
+            }
             WithAd(AdPlacement.Hint, DoHint);
         }
 
@@ -719,6 +809,8 @@ namespace CircuitCube.Game
             _busy = true;
             _state = State.Won;
             _spin = Vector2.zero;
+            LessonOnWin();
+            ResetZoom(true);   // the box breaks open in the framed view, so the stars fly from its centre
             int points = PointsFor();
             var wasOpen = new bool[GameData.GroupCount];
             for (int g = 0; g < wasOpen.Length; g++) wasOpen[g] = CubeSave.GroupOpen(g);
@@ -857,6 +949,7 @@ namespace CircuitCube.Game
             RewardedAds.Tick();
             _tw.Tick(dt);
             HandlePointer(dt);
+            TickLesson(dt);
 
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) Back();
 
@@ -873,8 +966,73 @@ namespace CircuitCube.Game
             tr.rotation = Quaternion.AngleAxis(aroundUp, Cam.transform.up) * Quaternion.AngleAxis(aroundRight, Cam.transform.right) * tr.rotation;
         }
 
+        bool CanZoom => _state == State.Playing && _board != null && !_busy && !CardOpen;
+
+        /// <summary>
+        /// Two fingers: pinch to zoom towards the point between them, move them together to pan. Until every finger
+        /// is up again a pinch never turns into a spin or a tap. Mouse: wheel zooms at the pointer, right button pans.
+        /// </summary>
+        bool HandleZoom()
+        {
+            var ts = Touchscreen.current;
+            int n = 0;
+            Vector2 a = default, b = default;
+            if (ts != null)
+            {
+                var touches = ts.touches;
+                for (int i = 0; i < touches.Count; i++)
+                {
+                    if (!touches[i].press.isPressed) continue;
+                    if (n == 0) a = touches[i].position.ReadValue();
+                    else if (n == 1) b = touches[i].position.ReadValue();
+                    n++;
+                }
+            }
+            if (n >= 2 && CanZoom)
+            {
+                float d = (a - b).magnitude;
+                Vector2 mid = (a + b) * 0.5f;
+                if (!_pinching)
+                {
+                    _pinching = true;
+                    _spin = Vector2.zero;
+                    _pressed = true;
+                    _dragging = true;   // the finger that went down first is no tap any more
+                    _overUi = false;
+                }
+                else
+                {
+                    if (_pinchDist > 1f) ZoomAt(mid, _zoom * d / _pinchDist);
+                    PanPixels(mid - _pinchMid);
+                }
+                _pinchDist = d;
+                _pinchMid = mid;
+                return true;
+            }
+            if (_pinching)
+            {
+                if (n == 0) { _pinching = false; _pressed = false; }
+                return true;
+            }
+
+            var mouse = Mouse.current;
+            if (mouse == null || ts != null && ts.primaryTouch.press.isPressed) return false;
+            Vector2 mp = mouse.position.ReadValue();
+            float wheel = mouse.scroll.ReadValue().y;
+            if (wheel != 0f && CanZoom && !PointerOverUi(mp)) ZoomAt(mp, _zoom * Mathf.Pow(1.0015f, Mathf.Clamp(wheel, -480f, 480f)));
+            if (mouse.rightButton.isPressed && CanZoom)
+            {
+                if (_rightPanning) PanPixels(mp - _rightLast);
+                _rightPanning = true;
+                _rightLast = mp;
+            }
+            else _rightPanning = false;
+            return false;
+        }
+
         void HandlePointer(float dt)
         {
+            if (HandleZoom()) return;
             bool down = false;
             Vector2 pos = default;
             var ts = Touchscreen.current;
@@ -896,9 +1054,10 @@ namespace CircuitCube.Game
                 if (_dragging)
                 {
                     Vector2 d = pos - _lastPos;
-                    float degPerPixel = 220f / Mathf.Max(400f, Screen.height);
+                    float degPerPixel = 220f / Mathf.Max(400f, Screen.height) / Mathf.Sqrt(_zoom);   // finer turns when zoomed in
                     float ax = -d.x * degPerPixel, ay = d.y * degPerPixel;
                     Rotate(ax, ay);
+                    LessonSpun(Mathf.Abs(ax) + Mathf.Abs(ay));
                     if (dt > 0f) _spin = Vector2.Lerp(_spin, new Vector2(ax, ay) / dt, 0.5f);
                 }
                 _lastPos = pos;
@@ -916,7 +1075,17 @@ namespace CircuitCube.Game
         {
             if (_state != State.Playing || _board == null) return;
             int index = _board.Pick(Cam.ScreenPointToRay(screenPos));
-            if (index >= 0) TapTile(index);
+            if (index >= 0) { _lastEmptyTap = -1f; TapTile(index); return; }
+            // two taps next to the board zoom back out
+            float now = Time.unscaledTime;
+            if (_zoom > 1.02f && _lastEmptyTap >= 0f && now - _lastEmptyTap < DoubleTapTime && (screenPos - _lastEmptyTapPos).magnitude < _dragThreshold * 4f)
+            {
+                _lastEmptyTap = -1f;
+                if (CanZoom) ResetZoom(true);
+                return;
+            }
+            _lastEmptyTap = now;
+            _lastEmptyTapPos = screenPos;
         }
 
         bool PointerOverUi(Vector2 pos)

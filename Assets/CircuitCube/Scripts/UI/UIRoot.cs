@@ -18,5 +18,7 @@ namespace CircuitCube.UI
         public SettingsCard Settings;
         [Tooltip("Stars that burst out of the solved box and fly into the result card's star row (above every card).")]
         public RectTransform[] FlyingStars = new RectTransform[0];
+        [Tooltip("First-time tutorial layer: pointer, speech bubble and Skip (built by Tools/Circuit Cube/Art V2/Build Tutorial UI).")]
+        public TutorialOverlay Tutorial;
     }
 }

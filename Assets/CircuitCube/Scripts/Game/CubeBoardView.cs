@@ -508,6 +508,9 @@ namespace CircuitCube.Game
 
         public Vector3 NormalWorld(int index) => transform.TransformDirection(_t[index].Normal);
 
+        /// <summary>Centre of a tile in world space.</summary>
+        public Vector3 CenterWorld(int index) => transform.TransformPoint(_t[index].Center * ContentScale);
+
         /// <summary>The visible tile a screen ray hits first, or -1. No colliders: ray against each tile's polygon.</summary>
         public int Pick(Ray ray)
         {

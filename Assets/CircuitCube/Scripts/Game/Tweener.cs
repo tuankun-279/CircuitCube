@@ -26,6 +26,13 @@ namespace CircuitCube.Game
                 if (_items[i].Owner == owner) { _items[i].Step(1f); _items.RemoveAt(i); }
         }
 
+        /// <summary>Drop the owner's runs where they are, without finishing them.</summary>
+        public void Stop(object owner)
+        {
+            for (int i = _items.Count - 1; i >= 0; i--)
+                if (_items[i].Owner == owner) _items.RemoveAt(i);
+        }
+
         public void Clear() => _items.Clear();
 
         public void Tick(float dt)

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 namespace CircuitCube.Core
 {
     /// <summary>
-    /// Level groups. Each group has its own shape family and 100 levels; beating level 100 of a group unlocks the
-    /// next one. The last group (Nebula, id megamix) keeps going after 100. Levels are deterministic: group 2 level 37 is the
+    /// Level groups. Each group has its own shape family; beating level 100 of a group unlocks the next one, and the
+    /// generator keeps going to level 300 (the levels the game plays come from the published data). The last group (Nebula, id megamix) keeps going after 100. Levels are deterministic: group 2 level 37 is the
     /// same board for every player.
     /// </summary>
     public static class LevelPlan
@@ -37,7 +37,12 @@ namespace CircuitCube.Core
         /// <summary>Group order of the first releases (before Octa and Dodeca), for moving old PlayerPrefs saves.</summary>
         public static readonly string[] OldGroupIds = { "cube", "tetra", "sphere", "cross", "megamix" };
 
-        static bool Big(int level) => level >= 30 && level % 10 == 0;
+        /// <summary>
+        /// Big boards: every 10th level from 30. Past level 100 they come more often (every 5th, then every 3rd past 200)
+        /// so the later levels keep getting harder once the sizes stop growing.
+        /// </summary>
+        static bool Big(int level) =>
+            level >= 30 && level % 10 == 0 || level > 100 && level % (level > 200 ? 3 : 5) == 0;
 
         public static int GroupCount => Groups.Length;
 
@@ -57,7 +62,7 @@ namespace CircuitCube.Core
         static int CubeSize(int level)
         {
             if (level <= CubeIntro.Length) return CubeIntro[level - 1].Size;
-            if (level >= 30 && level % 10 == 0) return 5;
+            if (Big(level)) return 5;
             return level <= 24 ? 3 : 4;
         }
 
@@ -94,7 +99,7 @@ namespace CircuitCube.Core
         static string StationFor(int level)
         {
             if (level % 3 != 0) return null;
-            if (Big(level)) return "cross-22";
+            if (Big(level) && level % 10 == 0) return "cross-22";
             var list = level <= 20 ? SmallStations : level <= 50 ? MidStations : BigStations;
             return list[(level / 3) % list.Length];
         }
@@ -115,7 +120,7 @@ namespace CircuitCube.Core
                         int a = d[0] - '0', b = d[1] - '0';
                         return station.StartsWith("tower") ? ShapeLibrary.Tower(a, b) : station.StartsWith("ell") ? ShapeLibrary.Ell(a, b) : ShapeLibrary.Cross(a, b);
                     }
-                    int min = level <= 10 ? 50 : 70, max = level <= 10 ? 90 : big ? 180 : 140;
+                    int min = level <= 10 ? 50 : level > 100 ? 80 : 70, max = level <= 10 ? 90 : big ? 180 : level > 100 ? 150 : 140;
                     return ShapeLibrary.Megamix(SeedFor(group, level) ^ 0x2545f491u, min, max);
                 }
             }
@@ -150,7 +155,12 @@ namespace CircuitCube.Core
             int count, mixes;
             if (group > 0 && level <= 3) { count = level == 1 ? 2 : 3; mixes = 1; }
             else if (group > 0 && level <= 10) { count = 3; mixes = 1 + R.Range(2); }
-            else { count = level <= 30 ? 3 : 4; mixes = 1 + R.Range(level <= 30 ? 2 : 3); }
+            else
+            {
+                // past level 200 half the levels use five colours (only levels past 100 change here)
+                count = level <= 30 ? 3 : level > 200 && R.Range(2) == 0 ? 5 : 4;
+                mixes = 1 + R.Range(level <= 30 ? 2 : 3);
+            }
             var groups = new List<int>();
             var s = new List<int>(Singles); R.Shuffle(s);
             var m = new List<int>(Mixes); R.Shuffle(m);
@@ -178,6 +188,8 @@ namespace CircuitCube.Core
             if (group > 0 && level <= 10) s *= 0.6f + 0.04f * level;
             // a hexagon tile takes up to five taps to come back, so the balls turn fewer tiles
             if (GroupIds[group] == "sphere") s *= 0.7f;
+            // levels past 100 scramble a little more: 10%, then 20% past 200
+            if (level > 100) s = System.Math.Min(0.7f, s * (level > 200 ? 1.2f : 1.1f));
             return s;
         }
 

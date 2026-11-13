@@ -22,6 +22,8 @@ namespace CircuitCube.Game
         public string currentGroup;
         public List<GroupUnlock> groups = new List<GroupUnlock>();
         public bool seenHowTo, seenMix;
+        /// <summary>First-time tutorial steps done: 1 tap a tile, 2 spin the shape, 3 use a hint (3 = finished or skipped).</summary>
+        public int tutorial;
         public List<string> seenShapes = new List<string>();
         public List<GroupSeen> seenLevels = new List<GroupSeen>();   // level count of each group the player last saw
     }
@@ -278,6 +280,7 @@ namespace CircuitCube.Game
 
         public static bool SeenMix { get => Profile.seenMix; set { Profile.seenMix = value; SaveProfile(); } }
         public static bool SeenHowTo { get => Profile.seenHowTo; set { Profile.seenHowTo = value; SaveProfile(); } }
+        public static int TutorialStep { get => Profile.tutorial; set { Profile.tutorial = value; SaveProfile(); } }
 
         /// <summary>Test helper: mark every level of a group up to <paramref name="level"/> as beaten.</summary>
         public static void UnlockUpTo(int group, int level)

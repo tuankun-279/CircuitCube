@@ -54,6 +54,30 @@ namespace CircuitCube.Tests
         }
 
         [Test]
+        public void GeneratorKeepsGoingPast100()
+        {
+            int[] sample = { 101, 105, 150, 199, 200, 201, 202, 203, 250, 299, 300 };
+            for (int g = 0; g < LevelPlan.GroupCount; g++)
+                foreach (int l in sample)
+                {
+                    var lv = LevelPlan.Build(g, l);
+                    string where = LevelPlan.GroupIds[g] + " " + l;
+                    Assert.IsTrue(lv.IsSolved(true), where + " solution");
+                    Assert.IsFalse(lv.IsSolved(false), where + " start");
+                    Assert.LessOrEqual(lv.Tiles.Length, 200, where + " board size");
+                    Assert.GreaterOrEqual(lv.Par, 10, where + " par");
+                }
+            // the first hundred keep their boards: same shapes as the first release of the data
+            Assert.AreEqual("cube-5", LevelPlan.ShapeIdFor(0, 100));
+            Assert.AreEqual("cube-4", LevelPlan.ShapeIdFor(0, 99));
+            Assert.AreEqual("cross-22", LevelPlan.ShapeIdFor(5, 90));
+            Assert.AreEqual("tetra-6", LevelPlan.ShapeIdFor(1, 60));
+            Assert.AreEqual("tetra-5", LevelPlan.ShapeIdFor(1, 61));
+            Assert.AreEqual("tetra-6", LevelPlan.ShapeIdFor(1, 105));   // every 5th past 100 is big
+            Assert.AreEqual("tetra-6", LevelPlan.ShapeIdFor(1, 204));   // every 3rd past 200
+        }
+
+        [Test]
         public void ScoreRule()
         {
             var r = new GameRules();

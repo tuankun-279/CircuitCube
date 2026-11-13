@@ -26,29 +26,8 @@ namespace CircuitCube.Game
                 var order = new List<int>();
                 for (int l = 1; l <= perGroup; l++)
                 {
-                    var lv = LevelPlan.Build(g, l);
-                    string shape = LevelPlan.ShapeIdFor(g, l);
-                    if (shape.StartsWith("voxel-"))
-                    {
-                        var vox = new VoxelShapeFile { id = shape, blocks = ShapeResolver.FlattenBlocks(LevelPlan.ShapeFor(g, l)) };
-                        files["shapes/voxel/" + shape + ".json"] = JsonUtility.ToJson(vox);
-                    }
-                    else if (seenShapes.Add(shape)) AddToCatalog(catalog, shape);
-                    string tiles = TileCodec.Encode(lv.Tiles);
-                    var d = new LevelData
-                    {
-                        id = id + "-" + l.ToString("D4"), serial = l, group = id, rev = 1, shape = shape, ports = lv.Tiles[0].Ports,
-                        tiles = tiles, par = lv.Par, check = TileCodec.Check(tiles),
-                        difficulty = TileCodec.Difficulty(lv.Par, lv.Tiles.Length, lv.Colors.Length),
-                        gen = new GenInfo
-                        {
-                            ver = 1, seed = LevelPlan.SeedFor(g, l), colors = new List<int>(lv.Colors),
-                            scramble = (float)System.Math.Round(LevelPlan.ScrambleFor(g, l, lv.Tiles.Length), 3),
-                            minPar = LevelPlan.MinParFor(l, lv.Tiles.Length)
-                        }
-                    };
-                    if (l % 10 == 0) d.tags.Add("milestone");
-                    if (g == 0 && l <= 3) d.tags.Add("tutorial");
+                    string shape = LevelFile(g, l, files, out var d);
+                    if (!shape.StartsWith("voxel-") && seenShapes.Add(shape)) AddToCatalog(catalog, shape);
                     files[GameData.LevelPath(id, l)] = JsonUtility.ToJson(d, true);
                     order.Add(l);
                 }
@@ -63,6 +42,50 @@ namespace CircuitCube.Game
             files["manifest.json"] = JsonUtility.ToJson(manifest, true);
             files["shapes.json"] = JsonUtility.ToJson(catalog, true);
             return files;
+        }
+
+        /// <summary>
+        /// Levels <paramref name="from"/> to <paramref name="to"/> of one group as data files: levels/... and, for Nebula's
+        /// mixed levels, shapes/voxel/... (other shapes are in the catalog already). Used to add levels to Level Lab.
+        /// </summary>
+        public static Dictionary<string, string> Range(int group, int from, int to)
+        {
+            var files = new Dictionary<string, string>();
+            for (int l = from; l <= to; l++)
+            {
+                LevelFile(group, l, files, out var d);
+                files[GameData.LevelPath(LevelPlan.GroupIds[group], l)] = JsonUtility.ToJson(d, true);
+            }
+            return files;
+        }
+
+        /// <summary>One generated level as data (its voxel shape, if any, goes into <paramref name="files"/>). Returns its shape id.</summary>
+        static string LevelFile(int g, int l, Dictionary<string, string> files, out LevelData d)
+        {
+            string id = LevelPlan.GroupIds[g];
+            var lv = LevelPlan.Build(g, l);
+            string shape = LevelPlan.ShapeIdFor(g, l);
+            if (shape.StartsWith("voxel-"))
+            {
+                var vox = new VoxelShapeFile { id = shape, blocks = ShapeResolver.FlattenBlocks(LevelPlan.ShapeFor(g, l)) };
+                files["shapes/voxel/" + shape + ".json"] = JsonUtility.ToJson(vox);
+            }
+            string tiles = TileCodec.Encode(lv.Tiles);
+            d = new LevelData
+            {
+                id = id + "-" + l.ToString("D4"), serial = l, group = id, rev = 1, shape = shape, ports = lv.Tiles[0].Ports,
+                tiles = tiles, par = lv.Par, check = TileCodec.Check(tiles),
+                difficulty = TileCodec.Difficulty(lv.Par, lv.Tiles.Length, lv.Colors.Length),
+                gen = new GenInfo
+                {
+                    ver = 1, seed = LevelPlan.SeedFor(g, l), colors = new List<int>(lv.Colors),
+                    scramble = (float)System.Math.Round(LevelPlan.ScrambleFor(g, l, lv.Tiles.Length), 3),
+                    minPar = LevelPlan.MinParFor(l, lv.Tiles.Length)
+                }
+            };
+            if (l % 10 == 0) d.tags.Add("milestone");
+            if (g == 0 && l <= 3) d.tags.Add("tutorial");
+            return shape;
         }
 
         static void AddToCatalog(ShapeCatalogFile c, string id)
