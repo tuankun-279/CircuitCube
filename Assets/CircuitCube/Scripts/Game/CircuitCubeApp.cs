@@ -144,20 +144,40 @@ namespace CircuitCube.Game
             GameData.Reload();
             // the data loads in one go; the bar just gives the logo a moment on screen
             _tw.Run(0.9f, p => UI.Splash.SetProgress(Tweener.Ease(p)), () => { if (UI.Splash.gameObject.activeSelf) ShowHome(); });
+            AppUpdates.Downloaded += OfferUpdateRestart;
             if (!string.IsNullOrEmpty(ContentBaseUrl))
                 StartCoroutine(RemoteContent.Sync(ContentBaseUrl, CubeSave.Beaten, () =>
                 {
+                    AppUpdates.Check(GameData.Rules.updateBelow);   // with the rules just downloaded
                     if (_state == State.Playing || _state == State.Won) return;
                     DebugRefresh();
                     if (RemoteContent.NeedsUpdate && !CardOpen) ShowUpdateTip();
                 }));
+            else AppUpdates.Check(GameData.Rules.updateBelow);
         }
 
-        void OnApplicationPause(bool paused) { if (paused) SaveInProgress(); }
+        void OnApplicationPause(bool paused)
+        {
+            if (!paused) return;
+            SaveInProgress();
+            AppUpdates.OnPause();
+        }
+
+        bool _restartOffered;
+
+        /// <summary>A downloaded update: offer the restart on a menu screen (never in the middle of a level).</summary>
+        void OfferUpdateRestart()
+        {
+            if (_restartOffered || !AppUpdates.ReadyToInstall || CardOpen || _state == State.Playing || _state == State.Won) return;
+            _restartOffered = true;
+            ShowTip("Update ready", "A new version of Circuit Cube has been downloaded. Restart now to finish updating; your progress is kept.",
+                "Restart", AppUpdates.Complete);
+        }
 
         // the player may switch the phone between light and dark while the game is in the background
         void OnApplicationFocus(bool focus)
         {
+            if (focus) AppUpdates.OnResume();
             if (focus && CubeSave.Settings != null && CubeSave.Settings.theme == "system" && Themes.Current != null && Themes.IsDark != SystemTheme.IsDark())
                 SetTheme("system");
         }
@@ -245,6 +265,7 @@ namespace CircuitCube.Game
             GameAudio.Music(MusicTrack.Menu);
             _tw.Clear();
             HideAll();
+            if (AppUpdates.ReadyToInstall && !_restartOffered) _tw.Run(0.6f, p => { }, OfferUpdateRestart);   // after the screen settles
             int g = CubeSave.CurrentGroup;
             // A solved decorative shape of the current group spins behind the title. It is not a real level.
             int lg = Mathf.Max(0, System.Array.IndexOf(LevelPlan.GroupIds, GameData.GroupId(g)));
@@ -499,7 +520,8 @@ namespace CircuitCube.Game
         }
 
         void ShowUpdateTip() => ShowTip("Update to play more",
-            "New levels are out, and they need the latest version of Circuit Cube. Update the game from the store to play them.", "OK", null);
+            "New levels are out, and they need the latest version of Circuit Cube. Update the game to play them.", "Update",
+            () => AppUpdates.Check(int.MaxValue));   // any newer version is a must here: the full-screen Play update
 
         void ShowTip(string title, string body, string button, System.Action onClose)
         {
@@ -960,6 +982,7 @@ namespace CircuitCube.Game
             RefitOnResize();
             float dt = Time.unscaledDeltaTime;
             RewardedAds.Tick();
+            AppUpdates.Tick();
             _tw.Tick(dt);
             HandlePointer(dt);
             TickLesson(dt);

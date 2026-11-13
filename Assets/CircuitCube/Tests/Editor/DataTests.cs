@@ -123,6 +123,18 @@ namespace CircuitCube.Tests
         }
 
         [Test]
+        public void UpdateFlowChoice()
+        {
+            Assert.AreEqual(AppUpdates.Mode.None, AppUpdates.Decide(3, 3, 0, true, true, false));         // up to date
+            Assert.AreEqual(AppUpdates.Mode.Flexible, AppUpdates.Decide(3, 4, 0, true, true, false));     // offered
+            Assert.AreEqual(AppUpdates.Mode.None, AppUpdates.Decide(3, 4, 0, true, true, true));          // once a day
+            Assert.AreEqual(AppUpdates.Mode.Immediate, AppUpdates.Decide(3, 5, 4, true, true, true));     // forced below 4
+            Assert.AreEqual(AppUpdates.Mode.Flexible, AppUpdates.Decide(4, 5, 4, true, true, false));     // 4 is not below 4
+            Assert.AreEqual(AppUpdates.Mode.Flexible, AppUpdates.Decide(3, 5, 4, false, true, false));    // Play allows only flexible
+            Assert.AreEqual(0, new GameRules().updateBelow);
+        }
+
+        [Test]
         public void SaveRoundTrip()
         {
             string old = CubeSave.Root;

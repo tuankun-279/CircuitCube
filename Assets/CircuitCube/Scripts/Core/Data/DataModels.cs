@@ -31,6 +31,8 @@ namespace CircuitCube.Core
         public int undosPerLevel = 5;
         // 1 = a hint or an undo plays a rewarded ad first; 0 = free for everyone (closed test), switched from Level Lab
         public int adsOn = 1;
+        // installed version codes below this get the full-screen Play update at start (0 = never forced)
+        public int updateBelow = 0;
         public int minScore = 3, parScore = 6, overParScore = 5;
         // moves up to par + expertSlackPercent% of par (rounded up, at least expertSlackMin) still count as par (3 stars, Expert)
         public int expertSlackPercent = 15, expertSlackMin = 0;
