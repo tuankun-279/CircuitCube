@@ -6,7 +6,10 @@
         "UnityEngine.UI",
         "Unity.TextMeshPro",
         "Unity.RenderPipelines.Core.Runtime",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Google.Play.AppUpdate",
+        "Google.Play.Common",
+        "Google.Play.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

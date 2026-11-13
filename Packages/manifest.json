@@ -4,6 +4,7 @@
     "com.google.external-dependency-manager": "1.2.190",
     "com.google.firebase.analytics": "file:../GooglePackages/com.google.firebase.analytics-14.1.0.tgz",
     "com.google.firebase.app": "file:../GooglePackages/com.google.firebase.app-14.1.0.tgz",
+    "com.google.play.appupdate": "1.8.5",
     "com.unity.ai.assistant": "2.21.0-pre.2",
     "com.unity.ai.inference": "2.6.1",
     "com.unity.collab-proxy": "2.12.4",
@@ -57,7 +58,10 @@
       "url": "https://package.openupm.com",
       "scopes": [
         "com.google.ads.mobile",
-        "com.google.external-dependency-manager"
+        "com.google.external-dependency-manager",
+        "com.google.play.appupdate",
+        "com.google.play.common",
+        "com.google.play.core"
       ]
     }
   ]
