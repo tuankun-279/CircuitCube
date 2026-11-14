@@ -27,6 +27,12 @@ namespace CircuitCube.UI
         public Button Privacy;
         [Tooltip("Extra panel height while the Privacy button shows.")]
         public float PrivacyHeight = 80f;
+        [Tooltip("App version line. Seven taps show this device's code for the ad tester list and copy it.")]
+        public Button VersionButton;
+        public TMP_Text VersionLabel;
+
+        const int TapsForDeviceCode = 7;
+        int _versionTaps;
 
         static readonly string[] Modes = { "system", "light", "dark" };
 
@@ -43,6 +49,21 @@ namespace CircuitCube.UI
                 string mode = Modes[i];
                 ThemeButtons[i].onClick.AddListener(() => { ThemePicked?.Invoke(mode); ShowTheme(mode); });
             }
+            if (VersionButton != null) VersionButton.onClick.AddListener(VersionTapped);
+        }
+
+        void VersionTapped()
+        {
+            if (VersionLabel == null || ++_versionTaps < TapsForDeviceCode) return;
+            string code = AdsGate.DeviceCode;
+            GUIUtility.systemCopyBuffer = code;
+            VersionLabel.text = "Device " + code + " \u00b7 ads " + (AdsGate.On ? "on" : "off") + " \u00b7 copied";
+        }
+
+        static string VersionText()
+        {
+            int code = AppUpdates.InstalledVersionCode;
+            return code > 0 ? "Version " + Application.version + " (" + code + ")" : "Version " + Application.version;
         }
 
         public void Open(bool paused)
@@ -58,6 +79,8 @@ namespace CircuitCube.UI
             Music.Set(s.music);
             Vibration.Set(s.vibration);
             ShowTheme(s.theme);
+            _versionTaps = 0;
+            if (VersionLabel != null) VersionLabel.text = VersionText();
             if (Anim != null && Anim.GetClip("In") != null) { Anim.Stop(); Anim.Play("In"); }
         }
 

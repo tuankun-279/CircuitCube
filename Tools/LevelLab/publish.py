@@ -25,7 +25,7 @@ import sys
 
 REPO = "tuankun-279/CircuitCube"
 B64 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
-RULES = {"windowBack": 10, "windowAhead": 10, "hintsPerLevel": 3, "hintPenalty": 1, "undosPerLevel": 5, "adsOn": 1, "updateBelow": 0, "minScore": 3, "parScore": 6, "overParScore": 5,
+RULES = {"windowBack": 10, "windowAhead": 10, "hintsPerLevel": 3, "hintPenalty": 1, "undosPerLevel": 5, "adsOn": 1, "adsTesters": "", "updateBelow": 0, "minScore": 3, "parScore": 6, "overParScore": 5,
          "expertSlackPercent": 15, "expertSlackMin": 0}
 POLY_TYPES = ("tetra", "octa", "dodeca", "geo")
 HERE = os.path.dirname(os.path.abspath(__file__))

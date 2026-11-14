@@ -46,6 +46,7 @@ namespace CircuitCube.EditorTools
             NewLevelsAndTablets();
             FlyingStars();
             AdsUi();
+            VersionUi();
             ZoomUi();
             TutorialUi();
             Debug.Log("[CircuitCube] UI V2 built.");
@@ -88,6 +89,34 @@ namespace CircuitCube.EditorTools
             finally { PrefabUtility.UnloadPrefabContents(root); }
             AssetDatabase.SaveAssets();
             Debug.Log("[CircuitCube] Ads UI built.");
+        }
+
+        /// <summary>
+        /// App version line at the bottom of the settings card's content (under the theme choice); the Privacy link moves
+        /// below it and the card grows to fit. Run after <see cref="AdsUi"/>. Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/Circuit Cube/Art V2/Build Version UI")]
+        public static void VersionUi()
+        {
+            var root = PrefabUtility.LoadPrefabContents(UiPrefab);
+            try
+            {
+                var st = root.GetComponent<UIRoot>().Settings;
+                var panel = st.Panel;
+                var line = Fresh(panel, "Version", TopC, TopC, TopC, new Vector2(0, -698), new Vector2(760, 56));
+                Img(line, null, UiRole.None).color = new Color(1, 1, 1, 0);   // invisible hit area
+                st.VersionLabel = Label(line, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, "Version 1.0.0", 26, UiRole.TextMuted);
+                st.VersionLabel.raycastTarget = false;
+                st.VersionButton = line.gameObject.AddComponent<Button>();
+                st.VersionButton.transition = Selectable.Transition.None;   // a plain line of text, not a button to the eye
+                st.SettingsHeight = 820f;
+                st.PausedHeight = 1100f;
+                if (st.Privacy != null) ((RectTransform)st.Privacy.transform).anchoredPosition = new Vector2(0, -760);
+                PrefabUtility.SaveAsPrefabAsset(root, UiPrefab);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CircuitCube] Version UI built.");
         }
 
         /// <summary>

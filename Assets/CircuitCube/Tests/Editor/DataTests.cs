@@ -108,6 +108,27 @@ namespace CircuitCube.Tests
         }
 
         [Test]
+        public void AdsOnlyForListedDevices()
+        {
+            string mine = AdsGate.CodeFrom("device-a"), other = AdsGate.CodeFrom("device-b");
+            Assert.AreEqual(9, mine.Length);
+            Assert.AreEqual('-', mine[4]);
+            Assert.AreEqual(mine, AdsGate.CodeFrom("device-a"));   // the same device always gets the same code
+            Assert.AreNotEqual(mine, other);
+            Assert.IsFalse(AdsGate.Allowed(0, mine, mine));         // off for everyone, listed or not
+            Assert.IsTrue(AdsGate.Allowed(1, "", mine));            // on for everyone
+            Assert.IsFalse(AdsGate.Allowed(2, "", mine));           // testers only, nobody listed
+            Assert.IsFalse(AdsGate.Allowed(2, other, mine));
+            Assert.IsTrue(AdsGate.Allowed(2, other + ", " + mine, mine));
+            Assert.IsTrue(AdsGate.Allowed(2, mine.Replace("-", "").ToLowerInvariant() + ";" + other, mine));   // typed by hand
+            // a manifest published before the rule existed lists nobody
+            var old = JsonUtility.FromJson<ManifestData>("{\"schema\":3,\"rules\":{\"adsOn\":2}}");
+            Assert.AreEqual("", old.rules.adsTesters);
+            var set = JsonUtility.FromJson<ManifestData>("{\"schema\":3,\"rules\":{\"adsOn\":2,\"adsTesters\":\"ABCD-EFGH\"}}");
+            Assert.IsTrue(AdsGate.Allowed(set.rules.adsOn, set.rules.adsTesters, "ABCD-EFGH"));
+        }
+
+        [Test]
         public void UndoLimitRule()
         {
             Assert.AreEqual(5, new GameRules().undosPerLevel);

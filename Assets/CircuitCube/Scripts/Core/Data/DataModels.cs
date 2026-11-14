@@ -29,8 +29,11 @@ namespace CircuitCube.Core
         public int hintsPerLevel = 3, hintPenalty = 1;
         // each undo costs a rewarded ad; a level allows this many
         public int undosPerLevel = 5;
-        // 1 = a hint or an undo plays a rewarded ad first; 0 = free for everyone (closed test), switched from Level Lab
+        // 1 = a hint or an undo plays a rewarded ad first; 0 = free for everyone (closed test);
+        // 2 = ads only on the devices listed in adsTesters. Switched from Level Lab
         public int adsOn = 1;
+        // device codes (settings card, seven taps on the version line) that see ads while adsOn is 2; commas or spaces between
+        public string adsTesters = "";
         // installed version codes below this get the full-screen Play update at start (0 = never forced)
         public int updateBelow = 0;
         public int minScore = 3, parScore = 6, overParScore = 5;
