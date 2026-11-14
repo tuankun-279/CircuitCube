@@ -76,7 +76,7 @@ namespace CircuitCube.EditorTools
 
                 var st = ui.Settings;
                 var panel = st.Panel;
-                var link = Fresh(panel, "Privacy", TopC, TopC, TopC, new Vector2(0, -700), new Vector2(760, 64));
+                var link = Fresh(panel, "Privacy", TopC, TopC, TopC, new Vector2(0, -760), new Vector2(760, 64));   // under the version line (VersionUi)
                 Img(link, null, UiRole.None).color = new Color(1, 1, 1, 0);   // invisible hit area
                 var label = Label(link, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, "<u>Privacy options</u>", 30, UiRole.TextMuted);
                 label.raycastTarget = false;
