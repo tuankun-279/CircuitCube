@@ -47,6 +47,7 @@ namespace CircuitCube.EditorTools
             FlyingStars();
             AdsUi();
             VersionUi();
+            LevelGridV3();
             ZoomUi();
             TutorialUi();
             Debug.Log("[CircuitCube] UI V2 built.");
@@ -117,6 +118,70 @@ namespace CircuitCube.EditorTools
             finally { PrefabUtility.UnloadPrefabContents(root); }
             AssetDatabase.SaveAssets();
             Debug.Log("[CircuitCube] Version UI built.");
+        }
+
+        /// <summary>
+        /// V3 art (ArtRef/tools/cut_v3.py): level cells get a frame (locked levels are an outline, Expert levels a gold
+        /// outline) and the Expert badge in place of the stars; the dim behind cards and the screen shades use the
+        /// vignette; the settings dividers use the fading line. Adds the NodeFrame colour to the themes if missing.
+        /// Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/Circuit Cube/Art V2/Build Level Grid V3")]
+        public static void LevelGridV3()
+        {
+            foreach (var (path, hex) in new[] { ("Assets/CircuitCube/Themes/Theme_Dark.asset", "2E3650"), ("Assets/CircuitCube/Themes/Theme_Light.asset", "BCC4D6") })
+            {
+                var theme = AssetDatabase.LoadAssetAtPath<GameTheme>(path);
+                if (theme == null || theme.Ui.Exists(r => r.Role == UiRole.NodeFrame)) continue;
+                ColorUtility.TryParseHtmlString("#" + hex, out var c);
+                theme.Ui.Add(new RoleColor(UiRole.NodeFrame, c));
+                EditorUtility.SetDirty(theme);
+            }
+
+            const string NodePrefab = "Assets/CircuitCube/Prefabs/UI/LevelNode.prefab";
+            var node = PrefabUtility.LoadPrefabContents(NodePrefab);
+            try
+            {
+                var ln = node.GetComponent<LevelNode>();
+                var frame = Fresh(node.transform, "Frame", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero);
+                frame.SetSiblingIndex(0);   // over the cell's background, under the number
+                ln.Frame = Img(frame, S("ui_frame"), UiRole.None, true);
+                ln.Frame.raycastTarget = false;
+                // where the star row sits (bottom centre), a little larger than one star
+                ln.Expert = Pic(node.transform, "Expert", BottomC, BottomC, BottomC, new Vector2(0, 24), new Vector2(84, 84), Icon("icon_expert_orbit"), UiRole.None);
+                ln.Expert.gameObject.SetActive(false);
+                frame.gameObject.SetActive(false);
+                PrefabUtility.SaveAsPrefabAsset(node, NodePrefab);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(node); }
+
+            var root = PrefabUtility.LoadPrefabContents(UiPrefab);
+            try
+            {
+                var safe = root.transform.Find("SafeArea");
+                foreach (var path in new[] { "Dim", "Levels/Shade", "Shapes/Shade" })
+                {
+                    var img = safe.Find(path)?.GetComponent<Image>();
+                    if (img == null) { Debug.LogWarning("[CircuitCube] UI path not found: " + path); continue; }
+                    img.sprite = S("ui_vignette");
+                    img.type = Image.Type.Simple;
+                    img.preserveAspect = false;
+                }
+                foreach (var t in root.GetComponentsInChildren<Transform>(true))
+                {
+                    if (t.name != "Divider") continue;
+                    var img = t.GetComponent<Image>();
+                    if (img == null) continue;
+                    img.sprite = S("ui_divider");
+                    img.type = Image.Type.Simple;
+                    var rt = (RectTransform)t;
+                    rt.sizeDelta = new Vector2(rt.sizeDelta.x, 4);
+                }
+                PrefabUtility.SaveAsPrefabAsset(root, UiPrefab);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CircuitCube] Level grid V3 built.");
         }
 
         /// <summary>

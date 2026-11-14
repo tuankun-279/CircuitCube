@@ -113,6 +113,7 @@ namespace CircuitCube.EditorTools
                     new RoleColor(UiRole.Star, Hex("FFC83D")), new RoleColor(UiRole.Chip, Hex("141826")),
                     new RoleColor(UiRole.NodeOpen, Hex("141826")), new RoleColor(UiRole.NodeCurrent, Hex("46B8C6")),
                     new RoleColor(UiRole.NodeLocked, Hex("0F1320")), new RoleColor(UiRole.OnNode, Hex("E3E8F5")),
+                    new RoleColor(UiRole.NodeFrame, Hex("2E3650")),
                 };
             }
             else
@@ -135,6 +136,7 @@ namespace CircuitCube.EditorTools
                     new RoleColor(UiRole.Star, Hex("F5B300")), new RoleColor(UiRole.Chip, Hex("FFFFFF")),
                     new RoleColor(UiRole.NodeOpen, Hex("FFFFFF")), new RoleColor(UiRole.NodeCurrent, Hex("1E9AAA")),
                     new RoleColor(UiRole.NodeLocked, Hex("E4E8F0")), new RoleColor(UiRole.OnNode, Hex("18203A")),
+                    new RoleColor(UiRole.NodeFrame, Hex("BCC4D6")),
                 };
             }
             EditorUtility.SetDirty(t);

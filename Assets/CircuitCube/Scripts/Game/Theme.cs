@@ -8,7 +8,9 @@ namespace CircuitCube.Game
     public enum UiRole
     {
         None, Background, Card, Primary, OnPrimary, Secondary, OnSecondary, Round, OnRound,
-        Text, TextMuted, Dim, Overlay, Track, Accent, Star, Chip, NodeOpen, NodeCurrent, NodeLocked, OnNode, Transparent
+        Text, TextMuted, Dim, Overlay, Track, Accent, Star, Chip, NodeOpen, NodeCurrent, NodeLocked, OnNode, Transparent,
+        // added later: keep new roles at the end, the assets store them by number
+        NodeFrame
     }
 
     [Serializable]

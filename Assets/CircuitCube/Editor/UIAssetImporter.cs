@@ -16,7 +16,7 @@ namespace CircuitCube.EditorTools
     {
         const string Marker = "circuitcube-art";
         /// <summary>UI/Common shapes that stretch with 9-slice borders.</summary>
-        public static readonly string[] NineSlice = { "ui_button", "ui_card", "ui_pill", "ui_square", "ui_bar", "ui_card_shadow" };
+        public static readonly string[] NineSlice = { "ui_button", "ui_card", "ui_pill", "ui_square", "ui_bar", "ui_card_shadow", "ui_frame" };
 
         void OnPreprocessTexture()
         {
