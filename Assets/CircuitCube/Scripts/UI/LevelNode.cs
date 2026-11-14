@@ -8,7 +8,7 @@ namespace CircuitCube.UI
 {
     /// <summary>
     /// One cell of the level grid (prefab LevelNode). Sprites for each state are set on the prefab.
-    /// A locked level is an empty frame with its number and a lock; an Expert level (full score) shows the Expert
+    /// A locked level is a dark cell with a visible frame, its number and a lock; an Expert level (full score) shows the Expert
     /// badge in a gold frame instead of its three stars.
     /// </summary>
     public sealed class LevelNode : MonoBehaviour
@@ -39,7 +39,7 @@ namespace CircuitCube.UI
             var th = Themes.Current;
             if (th != null)
             {
-                Background.color = th.Get(!open ? UiRole.Transparent : current ? UiRole.NodeCurrent : UiRole.NodeOpen);
+                Background.color = th.Get(!open ? UiRole.NodeLocked : current ? UiRole.NodeCurrent : UiRole.NodeOpen);
                 Number.color = th.Get(!open ? UiRole.TextMuted : current ? UiRole.OnPrimary : UiRole.OnNode);
                 if (Frame != null) Frame.color = th.Get(expert ? UiRole.Star : UiRole.NodeFrame);
                 if (Expert != null) Expert.color = th.Get(UiRole.Star);
