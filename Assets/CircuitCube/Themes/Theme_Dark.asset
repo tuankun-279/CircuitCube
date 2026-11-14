@@ -54,6 +54,8 @@ MonoBehaviour:
     Color: {r: 0.05882353, g: 0.07450981, b: 0.1254902, a: 1}
   - Role: 20
     Color: {r: 0.8901961, g: 0.9098039, b: 0.9607843, a: 1}
+  - Role: 22
+    Color: {r: 0.18039216, g: 0.21176471, b: 0.3137255, a: 1}
   CameraBackground: {r: 0.039215688, g: 0.047058824, b: 0.078431375, a: 1}
   Backdrop: {fileID: 21300000, guid: e488c65c20f155f4e88f9e78ffa29900, type: 3}
   ShadeDark: {r: 0.7, g: 0.73, b: 0.84, a: 1}
