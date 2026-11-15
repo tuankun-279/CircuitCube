@@ -5,6 +5,7 @@ usage: cut_v3.py <raw dir> <Assets/CircuitCube/Art>
 Sheets (white shapes on black, so brightness becomes alpha and the sprite stays white for the game to tint):
   raw3_expert_icons.png   three Expert badge ideas -> UI/Icons/icon_expert_{comet,orbit,constellation}.png
   raw3_frame_divider.png  rounded frame (left) and fading line (right) -> UI/Common/ui_frame.png, ui_divider.png
+  raw3_expert_comet3.png  the comet badge with three stars in its head, three layouts -> UI/Icons/icon_expert_comet3_{a,b,c}.png
   raw3_vignette.png       grey vignette mask -> UI/Common/ui_vignette.png (alpha: middle 0.88, edges 1)
 Every pixel comes from the ChatGPT art; this only crops, removes specks, scales and turns brightness into alpha.
 """
@@ -78,6 +79,17 @@ def icons():
         save(square(white_alpha(crop(g, sl, 8)), ICON), "UI", "Icons", "icon_expert_" + name + ".png")
 
 
+def comet3():
+    """The comet the player earns for a full score: three star layouts (triangle, arc, big middle star)."""
+    g = load_gray("raw3_expert_comet3.png")
+    g = np.where(g < 24, 0, g)
+    boxes = objects(g)
+    if len(boxes) != 3:
+        raise SystemExit("expected 3 comets, found %d" % len(boxes))
+    for name, sl in zip("abc", boxes):
+        save(square(white_alpha(crop(g, sl, 8)), ICON, fill=0.94), "UI", "Icons", "icon_expert_comet3_" + name + ".png")
+
+
 def frame_and_divider():
     g = load_gray("raw3_frame_divider.png")
     g = np.where(g < 24, 0, g)
@@ -106,6 +118,8 @@ def vignette():
 
 
 if __name__ == "__main__":
+    if os.path.exists(os.path.join(RAW, "raw3_expert_comet3.png")):
+        comet3()
     icons()
     frame_and_divider()
     if os.path.exists(os.path.join(RAW, "raw3_vignette.png")):
