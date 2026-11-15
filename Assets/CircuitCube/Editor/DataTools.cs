@@ -16,6 +16,51 @@ namespace CircuitCube.EditorTools
         public const string DataFolder = "Assets/CircuitCube/Resources/CircuitCubeData";
         const string Menu = "Tools/Circuit Cube/Data/";
 
+        public const string ImportFolder = "Tools/LevelLab/import";
+
+        /// <summary>
+        /// Play the Level Lab import zips (Tools/LevelLab/import/*.zip) in the editor before they are published: their
+        /// groups, orders and levels are unpacked to Temp/ContentPreview, which GameData reads first. Manifests are
+        /// left out (they hold no rules). Zips are applied in name order, so a later one wins.
+        /// </summary>
+        [MenuItem(Menu + "Preview Level Lab Imports")]
+        public static void PreviewImportsMenu()
+        {
+            int n = PreviewImports();
+            EditorUtility.DisplayDialog("Circuit Cube data", n + " files from " + ImportFolder + " are previewed in the editor.\n\nStop with Data > Stop Previewing Imports.", "OK");
+        }
+
+        public static int PreviewImports()
+        {
+            string root = GameData.PreviewRoot;
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+            Directory.CreateDirectory(root);
+            int n = 0;
+            var zips = Directory.Exists(ImportFolder) ? Directory.GetFiles(ImportFolder, "*.zip") : new string[0];
+            System.Array.Sort(zips, System.StringComparer.Ordinal);
+            foreach (var zip in zips)
+                using (var z = ZipFile.OpenRead(zip))
+                    foreach (var e in z.Entries)
+                    {
+                        if (!e.FullName.EndsWith(".json") || e.FullName.EndsWith("manifest.json") || e.FullName.Contains("..")) continue;
+                        string path = Path.Combine(root, e.FullName);
+                        Directory.CreateDirectory(Path.GetDirectoryName(path));
+                        e.ExtractToFile(path, true);
+                        n++;
+                    }
+            GameData.Reload();
+            Debug.Log("[CircuitCube] Previewing " + n + " files from " + zips.Length + " import zips (Temp/ContentPreview).");
+            return n;
+        }
+
+        [MenuItem(Menu + "Stop Previewing Imports")]
+        public static void StopPreview()
+        {
+            if (Directory.Exists(GameData.PreviewRoot)) Directory.Delete(GameData.PreviewRoot, true);
+            GameData.Reload();
+            Debug.Log("[CircuitCube] Import preview stopped.");
+        }
+
         [MenuItem(Menu + "Export Sample Data (10 per group)")]
         public static void ExportSampleMenu()
         {

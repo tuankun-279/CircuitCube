@@ -24,6 +24,10 @@ namespace CircuitCube.Game
         public bool seenHowTo, seenMix;
         /// <summary>First-time tutorial steps done: 1 tap a tile, 2 spin the shape, 3 use a hint (3 = finished or skipped).</summary>
         public int tutorial;
+        /// <summary>Later lessons seen, as bits: see CubeSave.TipColours and TipMix.</summary>
+        public int tips;
+        /// <summary>Levels with a mixed colour the player has won (the HUD spells out the mixes for the first few).</summary>
+        public int mixWins;
         public List<string> seenShapes = new List<string>();
         public List<GroupSeen> seenLevels = new List<GroupSeen>();   // level count of each group the player last saw
     }
@@ -279,6 +283,12 @@ namespace CircuitCube.Game
         public static bool SeenMix { get => Profile.seenMix; set { Profile.seenMix = value; SaveProfile(); } }
         public static bool SeenHowTo { get => Profile.seenHowTo; set { Profile.seenHowTo = value; SaveProfile(); } }
         public static int TutorialStep { get => Profile.tutorial; set { Profile.tutorial = value; SaveProfile(); } }
+        public static int Tips { get => Profile.tips; set { Profile.tips = value; SaveProfile(); } }
+        public static int MixWins { get => Profile.mixWins; set { Profile.mixWins = value; SaveProfile(); } }
+        /// <summary>Bit in <see cref="Tips"/>: the "each lamp needs its own colour" lesson.</summary>
+        public const int TipColours = 1;
+        /// <summary>Bit in <see cref="Tips"/> for the lesson on one mixed colour (3 purple, 5 orange, 6 green).</summary>
+        public static int TipMix(int color) => color == 3 ? 2 : color == 5 ? 4 : color == 6 ? 8 : 0;
 
         /// <summary>Test helper: mark every level of a group up to <paramref name="level"/> as beaten.</summary>
         public static void UnlockUpTo(int group, int level)

@@ -488,6 +488,9 @@ namespace CircuitCube.Game
             hud.Show();
             hud.Title.text = GameData.Group(group).name.ToUpperInvariant() + "  " + number;
             hud.Tip.text = (group == 0 && number <= 3) || !CubeSave.SeenHowTo ? "Drag to turn the shape  ·  Tap a tile to rotate it" : "";
+            // the first levels with mixed colours spell the mixes out
+            string mixes = CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null;
+            if (mixes != null) hud.Tip.text = mixes;
             int chips = 0;
             var seen = new HashSet<int>();
             foreach (int c in _level.Colors)
@@ -511,7 +514,7 @@ namespace CircuitCube.Game
                 ShowTip("New shape: " + info.name, info.blurb + "\n\nThe rules are the same: turn tiles until every lamp gets exactly its colour.", "Let's go",
                     () => CubeSave.MarkSeenShape(group));
             }
-            else if (!CubeSave.SeenMix && HasMixedColour(_level.Colors))   // the first level with a mixed lamp, wherever it is
+            else if (!CubeSave.SeenMix && MixFormula(_level.Colors) != null)   // only without the tutorial layer: the Mix lesson shows this
             {
                 ShowTip("Colours mix!",
                     "When two power sources share one wire, their colours combine.\n\nRed + Blue = Purple\nRed + Yellow = Orange\nBlue + Yellow = Green\n\nA lamp lights only when it gets exactly its colour.",
@@ -519,12 +522,8 @@ namespace CircuitCube.Game
             }
         }
 
-        /// <summary>A lamp colour made of two sources (purple, orange, green): more than one colour bit.</summary>
-        static bool HasMixedColour(int[] colors)
-        {
-            foreach (int c in colors) if ((c & (c - 1)) != 0) return true;
-            return false;
-        }
+        /// <summary>Won levels with mixed colours after which the HUD stops spelling the mixes out.</summary>
+        const int MixFormulaWins = 10;
 
         void ShowUpdateTip() => ShowTip("Update to play more",
             "New levels are out, and they need the latest version of Circuit Cube. Update the game to play them.", "Update",
@@ -717,7 +716,7 @@ namespace CircuitCube.Game
             _moves++;
             _undo.Push(index);
             LessonTapped();
-            if (_moves == 4 && !CubeSave.SeenHowTo) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = ""; }
+            if (_moves == 4 && !CubeSave.SeenHowTo) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = (CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null) ?? ""; }
             _board.AnimateRotation(index, 1);
             bool solved = _board.Refresh();
             if (!solved && _board.NewlyLitColor != 0) GameAudio.Lamp(_board.NewlyLitColor);
@@ -844,6 +843,7 @@ namespace CircuitCube.Game
             var wasOpen = new bool[GameData.GroupCount];
             for (int g = 0; g < wasOpen.Length; g++) wasOpen[g] = CubeSave.GroupOpen(g);
             if (!_cheat) CubeSave.Complete(_group, _level.Number, points);
+            if (!_cheat && MixFormula(_level.Colors) != null) CubeSave.MixWins++;
             int newGroup = -1;
             for (int g = 0; g < wasOpen.Length && newGroup < 0; g++) if (!wasOpen[g] && CubeSave.GroupOpen(g)) newGroup = g;
             bool unlocksNext = newGroup >= 0;

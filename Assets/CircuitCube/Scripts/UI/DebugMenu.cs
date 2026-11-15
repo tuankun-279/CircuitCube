@@ -10,6 +10,8 @@ namespace CircuitCube.UI
     /// <summary>
     /// Debug menu (prefab Prefabs/UI/DebugMenu.prefab). F1 shows or hides it. Only in the editor and development
     /// builds; release builds switch it off. Pick a shape group, type a level, Play; or unlock shapes.
+    /// Keys: F2 dark / light, F3 skip ads, F5 reset every lesson, F6 (editor) play the Level Lab import zips.
+    /// Levels started here show their lessons again.
     /// </summary>
     public sealed class DebugMenu : MonoBehaviour
     {
@@ -54,7 +56,39 @@ namespace CircuitCube.UI
                 Debug.Log("[CircuitCube] ads " + (RewardedAds.SkipAds ? "skipped" : "on"));
                 if (Status != null) Status.text = RewardedAds.SkipAds ? "Ads skipped (F3)" : "Ads on (F3)";
             }
+            // F5 forgets every lesson (tutorial on Moonbase 1-3, colours, mixes, the HUD mix formulas)
+            if (kb != null && kb.f5Key.wasPressedThisFrame)
+            {
+                CubeSave.TutorialStep = 0;
+                CubeSave.Tips = 0;
+                CubeSave.MixWins = 0;
+                CubeSave.SeenMix = false;
+                CubeSave.SeenHowTo = false;
+                Debug.Log("[CircuitCube] lessons reset");
+                if (Status != null) Status.text = "Lessons reset (F5)";
+            }
+#if UNITY_EDITOR
+            // F6 plays the Level Lab import zips (Tools/LevelLab/import) instead of the published levels, or stops
+            if (kb != null && kb.f6Key.wasPressedThisFrame)
+            {
+                bool on = !GameData.Previewing;
+                if (on) EditorPreview(); else System.IO.Directory.Delete(GameData.PreviewRoot, true);
+                GameData.Reload();
+                if (App != null) App.DebugRefresh();
+                Debug.Log("[CircuitCube] import preview " + (on ? "on" : "off"));
+                if (Status != null) Status.text = on ? "Playing the import zips (F6)" : "Playing the published levels (F6)";
+            }
+#endif
         }
+
+#if UNITY_EDITOR
+        /// <summary>Same as Tools/Circuit Cube/Data/Preview Level Lab Imports (the editor assembly is out of reach here).</summary>
+        static void EditorPreview()
+        {
+            var m = System.Type.GetType("CircuitCube.EditorTools.DataTools, CircuitCube.Editor")?.GetMethod("PreviewImports");
+            if (m != null) m.Invoke(null, null);
+        }
+#endif
 
         void Select(int g)
         {
