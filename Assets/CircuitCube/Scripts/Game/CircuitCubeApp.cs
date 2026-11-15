@@ -55,6 +55,7 @@ namespace CircuitCube.Game
         int _group;
 
         CubeLevel _level;
+        string _levelCheck = "";   // the level's check from its data file (empty for generated levels)
         CubeBoardView _board;
         int _moves, _hintsLeft, _hintsUsed, _undosLeft, _undosUsed;
         float _levelStartTime;
@@ -142,21 +143,12 @@ namespace CircuitCube.Game
             UI.Splash.SetProgress(0f);
             UI.Splash.Status.text = "Loading levels...  ·  v" + Application.version;
             GameData.Reload();
-            // the data loads in one go; the bar just gives the logo a moment on screen
-            _tw.Run(0.9f, p => UI.Splash.SetProgress(Tweener.Ease(p)), () => { if (UI.Splash.gameObject.activeSelf) ShowHome(); });
+            // the bar gives the logo a moment on screen; Home waits a little longer for a new publish to come in
+            _splashUntil = Time.realtimeSinceStartup + SplashWaitSeconds;
+            _contentReady = string.IsNullOrEmpty(ContentBaseUrl);
+            _tw.Run(0.9f, p => UI.Splash.SetProgress(Tweener.Ease(p)), () => _splashShown = true);
             AppUpdates.Downloaded += OfferUpdateRestart;
-            if (!string.IsNullOrEmpty(ContentBaseUrl))
-                StartCoroutine(RemoteContent.Sync(ContentBaseUrl, CubeSave.Beaten, () =>
-                {
-                    AppUpdates.Check(GameData.Rules.updateBelow);   // with the rules just downloaded
-                    if (_state == State.Playing || _state == State.Won) return;
-                    DebugRefresh();
-                    if (RemoteContent.NeedsUpdate && !CardOpen) ShowUpdateTip();
-                }, () =>
-                {
-                    // new level counts and group names show at once, before the levels themselves download
-                    if (_state == State.Home || _state == State.Shapes || _state == State.Levels) DebugRefresh();
-                }));
+            if (!string.IsNullOrEmpty(ContentBaseUrl)) SyncContent(true);
             else AppUpdates.Check(GameData.Rules.updateBelow);
         }
 
@@ -182,6 +174,8 @@ namespace CircuitCube.Game
         void OnApplicationFocus(bool focus)
         {
             if (focus) AppUpdates.OnResume();
+            // back in front after a while: look for a new publish soon
+            if (focus && _syncedOnce) _nextSync = Mathf.Min(_nextSync, Time.realtimeSinceStartup + 2f);
             if (focus && CubeSave.Settings != null && CubeSave.Settings.theme == "system" && Themes.Current != null && Themes.IsDark != SystemTheme.IsDark())
                 SetTheme("system");
         }
@@ -193,7 +187,7 @@ namespace CircuitCube.Game
             if (_state != State.Playing || _level == null || _cheat) return;
             int serial = GameData.SerialAt(_group, _level.Number);
             if (serial <= 0) return;
-            var ip = new InProgress { serial = serial, position = _level.Number, moves = _moves, hintsUsed = _hintsUsed, undosUsed = _undosUsed };
+            var ip = new InProgress { serial = serial, position = _level.Number, check = _levelCheck, moves = _moves, hintsUsed = _hintsUsed, undosUsed = _undosUsed };
             var sb = new System.Text.StringBuilder(_level.Tiles.Length);
             for (int i = 0; i < _level.Tiles.Length; i++)
             {
@@ -210,6 +204,8 @@ namespace CircuitCube.Game
             int serial = GameData.SerialAt(_group, _level.Number);
             var ip = CubeSave.GetInProgress(_group);
             if (serial <= 0 || ip == null || ip.serial != serial || ip.rotations == null || ip.rotations.Length != _level.Tiles.Length) return;
+            // the level was edited in a publish since: its old rotations would scramble the new board
+            if (!string.IsNullOrEmpty(ip.check) && ip.check != _levelCheck) return;
             for (int i = 0; i < _level.Tiles.Length; i++) _level.Tiles[i].Rot = ip.rotations[i] - '0';
             foreach (int i in ip.hintedTiles) if (i >= 0 && i < _level.Tiles.Length) _level.Tiles[i].Locked = true;
             _moves = ip.moves;
@@ -476,6 +472,8 @@ namespace CircuitCube.Game
             _undo.Clear();
             _unlockedGroup = -1;
             _shownMoves = _shownPar = _shownLit = _shownTotal = _shownHints = _shownUndos = -1;
+            var data = GameData.LevelDataAt(group, number);
+            _levelCheck = data != null ? data.check ?? "" : "";
             if (!cheat) RestoreInProgress();
             _levelStartTime = Time.realtimeSinceStartup;
             _zoomLogged = false;
@@ -524,10 +522,63 @@ namespace CircuitCube.Game
                     "When two power sources share one wire, their colours combine.\n\nRed + Blue = Purple\nRed + Yellow = Orange\nBlue + Yellow = Green\n\nA lamp lights only when it gets exactly its colour.",
                     "Got it", () => CubeSave.SeenMix = true);
             }
+            else if (_contentNotice) ShowContentNotice();   // a publish came in during the last level
         }
 
         /// <summary>Won levels with mixed colours after which the HUD stops spelling the mixes out.</summary>
         const int MixFormulaWins = 10;
+
+        // ---------------- Live content ----------------
+
+        /// <summary>Seconds between looks for a new publish while the game is open.</summary>
+        const float SyncEverySeconds = 180f;
+        /// <summary>Longest the splash waits for a new publish (the player's own levels) before showing Home.</summary>
+        const float SplashWaitSeconds = 3.5f;
+
+        float _nextSync = float.MaxValue, _splashUntil;
+        bool _splashShown, _contentReady, _syncedOnce, _contentNotice;
+
+        /// <summary>
+        /// Download a new publish in the background. Whatever level is being played stays as it is (it is already in
+        /// memory); menus show the new data at once, and a player in a level hears about it when the level is over.
+        /// </summary>
+        void SyncContent(bool first)
+        {
+            if (RemoteContent.Busy || string.IsNullOrEmpty(ContentBaseUrl)) return;
+            _nextSync = Time.realtimeSinceStartup + SyncEverySeconds;
+            StartCoroutine(RemoteContent.Sync(ContentBaseUrl, CubeSave.Beaten, () =>
+            {
+                _syncedOnce = true;
+                _contentReady = true;
+                _nextSync = Time.realtimeSinceStartup + SyncEverySeconds;
+                if (first) AppUpdates.Check(GameData.Rules.updateBelow);   // with the rules just downloaded
+                if (RemoteContent.LastChanged && !first) _contentNotice = true;
+                if (InMenus) DebugRefresh();
+                if (RemoteContent.NeedsUpdate && !CardOpen && InMenus) ShowUpdateTip();
+            }, () =>
+            {
+                // new level counts and group names show at once, before the levels themselves download
+                if (InMenus) DebugRefresh();
+            }, CubeSave.CurrentGroup, () => _contentReady = true));
+        }
+
+        bool InMenus => !UI.Splash.gameObject.activeSelf && (_state == State.Home || _state == State.Shapes || _state == State.Levels);
+
+        /// <summary>Called every frame: leave the splash, look for a publish, tell the player about one.</summary>
+        void TickContent()
+        {
+            float now = Time.realtimeSinceStartup;
+            if (UI.Splash.gameObject.activeSelf && _splashShown && (_contentReady || now >= _splashUntil)) ShowHome();
+            if (now >= _nextSync) SyncContent(false);
+            if (_contentNotice && InMenus && !CardOpen) ShowContentNotice();
+        }
+
+        void ShowContentNotice()
+        {
+            _contentNotice = false;
+            GameAnalytics.Log("content_notice", ("version", GameData.Manifest != null ? GameData.Manifest.contentVersion : 0));
+            ShowTip("New levels are here", "Fresh levels just arrived while you were playing. Your progress and stars are kept.", "Nice", null);
+        }
 
         void ShowUpdateTip() => ShowTip("Update to play more",
             "New levels are out, and they need the latest version of Circuit Cube. Update the game to play them.", "Update",
@@ -994,6 +1045,7 @@ namespace CircuitCube.Game
             float dt = Time.unscaledDeltaTime;
             RewardedAds.Tick();
             AppUpdates.Tick();
+            TickContent();
             _tw.Tick(dt);
             HandlePointer(dt);
             TickLesson(dt);

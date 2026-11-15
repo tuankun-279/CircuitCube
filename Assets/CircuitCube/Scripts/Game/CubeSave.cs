@@ -35,6 +35,7 @@ namespace CircuitCube.Game
     {
         public int serial;                 // 0 = nothing in progress
         public int position;
+        public string check = "";          // the level's check when it was saved; another check = the level was edited
         public string rotations = "";      // one digit per tile
         public int moves, hintsUsed, undosUsed;
         public List<int> hintedTiles = new List<int>();

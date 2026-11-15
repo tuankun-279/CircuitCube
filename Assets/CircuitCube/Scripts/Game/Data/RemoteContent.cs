@@ -11,7 +11,8 @@ namespace CircuitCube.Game
     /// <summary>
     /// Keeps the download cache in step with the CDN: manifest, group files, the order chunks around the player's
     /// position, and only the levels from X−windowBack to X+windowAhead in each open group. Anything that fails keeps
-    /// the files already on the device; the game never waits on the network.
+    /// the files already on the device; the game never waits on the network. The game runs it at start, then again
+    /// every few minutes and when it comes back to the front, so a publish reaches players who have the game open.
     /// </summary>
     public static class RemoteContent
     {
@@ -22,6 +23,9 @@ namespace CircuitCube.Game
         /// the content it has and the game asks the player to update.
         /// </summary>
         public static bool NeedsUpdate { get; private set; }
+
+        /// <summary>The last sync brought a new publish (a different contentVersion from the one the game had).</summary>
+        public static bool LastChanged { get; private set; }
 
         /// <summary>Compares dotted versions ("1.2.10" &gt; "1.2.9"); missing parts count as 0, other text is ignored.</summary>
         public static int CompareVersions(string a, string b)
@@ -53,12 +57,17 @@ namespace CircuitCube.Game
         /// Called as soon as the new group files are in (level counts, names), before the levels download, so the
         /// menus can show them at once.
         /// </param>
-        public static IEnumerator Sync(string baseUrl, Func<int, int> clearedOf, Action done, Action groupsReady = null)
+        /// <param name="firstGroup">Group index whose levels come first (the one the player is on).</param>
+        /// <param name="firstGroupReady">Called once that group's levels around the player are in.</param>
+        public static IEnumerator Sync(string baseUrl, Func<int, int> clearedOf, Action done, Action groupsReady = null,
+            int firstGroup = 0, Action firstGroupReady = null)
         {
             if (string.IsNullOrEmpty(baseUrl) || Busy) { done?.Invoke(); yield break; }
             Busy = true;
+            LastChanged = false;
             baseUrl = baseUrl.TrimEnd('/') + "/";
             string root = GameData.CacheRoot;
+            int before = GameData.Manifest != null ? GameData.Manifest.contentVersion : 0;
 
             // the new manifest lands next to the old one and replaces it only when this game can play it
             bool ok = false;
@@ -79,18 +88,27 @@ namespace CircuitCube.Game
             }
             if (ok)
             {
+                LastChanged = m.contentVersion != before;
                 if (m != null && !string.IsNullOrEmpty(m.cdn)) baseUrl = m.cdn.TrimEnd('/') + "/";
+                // group files change only with a publish; the checks every few minutes skip them otherwise
                 var groupFiles = new List<string>();
-                foreach (var g in m.groups) groupFiles.Add("groups/" + g.id + ".json");
+                foreach (var g in m.groups)
+                {
+                    string rel = "groups/" + g.id + ".json";
+                    if (LastChanged || !File.Exists(Path.Combine(root, rel))) groupFiles.Add(rel);
+                }
                 yield return FetchMany(baseUrl, groupFiles, root);
                 GameData.Reload();
                 groupsReady?.Invoke();
 
                 var rules = GameData.Rules;
-                for (int gi = 0; gi < GameData.GroupCount; gi++)
+                var order = new List<int>();
+                if (firstGroup >= 0 && firstGroup < GameData.GroupCount) order.Add(firstGroup);
+                for (int gi = 0; gi < GameData.GroupCount; gi++) if (gi != firstGroup) order.Add(gi);
+                foreach (int gi in order)
                 {
                     var gd = GameData.Group(gi);
-                    if (gd.levelCount == 0) continue;
+                    if (gd.levelCount == 0) { if (gi == firstGroup) firstGroupReady?.Invoke(); continue; }
                     int x = Mathf.Clamp(clearedOf(gi) + 1, 1, gd.levelCount);
                     int from = Mathf.Max(1, x - rules.windowBack), to = Mathf.Min(gd.levelCount, x + rules.windowAhead);
 
@@ -130,8 +148,10 @@ namespace CircuitCube.Game
                     }
                     yield return FetchMany(baseUrl, shapes, root);
                     Prune(Path.Combine(root, "levels", gd.id), keep);
+                    if (gi == firstGroup) { GameData.Reload(); firstGroupReady?.Invoke(); }
                 }
             }
+            GameData.Reload();
             Busy = false;
             done?.Invoke();
         }
