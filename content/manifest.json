@@ -9,6 +9,8 @@
     "hintPenalty": 1,
     "undosPerLevel": 5,
     "adsOn": 0,
+    "adsTesters": "",
+    "updateBelow": 0,
     "minScore": 3,
     "parScore": 6,
     "overParScore": 5,
@@ -26,39 +28,39 @@
     {
       "id": "tetra",
       "unlock": {
-        "group": "cube",
-        "cleared": 100
+        "cleared": 100,
+        "group": "cube"
       }
     },
     {
       "id": "octa",
       "unlock": {
-        "group": "tetra",
-        "cleared": 100
+        "cleared": 100,
+        "group": "tetra"
       }
     },
     {
       "id": "sphere",
       "unlock": {
-        "group": "octa",
-        "cleared": 100
+        "cleared": 100,
+        "group": "octa"
       }
     },
     {
       "id": "dodeca",
       "unlock": {
-        "group": "sphere",
-        "cleared": 100
+        "cleared": 100,
+        "group": "sphere"
       }
     },
     {
       "id": "megamix",
       "unlock": {
-        "group": "dodeca",
-        "cleared": 100
+        "cleared": 100,
+        "group": "dodeca"
       }
     }
   ],
-  "contentVersion": 8,
-  "cdn": "https://cdn.jsdelivr.net/gh/tuankun-279/CircuitCube@890c84751b83896cdebb153e40cfc8c9fa53e00e/content/"
+  "contentVersion": 9,
+  "cdn": ""
 }
