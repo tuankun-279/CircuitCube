@@ -31,6 +31,15 @@ POLY_TYPES = ("tetra", "octa", "dodeca", "geo")
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
+def previous(content, rel):
+    """The file as the last publish left it in content/, or None."""
+    try:
+        with open(os.path.join(content, rel)) as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return None
+
+
 def load_dir(d):
     out = {}
     if not os.path.isdir(d):
@@ -222,6 +231,7 @@ def main():
         g.pop("shapes", None)   # Level Lab only: the shapes Auto fill uses for this group
         chunks = sorted((o for o in orders.values() if o.get("group") == gid), key=lambda o: o["chunk"])
         count = 0
+        chunk_info = []
         for c in chunks:
             revs = []
             for serial in c.get("levels", []):
@@ -247,7 +257,18 @@ def main():
                 used_shapes.add(L.get("shape", ""))
                 files["levels/%s/%04d.json" % (gid, serial)] = L
                 count += 1
-            files["orders/%s/%d.json" % (gid, c["chunk"])] = {"group": gid, "chunk": c["chunk"], "version": c.get("version", 1), "levels": c.get("levels", []), "revs": revs}
+            # The game downloads a chunk again only when its version changes, so a chunk whose levels or revisions
+            # differ from the last publish gets a higher version (Level Lab keeps the version it was given).
+            rel = "orders/%s/%d.json" % (gid, c["chunk"])
+            cv = c.get("version", 1)
+            before = previous(content, rel)
+            if before:
+                cv = max(cv, before.get("version", 1))
+                if before.get("levels") != c.get("levels", []) or before.get("revs") != revs:
+                    cv = before.get("version", 1) + 1 if cv <= before.get("version", 1) else cv
+            files[rel] = {"group": gid, "chunk": c["chunk"], "version": cv, "levels": c.get("levels", []), "revs": revs}
+            chunk_info.append({"index": c["chunk"], "version": cv, "count": len(c.get("levels", []))})
+        g["chunks"] = chunk_info   # versions as published, so the game sees which chunks changed
         if g.get("levelCount", 0) != count:
             problems.append("%s: levelCount %s but the order lists %d levels" % (gid, g.get("levelCount"), count))
         files["groups/%s.json" % gid] = g
