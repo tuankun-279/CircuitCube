@@ -13,7 +13,7 @@ namespace CircuitCube.EditorTools
     /// The hand-made difficulty curve for the first 50 levels of each shape, as a Level Lab import zip
     /// (Tools/LevelLab/import/shapes_1-50_curve.zip). Each shape starts on its smallest board with one or two plain
     /// colours, then a mix (players already know mixing from Moonbase 21-30), then three colour groups, then a bigger
-    /// board. Every level is the best of 16 seeds for a par that only climbs within a phase, and is checked to be
+    /// board. Every level is the the one of 32 seeds closest to a par target, and is checked to be
     /// solvable and scrambled. Revisions go one above the published ones (content/) so phones download them again.
     /// The zip's manifest carries <see cref="Unlocks"/>: how many levels of the shape before opens the next one.
     /// </summary>
@@ -21,7 +21,7 @@ namespace CircuitCube.EditorTools
     {
         const string Menu = "Tools/Circuit Cube/Data/";
         const string OutZip = "Tools/LevelLab/import/shapes_1-50_curve.zip";
-        const int Seeds = 16;
+        const int Seeds = 32;
 
         /// <summary>Levels of the shape before that open each shape (Moonbase 30 = after the mixing lessons).</summary>
         public static readonly Dictionary<string, (string after, int cleared)> Unlocks = new Dictionary<string, (string, int)>
@@ -50,7 +50,7 @@ namespace CircuitCube.EditorTools
             //                 A  B  C  D  E  F  50
             { "tetra",  new[] { 2, 2, 3, 3, 4, 4, 5 } },     // 16, 36, 64, 100 tiles
             { "octa",   new[] { 2, 2, 2, 3, 3, 3, 4 } },     // 32, 72, 128
-            { "sphere", new[] { 1, 1, 1, 2, 2, 3, 3 } },     // 32, 42, 92 (six-sided tiles take more taps)
+            { "sphere", new[] { 1, 1, 1, 2, 2, 2, 3 } },     // 32, 42, 92 (six-sided tiles take more taps)
             { "dodeca", new[] { 2, 2, 2, 2, 2, 2, 3 } },     // 60, 132
         };
 
@@ -58,6 +58,20 @@ namespace CircuitCube.EditorTools
         {
             { "tetra", "tetra-" }, { "octa", "octa-" }, { "sphere", "geo-" }, { "dodeca", "dodeca-" },
         };
+
+        /// <summary>
+        /// Par the curve aims for at each level, on the Moonbase scale: 6 to 15 on the first board, a dip each time
+        /// something new comes in (mixes at 21, three groups at 31, the big board at 41) and never a wall.
+        /// </summary>
+        static int Target(int l)
+        {
+            if (l <= 10) return 6 + (l - 1);                        // 6..15
+            if (l <= 20) return 14 + (l - 11) * 3 / 2;              // 14..27
+            if (l <= 30) return 20 + (l - 21) * 3 / 2;              // 20..33
+            if (l <= 40) return 28 + (l - 31) * 3 / 2;              // 28..41
+            if (l <= 49) return 36 + (l - 41) * 2;                  // 36..52
+            return 56;
+        }
 
         static List<Spec> CurveFor(string group)
         {
@@ -100,7 +114,6 @@ namespace CircuitCube.EditorTools
             foreach (var group in new[] { "tetra", "octa", "sphere", "dodeca" })
             {
                 var specs = CurveFor(group);
-                int prevPar = 0, prevPhase = -1;
                 for (int i = 0; i < specs.Count; i++)
                 {
                     int l = i + 1;
@@ -123,16 +136,10 @@ namespace CircuitCube.EditorTools
                     }
                     if (cands.Count == 0) { bad++; report.AppendLine(group + " " + l + ": no level with colours " + string.Join(",", sp.Colors)); continue; }
                     cands.Sort((a, b) => a.lv.Par.CompareTo(b.lv.Par));
-                    (CubeLevel lv, uint seed) pick;
-                    if (sp.Phase != prevPhase) pick = cands[cands.Count / 4];           // a gentle start for the phase
-                    else
-                    {
-                        int want = Mathf.Max(prevPar + 1, Mathf.RoundToInt(prevPar * 1.05f));
-                        pick = cands[cands.Count - 1];
-                        foreach (var c in cands) if (c.lv.Par >= want) { pick = c; break; }
-                    }
-                    prevPar = pick.lv.Par;
-                    prevPhase = sp.Phase;
+                    // the seed whose par is closest to the curve's target (ties: the easier one)
+                    int want = Target(l);
+                    var pick = cands[0];
+                    foreach (var c in cands) if (System.Math.Abs(c.lv.Par - want) < System.Math.Abs(pick.lv.Par - want)) pick = c;
 
                     var lvl = pick.lv;
                     bool ok = lvl.IsSolved(true) && !lvl.IsSolved(false);
