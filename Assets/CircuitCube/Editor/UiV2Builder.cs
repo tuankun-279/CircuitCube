@@ -149,7 +149,7 @@ namespace CircuitCube.EditorTools
                 ln.Frame.raycastTarget = false;
                 ln.Frame.pixelsPerUnitMultiplier = 0.72f;   // corners as round as the cell's own (ui_square is drawn larger)
                 // where the star row sits (bottom centre), a little larger than one star
-                ln.Expert = Pic(node.transform, "Expert", BottomC, BottomC, BottomC, new Vector2(0, 24), new Vector2(84, 84), Icon("icon_expert_orbit"), UiRole.None);
+                ln.Expert = Pic(node.transform, "Expert", BottomC, BottomC, BottomC, new Vector2(0, 20), new Vector2(96, 96), Icon("icon_expert_comet3_a"), UiRole.None);
                 ln.Expert.gameObject.SetActive(false);
                 frame.gameObject.SetActive(false);
                 PrefabUtility.SaveAsPrefabAsset(node, NodePrefab);
