@@ -33,6 +33,7 @@ namespace CircuitCube.Game
         int _lessonStep;            // step within a lesson that shows several things in turn
         bool _lessonLitShown;       // the Tap lesson has said "a lamp is lit"
         float _lessonLitTime = -1f; // seconds the "a lamp is lit" line has been up (-1 = not showing)
+        int _lessonLitAtStart;      // lamps already lit when the level began (a lamp next to its source)
         int _lessonColorA, _lessonColorB, _lessonMix;   // colours the Colours / Mix lessons talk about
         bool _lessonMixFull;        // the first mix ever: show both sources, then the lamp
 
@@ -81,6 +82,7 @@ namespace CircuitCube.Game
             _lessonStep = 0;
             _lessonLitShown = false;
             _lessonLitTime = -1f;
+            _lessonLitAtStart = _board != null ? _board.LitLamps : 0;
             if (_lesson <= Lesson.Hint) UI.Hud.Tip.text = "";
             if (_lesson == Lesson.Tap) CubeSave.MarkSeenShape(0);   // the first level teaches by doing, not with a card
             if (_lesson == Lesson.Mix) CubeSave.SeenMix = true;      // the old text card is not needed any more
@@ -263,7 +265,7 @@ namespace CircuitCube.Game
                 NextStepAfter(StepSeconds + 0.4f);
                 return;
             }
-            if (!_lessonLitShown && _lessonTapped && _board.LitLamps > 0)
+            if (!_lessonLitShown && _lessonTapped && _board.LitLamps > _lessonLitAtStart)
             {
                 _lessonLitShown = true;
                 _lessonLitTime = 0f;
@@ -301,7 +303,7 @@ namespace CircuitCube.Game
         /// <summary>Ring round a tile with a line of text; text only when the tile is round the back.</summary>
         void LookAt(CircuitCube.UI.TutorialOverlay tut, int tile, string text)
         {
-            bool seen = tile >= 0 && Facing(tile);
+            bool seen = tile >= 0 && Facing(tile, 0.12f);   // a tile on a slanted face still counts as seen
             SetLessonText(text);
             tut.Pointer.gameObject.SetActive(seen);
             if (!seen) return;
@@ -330,7 +332,7 @@ namespace CircuitCube.Game
             {
                 var t = _level.Tiles[i];
                 if (t.Kind != kind || (color != 0 && t.Color != color)) continue;
-                float score = ((Vector2)Cam.WorldToScreenPoint(_board.CenterWorld(i)) - mid).sqrMagnitude + (Facing(i) ? 0f : 1e9f);
+                float score = ((Vector2)Cam.WorldToScreenPoint(_board.CenterWorld(i)) - mid).sqrMagnitude + (Facing(i) ? 0f : Facing(i, 0.12f) ? 1e8f : 1e9f);
                 if (score < bestScore) { bestScore = score; best = i; }
             }
             return best;
@@ -353,7 +355,7 @@ namespace CircuitCube.Game
             return best;
         }
 
-        bool Facing(int tile) => Vector3.Dot(_board.NormalWorld(tile), (Cam.transform.position - _board.CenterWorld(tile)).normalized) > 0.45f;
+        bool Facing(int tile, float min = 0.45f) => Vector3.Dot(_board.NormalWorld(tile), (Cam.transform.position - _board.CenterWorld(tile)).normalized) > min;
 
         /// <summary>The mixes in this level spelled out for the HUD tip line ("Purple = Red + Blue"), or null.</summary>
         static string MixFormula(int[] colors)
