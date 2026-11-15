@@ -152,6 +152,10 @@ namespace CircuitCube.Game
                     if (_state == State.Playing || _state == State.Won) return;
                     DebugRefresh();
                     if (RemoteContent.NeedsUpdate && !CardOpen) ShowUpdateTip();
+                }, () =>
+                {
+                    // new level counts and group names show at once, before the levels themselves download
+                    if (_state == State.Home || _state == State.Shapes || _state == State.Levels) DebugRefresh();
                 }));
             else AppUpdates.Check(GameData.Rules.updateBelow);
         }

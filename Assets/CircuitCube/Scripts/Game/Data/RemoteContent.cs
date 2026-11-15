@@ -49,7 +49,11 @@ namespace CircuitCube.Game
         /// jsDelivr) for groups/, orders/, levels/ and shapes/.
         /// </param>
         /// <param name="clearedOf">Positions cleared per group index (from the save).</param>
-        public static IEnumerator Sync(string baseUrl, Func<int, int> clearedOf, Action done)
+        /// <param name="groupsReady">
+        /// Called as soon as the new group files are in (level counts, names), before the levels download, so the
+        /// menus can show them at once.
+        /// </param>
+        public static IEnumerator Sync(string baseUrl, Func<int, int> clearedOf, Action done, Action groupsReady = null)
         {
             if (string.IsNullOrEmpty(baseUrl) || Busy) { done?.Invoke(); yield break; }
             Busy = true;
@@ -76,8 +80,11 @@ namespace CircuitCube.Game
             if (ok)
             {
                 if (m != null && !string.IsNullOrEmpty(m.cdn)) baseUrl = m.cdn.TrimEnd('/') + "/";
-                foreach (var g in m.groups) yield return Fetch(baseUrl, "groups/" + g.id + ".json", root, null);
+                var groupFiles = new List<string>();
+                foreach (var g in m.groups) groupFiles.Add("groups/" + g.id + ".json");
+                yield return FetchMany(baseUrl, groupFiles, root);
                 GameData.Reload();
+                groupsReady?.Invoke();
 
                 var rules = GameData.Rules;
                 for (int gi = 0; gi < GameData.GroupCount; gi++)
@@ -98,23 +105,30 @@ namespace CircuitCube.Game
                     GameData.Reload();
 
                     var keep = new HashSet<string>();
+                    var levels = new List<string>();
+                    var need = new List<string>();
                     for (int p = from; p <= to; p++)
                     {
                         int serial = GameData.SerialAt(gi, p);
                         if (serial <= 0) continue;
                         string rel = GameData.LevelPath(gd.id, serial);
                         keep.Add(Path.GetFileName(rel));
+                        levels.Add(rel);
                         // fetch when missing, or when the order chunk says the level was edited since the copy we have
                         int want = GameData.RevAt(gi, p);
                         var have = GameData.Has(rel) ? GameData.ReadJson<LevelData>(rel) : null;
-                        if (have == null || (want > 0 && have.rev != want)) yield return Fetch(baseUrl, rel, root, null);
-                        var lv = ReadCached<LevelData>(root, rel);
-                        if (lv != null && lv.shape != null && lv.shape.StartsWith("voxel-"))
-                        {
-                            string sr = "shapes/voxel/" + lv.shape + ".json";
-                            if (!GameData.Has(sr)) yield return Fetch(baseUrl, sr, root, null);
-                        }
+                        if (have == null || (want > 0 && have.rev != want)) need.Add(rel);
                     }
+                    yield return FetchMany(baseUrl, need, root);
+                    var shapes = new List<string>();
+                    foreach (var rel in levels)
+                    {
+                        var lv = ReadCached<LevelData>(root, rel);
+                        if (lv == null || lv.shape == null || !lv.shape.StartsWith("voxel-")) continue;
+                        string sr = "shapes/voxel/" + lv.shape + ".json";
+                        if (!GameData.Has(sr) && !shapes.Contains(sr)) shapes.Add(sr);
+                    }
+                    yield return FetchMany(baseUrl, shapes, root);
                     Prune(Path.Combine(root, "levels", gd.id), keep);
                 }
             }
@@ -154,22 +168,48 @@ namespace CircuitCube.Game
             {
                 req.timeout = 10;
                 yield return req.SendWebRequest();
-                bool ok = req.result == UnityWebRequest.Result.Success && !string.IsNullOrEmpty(req.downloadHandler.text);
-                if (ok)
-                {
-                    string path = Path.Combine(root, saveAs ?? rel);
-                    try
-                    {
-                        Directory.CreateDirectory(Path.GetDirectoryName(path));
-                        string tmp = path + ".tmp";
-                        File.WriteAllText(tmp, req.downloadHandler.text);
-                        if (File.Exists(path)) File.Delete(path);
-                        File.Move(tmp, path);
-                    }
-                    catch (IOException) { ok = false; }
-                }
-                result?.Invoke(ok);
+                result?.Invoke(Save(req, Path.Combine(root, saveAs ?? rel)));
             }
+        }
+
+        const int Parallel = 8;   // requests in flight at once; the CDN serves small files, so the wait is mostly latency
+
+        /// <summary>Downloads the files a batch at a time; a file that fails keeps the copy already on the device.</summary>
+        static IEnumerator FetchMany(string baseUrl, List<string> rels, string root)
+        {
+            var batch = new List<UnityWebRequest>(Parallel);
+            for (int i = 0; i < rels.Count; i += Parallel)
+            {
+                batch.Clear();
+                for (int j = i; j < rels.Count && j < i + Parallel; j++)
+                {
+                    var req = UnityWebRequest.Get(baseUrl + rels[j]);
+                    req.timeout = 10;
+                    req.SendWebRequest();
+                    batch.Add(req);
+                }
+                while (batch.Exists(r => !r.isDone)) yield return null;
+                for (int k = 0; k < batch.Count; k++)
+                {
+                    Save(batch[k], Path.Combine(root, rels[i + k]));
+                    batch[k].Dispose();
+                }
+            }
+        }
+
+        static bool Save(UnityWebRequest req, string path)
+        {
+            if (req.result != UnityWebRequest.Result.Success || string.IsNullOrEmpty(req.downloadHandler.text)) return false;
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                string tmp = path + ".tmp";
+                File.WriteAllText(tmp, req.downloadHandler.text);
+                if (File.Exists(path)) File.Delete(path);
+                File.Move(tmp, path);
+                return true;
+            }
+            catch (IOException) { return false; }
         }
     }
 }
