@@ -168,7 +168,8 @@ namespace CircuitCube.Game
             {
                 req.timeout = 10;
                 yield return req.SendWebRequest();
-                result?.Invoke(Save(req, Path.Combine(root, saveAs ?? rel)));
+                bool ok = Save(req, Path.Combine(root, saveAs ?? rel));   // save first: result may be null
+                result?.Invoke(ok);
             }
         }
 
