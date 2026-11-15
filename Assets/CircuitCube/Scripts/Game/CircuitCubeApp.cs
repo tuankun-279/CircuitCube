@@ -511,12 +511,19 @@ namespace CircuitCube.Game
                 ShowTip("New shape: " + info.name, info.blurb + "\n\nThe rules are the same: turn tiles until every lamp gets exactly its colour.", "Let's go",
                     () => CubeSave.MarkSeenShape(group));
             }
-            else if (GameData.GroupId(group) == "cube" && number == LevelPlan.MixIntroLevel && !CubeSave.SeenMix)
+            else if (!CubeSave.SeenMix && HasMixedColour(_level.Colors))   // the first level with a mixed lamp, wherever it is
             {
                 ShowTip("Colours mix!",
                     "When two power sources share one wire, their colours combine.\n\nRed + Blue = Purple\nRed + Yellow = Orange\nBlue + Yellow = Green\n\nA lamp lights only when it gets exactly its colour.",
                     "Got it", () => CubeSave.SeenMix = true);
             }
+        }
+
+        /// <summary>A lamp colour made of two sources (purple, orange, green): more than one colour bit.</summary>
+        static bool HasMixedColour(int[] colors)
+        {
+            foreach (int c in colors) if ((c & (c - 1)) != 0) return true;
+            return false;
         }
 
         void ShowUpdateTip() => ShowTip("Update to play more",

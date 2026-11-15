@@ -10,7 +10,7 @@ namespace CircuitCube.Core
     public static class LevelPlan
     {
         public const int LevelsPerGroup = 100;
-        public const int MixIntroLevel = 6;   // in the Cube group
+        public const int MixIntroLevel = 6;   // first mixed level of the built-in Cube plan (the published levels mix from 21; the game shows the mix tip on the first level that has a mixed lamp)
 
         public sealed class Group
         {
