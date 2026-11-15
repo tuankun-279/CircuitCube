@@ -363,6 +363,13 @@ table.bt th{color:var(--muted);font-weight:600}
     <div class="row" style="justify-content:flex-end"><button class="btn" type="button" id="cImpCancel">Cancel</button><button class="btn primary" type="button" id="cImpGo">Import</button></div>
   </div>
 </div>
+<div class="c-modal" id="pubAlert" hidden>
+  <div class="panel" role="alertdialog" aria-modal="true" aria-labelledby="pubAlertTitle" aria-describedby="pubAlertBody">
+    <h2 id="pubAlertTitle" style="margin:0;font-size:16px;letter-spacing:0;text-transform:none"></h2>
+    <div id="pubAlertBody" style="font-size:13.5px"></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn primary" type="button" id="pubAlertOk">OK</button></div>
+  </div>
+</div>
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script>
@@ -1538,15 +1545,52 @@ function renderPublish(){
   else if(p.state==="running")h=`Publishing… started ${ago(p.startedAt)}.`;
   else if(p.state==="done")h=`Published <b>v${esc(p.version)}</b> ${ago(p.finishedAt)} · ${esc(p.levels)} levels · <a href="${REPO_URL}/commit/${esc(p.commit)}" target="_blank" rel="noopener">commit ${esc(String(p.commit||"").slice(0,7))}</a>. Players get it on their next start.`;
   else if(p.state==="no-change")h=`Up to date${p.version?` with <b>v${esc(p.version)}</b>`:""}: nothing new to publish (checked ${ago(p.finishedAt)}).`;
-  else if(p.state==="failed")h=`<span style="color:var(--bad)">Publish stopped ${ago(p.finishedAt)}:</span> ${(p.problems||[]).slice(0,4).map(esc).join(" · ")}${(p.problems||[]).length>4?` · and ${p.problems.length-4} more (see Check)`:""}`;
-  el.innerHTML=h;$("#btnPublish").disabled=pubBusy||(p&&(p.state==="requested"||p.state==="running")&&Date.now()-Date.parse(p.requestedAt||p.startedAt)<15*60e3);
+  else if(p.state==="failed")h=`<span style="color:var(--bad)">Publish failed ${ago(p.finishedAt)}${p.step?` at <b>${esc(stepName(p.step))}</b>`:""}:</span> ${(p.problems||[]).slice(0,4).map(esc).join(" · ")}${(p.problems||[]).length>4?` · and ${p.problems.length-4} more <button class="btn sm" type="button" id="pubMore">Details</button>`:""}`;
+  const st=stalled(p);if(st)h=`<span style="color:var(--warn)">${esc(st)}</span>`;
+  el.innerHTML=h;const more=document.getElementById("pubMore");if(more)more.onclick=()=>showPubAlert(p,true);
+  $("#btnPublish").disabled=pubBusy||(p&&(p.state==="requested"||p.state==="running")&&!st);
+  checkPubAlert();
 }
+/* ---- alert when a publish finishes (success or failure, with the failing step) ---- */
+const STEP_NAMES={start:"starting the task",status:"1 · status",repo:"2 · GitHub repo (clone / pull)",dump:"3 · reading the Level Lab data",
+  build:"4 · building content (level check)",commit:"6 · commit",push:"6 · push to GitHub",report:"7 · report"};
+const stepName=s=>STEP_NAMES[s]||s;
+const FINAL=["done","failed","no-change"];
+function stalled(p){if(!p)return "";const now=Date.now();
+  if(p.state==="requested"&&now-Date.parse(p.requestedAt)>10*60e3)return `Publish requested ${ago(p.requestedAt)} but the task never started. Press Publish to try again.`;
+  if(p.state==="running"&&now-Date.parse(p.startedAt)>25*60e3)return `Publish started ${ago(p.startedAt)} and has not reported back: it probably stopped part way. Press Publish to try again.`;
+  return ""}
+let pubWatching=false,pubStallShown="";
+const SEEN_KEY="levellab.pubSeen";
+function seen(){try{return localStorage.getItem(SEEN_KEY)||""}catch(_){return ""}}
+function markSeen(v){try{localStorage.setItem(SEEN_KEY,v)}catch(_){}}
+function checkPubAlert(){const p=PUB;if(!p)return;
+  if(p.state==="requested"||p.state==="running"){pubWatching=true;const st=stalled(p);
+    if(st&&pubStallShown!==(p.requestedAt||p.startedAt)){pubStallShown=p.requestedAt||p.startedAt;showPubAlert({state:"failed",step:p.state==="requested"?"start":"",problems:[st],finishedAt:new Date().toISOString()},true)}return}
+  if(!FINAL.includes(p.state))return;const id=p.state+"|"+(p.finishedAt||"");
+  // show it when this page watched the run end, or when it ended in the last day and this browser has not seen it yet
+  if(pubWatching||(seen()!==id&&Date.now()-Date.parse(p.finishedAt||0)<24*3600e3)){pubWatching=false;markSeen(id);showPubAlert(p)}
+}
+function showPubAlert(p,keep){const t=$("#pubAlertTitle"),b=$("#pubAlertBody");let title,body;
+  if(p.state==="done"){title="✓ Publish succeeded";t.style.color="var(--ok)";
+    body=`<p style="margin:0 0 6px">Level content <b>v${esc(p.version)}</b> is live: ${esc(p.levels)} levels.</p><p class="note" style="margin:0">Commit <a href="${REPO_URL}/commit/${esc(p.commit)}" target="_blank" rel="noopener">${esc(String(p.commit||"").slice(0,7))}</a> · finished ${ago(p.finishedAt)}. Players get it on their next start.</p>`}
+  else if(p.state==="no-change"){title="Nothing to publish";t.style.color="var(--fg)";
+    body=`<p style="margin:0">The game already has every saved level${p.version?` (v${esc(p.version)})`:""}. Nothing was committed.</p>`}
+  else{title="✕ Publish failed";t.style.color="var(--bad)";const pr=p.problems||[];
+    body=`<p style="margin:0 0 6px">Failed at: <b>${esc(p.step?stepName(p.step):"unknown step")}</b>${p.finishedAt?` · ${ago(p.finishedAt)}`:""}. Nothing was changed in the game.</p>`+
+      (pr.length?`<pre style="white-space:pre-wrap;max-height:300px">${pr.map(x=>"• "+esc(x)).join("\n")}</pre>`:`<p class="note">No error text was reported.</p>`)+
+      (p.step==="build"?`<p class="note">Fix these levels (the Check tab lists them too), then press Publish again.</p>`:`<p class="note">Press Publish to try again; if it fails the same way, the error above says what to fix.</p>`)}
+  t.textContent=title;b.innerHTML=body;$("#pubAlert").hidden=false;$("#pubAlertOk").focus();
+}
+$("#pubAlertOk").onclick=()=>{$("#pubAlert").hidden=true};
+$("#pubAlert").onclick=e=>{if(e.target.id==="pubAlert")$("#pubAlert").hidden=true};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#pubAlert").hidden)$("#pubAlert").hidden=true});
 $("#btnPublish").onclick=async()=>{
   if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");
   if(gDirty&&gDirty())return toast("Save or discard the group changes first.");
   const mcp=await claude.use("mcp").catch(()=>null);
   if(!mcp)return toast("Publishing runs through your Claude Code connector: open Level Lab on claude.ai, signed in as its owner.");
-  pubBusy=true;renderPublish();
+  pubBusy=true;pubWatching=true;renderPublish();
   try{
     await DB.doc("meta/publish").set({state:"requested",requestedAt:new Date().toISOString()});
     await mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:PUBLISH_TASK,text:"Requested from Level Lab."});
@@ -1559,7 +1603,7 @@ $("#btnPublish").onclick=async()=>{
       c==="blocked_by_policy"?"Your organization does not allow this page to use the Claude Code connector.":
       c==="tool_error"?"The publish task could not start: "+((e.message||"").slice(0,160)):
       "The publish request may or may not have started ("+(c||"error")+"). Watch the status line before pressing again.";
-    toast(msg);if(c!=="server_unavailable"&&c!=="upstream_error")try{await DB.doc("meta/publish").set(Object.assign({},PUB||{},{state:"failed",finishedAt:new Date().toISOString(),problems:[msg]}))}catch(_){}
+    toast(msg);if(c!=="server_unavailable"&&c!=="upstream_error")try{await DB.doc("meta/publish").set(Object.assign({},PUB||{},{state:"failed",step:"start",finishedAt:new Date().toISOString(),problems:[msg]}))}catch(_){}
   }finally{pubBusy=false;renderPublish()}
 };
 setInterval(renderPublish,30000);
