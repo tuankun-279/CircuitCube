@@ -141,7 +141,7 @@ namespace CircuitCube.Game
             RewardedAds.Init();
             Loc.Changed += OnLanguageChanged;
             CloudSave.Init();
-            CubeSave.Merged += () => { if (InMenus) DebugRefresh(); };
+            CubeSave.Merged += OnCloudMerged;
             HideAll();
             UI.Splash.Show();
             UI.Splash.SetProgress(0f);
@@ -1092,6 +1092,16 @@ namespace CircuitCube.Game
         }
 
         // ---------------- Loop and input ----------------
+
+        /// <summary>Cloud progress came in: refresh the menu being shown.</summary>
+        void OnCloudMerged() { if (this != null && InMenus) DebugRefresh(); }
+
+        void OnDestroy()
+        {
+            // static events outlive this object (play mode in the editor, tests)
+            CubeSave.Merged -= OnCloudMerged;
+            Loc.Changed -= OnLanguageChanged;
+        }
 
         void Update()
         {
