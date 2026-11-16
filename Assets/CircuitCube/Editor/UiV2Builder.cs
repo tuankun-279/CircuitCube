@@ -189,14 +189,21 @@ namespace CircuitCube.EditorTools
                 fx.GoldBody = goldBody;
                 fx.Beams = new[] { Hidden(Pic(layer, "Beam0", Half, Half, Half, Vector2.zero, new Vector2(80, 80), S("fx_glow"), UiRole.None)),
                                    Hidden(Pic(layer, "Beam1", Half, Half, Half, Vector2.zero, new Vector2(80, 80), S("fx_glow"), UiRole.None)) };
+                // constellations, sized from the mockup: lamp light 12 px (+30 px glow), 8 px dots (+24), 1.6 px strokes (+12)
+                fx.LampGlows = new Image[15];
+                for (int i = 0; i < 15; i++)
+                {
+                    fx.LampGlows[i] = Hidden(Pic(layer, "LampGlow" + i, Half, Half, Half, Vector2.zero, new Vector2(202, 202), S("fx_lamp_halo"), UiRole.None));
+                    Pic(fx.LampGlows[i].transform, "Core", Half, Half, Half, Vector2.zero, new Vector2(56, 56), S("fx_lamp_core"), UiRole.None);
+                }
                 fx.Dots = new Image[15];
                 fx.Lines = new Image[15];
                 for (int i = 0; i < 15; i++)
                 {
-                    fx.Lines[i] = Hidden(Pic(layer, "Line" + i, Half, Half, new Vector2(0, 0.5f), Vector2.zero, new Vector2(10, 16), S("fx_line"), UiRole.None));
+                    fx.Lines[i] = Hidden(Pic(layer, "Line" + i, Half, Half, new Vector2(0, 0.5f), Vector2.zero, new Vector2(10, 73), S("fx_star_line"), UiRole.None));
                     fx.Lines[i].preserveAspect = false;
                 }
-                for (int i = 0; i < 15; i++) fx.Dots[i] = Hidden(Pic(layer, "Dot" + i, Half, Half, Half, Vector2.zero, new Vector2(60, 60), S("fx_glow"), UiRole.None));
+                for (int i = 0; i < 15; i++) fx.Dots[i] = Hidden(Pic(layer, "Dot" + i, Half, Half, Half, Vector2.zero, new Vector2(157, 157), S("fx_star_dot"), UiRole.None));
                 foreach (var g in layer.GetComponentsInChildren<Graphic>(true)) g.raycastTarget = false;
                 ui.Fx = fx;
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using CircuitCube.Game;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -52,6 +53,8 @@ namespace CircuitCube.UI
         public Image[] Beams = new Image[2];
 
         [Header("Constellations")]
+        [Tooltip("Coloured glow left where each lamp was when the box breaks; the light leaves from here (child Core: white).")]
+        public Image[] LampGlows = new Image[0];
         public Image[] Dots = new Image[0];
         public Image[] Lines = new Image[0];
 
@@ -87,6 +90,7 @@ namespace CircuitCube.UI
             foreach (var x in Comets) yield return x;
             yield return GoldBody; yield return GoldFrame; yield return GoldFace;
             foreach (var x in Beams) yield return x;
+            foreach (var x in LampGlows) yield return x;
             foreach (var x in Dots) yield return x;
             foreach (var x in Lines) yield return x;
         }
@@ -99,7 +103,7 @@ namespace CircuitCube.UI
         static float Smooth(float p) => p * p * (3f - 2f * p);
 
         /// <summary>CSS cubic-bezier(x1, y1, x2, y2) easing, so the motion matches the approved web mockup.</summary>
-        static float Bezier(float x1, float y1, float x2, float y2, float x)
+        public static float Bezier(float x1, float y1, float x2, float y2, float x)
         {
             if (x <= 0f) return 0f;
             if (x >= 1f) return 1f;
@@ -498,19 +502,32 @@ namespace CircuitCube.UI
         /// lines join them, then each star drops into its slot in <paramref name="slots"/>; <paramref name="landed"/> is
         /// called with its index.
         /// </summary>
-        public void PlayConstellations(Vector3[] lamps, int lampCount, Vector3 boardCenter, RectTransform[] slots, float dropAt, Action<int> landed, Action done)
+        /// <summary>
+        /// Three-star streak, after the approved mockup, from the moment the box breaks: the lamps' lights stay where
+        /// they were (0.15 s), light rises from them to the points of three small stars (0.7 s, 0.25 s apart), each
+        /// star is drawn in one stroke (1.25 s), the card comes up (2.6 s, the caller opens it) and the stars fly down
+        /// into the card's star slots (2.7 s, 0.2 s apart). <paramref name="card"/> is the result panel at rest.
+        /// </summary>
+        public void PlayConstellations(Vector3[] lamps, int[] colors, int lampCount, RectTransform card, RectTransform[] slots, Action<int> landed, Action done)
         {
             HideAll();
             Busy = true;
-            StartCoroutine(Const_(lamps, lampCount, Local(boardCenter), slots, dropAt, landed, done));
+            StartCoroutine(Const_(lamps, colors, lampCount, card, slots, landed, done));
         }
 
-        IEnumerator Const_(Vector3[] lamps, int lampCount, Vector2 board, RectTransform[] slots, float dropAt, Action<int> landed, Action done)
+        public const float ConstCardAt = 2.6f, ConstDropAt = 2.7f;
+
+        IEnumerator Const_(Vector3[] lamps, int[] colors, int lampCount, RectTransform card, RectTransform[] slots, Action<int> landed, Action done)
         {
             float t0 = T;
-            var centers = new[] { board + new Vector2(-260f, 470f), board + new Vector2(0f, 560f), board + new Vector2(260f, 470f) };
-            const float r = 95f;
             int perStar = 5, stars = Mathf.Min(3, Mathf.Min(Dots.Length / perStar, Lines.Length / perStar));
+            int glows = Mathf.Min(lampCount, Mathf.Min(LampGlows.Length, stars * perStar));
+            for (int i = 0; i < glows; i++) StartCoroutine(LampGlow(LampGlows[i], Local(lamps[i]), CubeColors.Energy(colors[i])));
+            // star centres from the mockup: 85 px left and right of the card centre 23 px above its top, the middle one 48 px above
+            Vector2 top = Local(card.TransformPoint(new Vector3(card.rect.center.x, card.rect.yMax, 0f)));
+            var centers = new[] { top + new Vector2(-MockupPx(85f), MockupPx(23f)), top + new Vector2(0f, MockupPx(48f)), top + new Vector2(MockupPx(85f), MockupPx(23f)) };
+            float r = MockupPx(34f);
+            int[] order = { 0, 2, 4, 1, 3, 0 };
             for (int s = 0; s < stars; s++)
             {
                 var pts = new Vector2[perStar];
@@ -521,26 +538,50 @@ namespace CircuitCube.UI
                 }
                 for (int k = 0; k < perStar; k++)
                 {
-                    var dot = Dots[s * perStar + k];
-                    Vector2 from = lampCount > 0 ? Local(lamps[(s * perStar + k) % lampCount]) : board;
-                    StartCoroutine(Rise(dot, from, pts[k], 0.15f + s * 0.25f + k * 0.05f, 0.9f));
+                    Vector2 from = glows > 0 ? Local(lamps[(s * perStar + k) % glows]) : centers[s];
+                    StartCoroutine(Rise(Dots[s * perStar + k], from, pts[k], 0.7f + s * 0.25f + k * 0.05f, 0.9f));
                 }
-                // star drawn in one stroke: 0 2 4 1 3 0
-                int[] order = { 0, 2, 4, 1, 3, 0 };
-                for (int k = 0; k < perStar; k++)
-                    StartCoroutine(DrawLine(Lines[s * perStar + k], pts[order[k]], pts[order[k + 1]], 1.0f + s * 0.25f + k * 0.12f, 0.18f));
+                var path = new Vector2[order.Length];
+                for (int k = 0; k < order.Length; k++) path[k] = pts[order[k]];
+                StartCoroutine(DrawStar(s * perStar, path, 1.25f + s * 0.25f, 0.9f));
             }
-            while (T - t0 < dropAt) yield return null;
+            while (T - t0 < ConstDropAt) yield return null;
             int left = stars;
             for (int s = 0; s < stars; s++)
             {
                 int k = s;
-                StartCoroutine(Drop(s, perStar, centers[s], slots[s], 0.55f, () => { landed?.Invoke(k); left--; }));
+                StartCoroutine(Drop(s, perStar, centers[s], slots[s], 0.55f, () => landed?.Invoke(k), () => left--));
                 yield return Wait(0.2f);
             }
             while (left > 0) yield return null;
             Busy = false;
             done?.Invoke();
+        }
+
+        /// <summary>A lamp's light stays put: pops in (0.5 s, to 1.6 and back), then fades as its light leaves (1.0 s).</summary>
+        IEnumerator LampGlow(Image glow, Vector2 at, Color color)
+        {
+            yield return Wait(0.15f);
+            var rt = glow.rectTransform;
+            rt.anchoredPosition = at;
+            color.a = 0f; glow.color = color;
+            glow.gameObject.SetActive(true);
+            float t0 = T;
+            while (true)
+            {
+                float t = T - t0;
+                float p = Mathf.Clamp01(t / 0.5f), e = EaseOut(p);
+                float scale = e < 0.6f ? Mathf.Lerp(0.3f, 1.6f, e / 0.6f) : Mathf.Lerp(1.6f, 1f, (e - 0.6f) / 0.4f);
+                float a = e < 0.6f ? e / 0.6f : 1f;
+                float f = Mathf.Clamp01((t - 0.85f) / 0.3f);              // fade from 1.0 s (0.85 s after this started)
+                a *= 1f - f * f * f;
+                rt.localScale = Vector3.one * scale;
+                SetAlpha(glow, a);
+                foreach (Transform c in rt) { var g = c.GetComponent<Graphic>(); if (g != null) SetAlpha(g, a); }
+                if (f >= 1f) break;
+                yield return null;
+            }
+            glow.gameObject.SetActive(false);
         }
 
         IEnumerator Rise(Image dot, Vector2 from, Vector2 to, float delay, float dur)
@@ -553,7 +594,7 @@ namespace CircuitCube.UI
             while (true)
             {
                 float p = Mathf.Clamp01((T - t0) / dur);
-                float e = 1f - (1f - p) * (1f - p) * (1f - p);
+                float e = Bezier(0.3f, 0.1f, 0.2f, 1f, p);
                 rt.anchoredPosition = Vector2.Lerp(from, to, e);
                 rt.localScale = Vector3.one * Mathf.Lerp(0.6f, 1f, e);
                 if (p >= 1f) yield break;
@@ -561,29 +602,42 @@ namespace CircuitCube.UI
             }
         }
 
-        IEnumerator DrawLine(Image line, Vector2 a, Vector2 b, float delay, float dur)
+        /// <summary>The star's five strokes drawn as one line, ease-out over <paramref name="dur"/> (stroke-dashoffset in the mockup).</summary>
+        IEnumerator DrawStar(int first, Vector2[] path, float delay, float dur)
         {
             yield return Wait(delay);
-            var rt = line.rectTransform;
-            line.gameObject.SetActive(true);
-            SetAlpha(line, 1f);
-            Vector2 d = b - a;
-            float len = d.magnitude;
-            rt.pivot = new Vector2(0f, 0.5f);
-            rt.anchoredPosition = a;
-            rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+            int n = path.Length - 1;
+            var len = new float[n];
+            for (int k = 0; k < n; k++)
+            {
+                var line = Lines[first + k];
+                var rt = line.rectTransform;
+                Vector2 d = path[k + 1] - path[k];
+                len[k] = d.magnitude;
+                rt.pivot = new Vector2(0f, 0.5f);
+                rt.anchoredPosition = path[k];
+                rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+                rt.sizeDelta = new Vector2(0f, rt.sizeDelta.y);
+                SetAlpha(line, 1f);
+            }
             float t0 = T;
             while (true)
             {
-                float p = Mathf.Clamp01((T - t0) / dur);
-                rt.sizeDelta = new Vector2(len * p, rt.sizeDelta.y);
+                float p = Mathf.Clamp01((T - t0) / dur), e = EaseOut(p) * n;
+                for (int k = 0; k < n; k++)
+                {
+                    float q = Mathf.Clamp01(e - k);
+                    var line = Lines[first + k];
+                    if (q > 0f && !line.gameObject.activeSelf) line.gameObject.SetActive(true);
+                    line.rectTransform.sizeDelta = new Vector2(len[k] * q, line.rectTransform.sizeDelta.y);
+                }
                 if (p >= 1f) yield break;
                 yield return null;
             }
         }
 
         /// <summary>One constellation shrinks and flies into its star slot.</summary>
-        IEnumerator Drop(int s, int perStar, Vector2 center, RectTransform slot, float dur, Action arrive)
+        IEnumerator Drop(int s, int perStar, Vector2 center, RectTransform slot, float dur, Action land, Action arrive)
         {
             var dots = new RectTransform[perStar];
             var lines = new RectTransform[perStar];
@@ -596,23 +650,29 @@ namespace CircuitCube.UI
                 lines[k] = Lines[s * perStar + k].rectTransform; linesFrom[k] = lines[k].anchoredPosition; linesSize[k] = lines[k].sizeDelta;
             }
             float t0 = T;
+            bool landed = false;
             while (true)
             {
                 float p = Mathf.Clamp01((T - t0) / dur);
-                float e = Smooth(p);
+                float e = Bezier(0.6f, 0f, 0.4f, 1f, p);
                 Vector2 to = Local(slot.position);
-                float k2 = Mathf.Lerp(1f, 0.15f, e);
+                float k2 = Mathf.Lerp(1f, 0.3f, e);
+                Vector2 c = Vector2.Lerp(center, to, e);
                 for (int k = 0; k < perStar; k++)
                 {
-                    dots[k].anchoredPosition = Vector2.Lerp(center, to, e) + (dotsFrom[k] - center) * k2;
-                    lines[k].anchoredPosition = Vector2.Lerp(center, to, e) + (linesFrom[k] - center) * k2;
-                    lines[k].sizeDelta = new Vector2(linesSize[k].x * k2, linesSize[k].y);
-                    SetAlpha(Dots[s * perStar + k], 1f - e * 0.8f);
+                    dots[k].anchoredPosition = c + (dotsFrom[k] - center) * k2;
+                    dots[k].localScale = Vector3.one * k2;
+                    lines[k].anchoredPosition = c + (linesFrom[k] - center) * k2;
+                    lines[k].sizeDelta = new Vector2(linesSize[k].x * k2, linesSize[k].y * k2);
+                    SetAlpha(Dots[s * perStar + k], 1f - e);
                     SetAlpha(Lines[s * perStar + k], 1f - e);
                 }
+                // the card's star pops in just before the constellation is gone (mockup: 0.45 s into the 0.55 s flight)
+                if (!landed && T - t0 >= 0.45f) { landed = true; land(); }
                 if (p >= 1f) break;
                 yield return null;
             }
+            if (!landed) land();
             for (int k = 0; k < perStar; k++) { Dots[s * perStar + k].gameObject.SetActive(false); Lines[s * perStar + k].gameObject.SetActive(false); }
             arrive();
         }

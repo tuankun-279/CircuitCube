@@ -34,6 +34,10 @@ def linear_fix(path):
     C=np.where(a[...,None]>1e-4,X/np.maximum(a[...,None],1e-4),0)
     out=np.dstack([to_srgb(np.clip(C,0,1)),a])
     Image.fromarray((out*255+0.5).astype(np.uint8),'RGBA').save(path)
+items['fx_star_dot']=(8+2*24,8+2*24,'<i style="position:absolute;left:24px;top:24px;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 10px 4px #FFE7A3"></i>')
+items['fx_lamp_core']=(12+2*4,12+2*4,'<i style="position:absolute;left:4px;top:4px;width:12px;height:12px;border-radius:50%;background:#fff"></i>')
+items['fx_lamp_halo']=(12+2*30,12+2*30,'<i style="position:absolute;left:30px;top:30px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 14px 6px #fff"></i>')
+items['fx_star_line_wide']=(200,26,'<i style="position:absolute;left:-20px;top:12.2px;width:240px;height:1.6px;background:#FFE7A3;filter:drop-shadow(0 0 4px #FFC94D)"></i>')
 async def main():
     async with async_playwright() as p:
         b=await p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--allow-file-access-from-files'])

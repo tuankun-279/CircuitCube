@@ -472,6 +472,26 @@ namespace CircuitCube.Game
             return n;
         }
 
+        /// <summary>
+        /// Lamp centres (world) and their colour sets, the lamps facing <paramref name="camPos"/> first, so effects that
+        /// start from the lamps start from ones the player can see.
+        /// </summary>
+        public int LampPoints(Vector3[] into, int[] colors, Vector3 camPos)
+        {
+            int n = 0;
+            for (int pass = 0; pass < 2; pass++)
+                for (int i = 0; i < _t.Length && n < into.Length; i++)
+                {
+                    if (_level.Tiles[i].Kind != TileKind.Lamp) continue;
+                    bool front = Vector3.Dot(NormalWorld(i), (camPos - CenterWorld(i)).normalized) > 0.1f;
+                    if (front != (pass == 0)) continue;
+                    into[n] = CenterWorld(i);
+                    colors[n] = _level.Tiles[i].Color;
+                    n++;
+                }
+            return n;
+        }
+
         /// <summary>Turn a tile's wire by <paramref name="steps"/> (negative = back), with a small overshoot.</summary>
         public void AnimateRotation(int index, int steps, float duration = -1f)
         {

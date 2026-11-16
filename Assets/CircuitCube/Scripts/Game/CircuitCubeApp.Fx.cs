@@ -62,25 +62,29 @@ namespace CircuitCube.Game
         readonly Vector3[] _lampWorld = new Vector3[32];
 
         /// <summary>Constellations start at the win (the lamps are still there), before the box breaks.</summary>
-        void StartConstellations(int points)
+        readonly int[] _lampColor = new int[32];
+
+        /// <summary>Three-star streak, from the moment the box breaks (see <see cref="ResultFx.PlayConstellations"/>).</summary>
+        void StartConstellations()
         {
             var fx = UI.Fx;
-            int n = _board.LampPositions(_lampWorld);
+            int n = _board.LampPoints(_lampWorld, _lampColor, Cam.transform.position);
             for (int i = 0; i < n; i++) BoardToUi(_lampWorld[i], fx.Layer, out _lampWorld[i]);
-            BoardToUi(_board.transform.position, fx.Layer, out var center);
             var row = UI.Result.Stars;
             row.Set(0);
             var slots = new RectTransform[row.Stars.Length];
             for (int i = 0; i < slots.Length; i++) slots[i] = row.Stars[i].rectTransform;
+            var panel = (RectTransform)UI.Result.transform.Find("Panel");
             _starsInFlight = 3;
-            fx.PlayConstellations(_lampWorld, n, center, slots, 1.75f, k =>
+            fx.PlayConstellations(_lampWorld, _lampColor, n, panel, slots, k =>
             {
                 _starsInFlight = Mathf.Max(0, _starsInFlight - 1);
                 if (!UI.Result.gameObject.activeSelf) return;
                 row.Set(k + 1);
                 GameAudio.Play(Sfx.Star, 1f + 0.12f * k);
+                // the mockup's star pop: from 2.4 times its size, cubic-bezier(.2,1.6,.4,1), 0.35 s
                 var pop = row.Stars[k].transform;
-                _tw.Run(0.3f, p => pop.localScale = Vector3.one * (1f + 0.35f * Mathf.Sin(p * Mathf.PI) * (1f - p * 0.5f)), () => pop.localScale = Vector3.one, pop);
+                _tw.Run(0.35f, p => pop.localScale = Vector3.one * Mathf.LerpUnclamped(2.4f, 1f, ResultFx.Bezier(0.2f, 1.6f, 0.4f, 1f, p)), () => pop.localScale = Vector3.one, pop);
             }, null);
         }
 

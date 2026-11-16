@@ -930,7 +930,6 @@ namespace CircuitCube.Game
             ResetZoom(true);   // the box breaks open in the framed view, so the stars fly from its centre
             int points = PointsFor();
             var fx = UI.Fx != null ? StreakFor(points) : (LevelScore.IsExpert(points) ? WinFx.Expert : WinFx.Stars);
-            if (fx == WinFx.Constellation) StartConstellations(points);
             var wasOpen = new bool[GameData.GroupCount];
             for (int g = 0; g < wasOpen.Length; g++) wasOpen[g] = CubeSave.GroupOpen(g);
             if (!_cheat) { CubeSave.Complete(_group, _level.Number, points); CloudSave.MarkDirty(); }
@@ -955,10 +954,12 @@ namespace CircuitCube.Game
                 board.Shatter();
                 if (fx == WinFx.Expert && UI.Fx != null) StartExpertWord();
                 else if (fx == WinFx.Stars) LaunchStars(points);
+                else if (fx == WinFx.Constellation) StartConstellations();
                 else if (fx == WinFx.Comets || (fx == WinFx.Expert && UI.Fx == null)) ExpertBurst();
                 Haptics.Play(Haptics.Kind.Win);
             }, tr);
-            _tw.Run(0.55f + ResultDelay, p => { }, () =>
+            // the constellations are drawn over the broken box before the card comes up
+            _tw.Run(0.55f + (fx == WinFx.Constellation ? ResultFx.ConstCardAt : ResultDelay), p => { }, () =>
             {
                 _busy = false;
                 var r = UI.Result;
@@ -984,7 +985,7 @@ namespace CircuitCube.Game
                     for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);
                 if (fx == WinFx.Comets && UI.Fx != null) StartComets();
                 if (UI.Fx != null)
-                    UI.Fx.ShowPraise(Praise.Pick(PraiseFor(fx, points)), fx == WinFx.Comets ? 2.6f : fx == WinFx.Expert ? 2.05f : fx == WinFx.Constellation ? 1.6f : 1.0f);
+                    UI.Fx.ShowPraise(Praise.Pick(PraiseFor(fx, points)), fx == WinFx.Comets ? 2.6f : fx == WinFx.Expert ? 2.05f : fx == WinFx.Constellation ? 1.1f : 1.0f);
             }, UI.Result);   // its own owner: a second run on the board's transform would cancel the wind-up
         }
 
