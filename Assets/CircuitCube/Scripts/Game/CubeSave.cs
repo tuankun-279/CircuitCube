@@ -34,6 +34,8 @@ namespace CircuitCube.Game
         public int tips;
         /// <summary>Levels with a mixed colour the player has won (the HUD spells out the mixes for the first few).</summary>
         public int mixWins;
+        /// <summary>2 = scores use Expert 7 (before, Expert was 6 and 6 is now three stars with help).</summary>
+        public int scoreVersion;
         public List<string> seenShapes = new List<string>();
         public List<GroupSeen> seenLevels = new List<GroupSeen>();   // level count of each group the player last saw
     }
@@ -109,14 +111,37 @@ namespace CircuitCube.Game
                 _profile = Read<PlayerProfile>(ProfilePath);
                 if (_profile == null)
                 {
-                    _profile = new PlayerProfile { playerId = Guid.NewGuid().ToString() };
+                    _profile = new PlayerProfile { playerId = Guid.NewGuid().ToString(), scoreVersion = ScoreVersion };
                     if (PlayerPrefs.GetInt(MigratedKey, 0) == 0) MigrateFromPlayerPrefs();
                     PlayerPrefs.SetInt(MigratedKey, 1);
                     PlayerPrefs.Save();
                     SaveProfile();
                 }
+                if (_profile.scoreVersion < ScoreVersion) UpgradeScores();
                 return _profile;
             }
+        }
+
+        const int ScoreVersion = 2;
+
+        /// <summary>
+        /// Scores saved before 1.2.0 used 6 for an Expert win (par, no hint). 1.2.0 keeps 6 for three stars won with
+        /// help and gives Expert its own 7, so old 6s become 7: nobody loses a comet they had.
+        /// </summary>
+        static void UpgradeScores()
+        {
+            string dir = Path.Combine(RootDir, "groups");
+            if (Directory.Exists(dir))
+                foreach (var f in Directory.GetFiles(dir, "stars-*.json", SearchOption.AllDirectories))
+                {
+                    var c = Read<StarChunk>(f);
+                    if (c == null || c.points == null || c.points.IndexOf('6') < 0) continue;
+                    c.points = c.points.Replace('6', '7');
+                    WriteAtomic(f, JsonUtility.ToJson(c));
+                }
+            _stars.Clear();
+            _profile.scoreVersion = ScoreVersion;
+            SaveProfile();
         }
 
         static void SaveProfile() => WriteAtomic(ProfilePath, JsonUtility.ToJson(_profile, true));

@@ -907,8 +907,8 @@ namespace CircuitCube.Game
             if (solved) Win();
         }
 
-        /// <summary>6 at par, at most 5 over par, minus one per hint, never below 3 (rules come from the manifest).</summary>
-        int PointsFor() => LevelScore.Points(_moves, _level.Par, _hintsUsed, GameData.Rules, GameData.Group(_group));
+        /// <summary>Expert (7) at par with no help, 6 at par with hints or undos, less over par (rules from the manifest).</summary>
+        int PointsFor() => LevelScore.Points(_moves, _level.Par, _hintsUsed, _undosUsed, GameData.Rules, GameData.Group(_group));
 
         void Win()
         {
@@ -927,7 +927,7 @@ namespace CircuitCube.Game
             bool unlocksNext = newGroup >= 0;
             _unlockedGroup = newGroup;
             GameAnalytics.Log("level_complete", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("moves", _moves),
-                ("par", LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group))), ("stars", points / 2),
+                ("par", LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group))), ("stars", LevelScore.WholeStars(points)), ("expert", LevelScore.IsExpert(points)),
                 ("hints", _hintsUsed), ("undos", _undosUsed), ("seconds", Mathf.RoundToInt(Time.realtimeSinceStartup - _levelStartTime)));
             if (unlocksNext) GameAnalytics.Log("shape_unlocked", ("shape", GameData.Group(newGroup).id));
             _board.Celebrate();
@@ -940,7 +940,7 @@ namespace CircuitCube.Game
             _tw.Run(0.55f, p => tr.rotation = Quaternion.AngleAxis(200f * p * p, Vector3.up) * from, () =>
             {
                 board.Shatter();
-                LaunchStars(points);
+                if (LevelScore.IsExpert(points)) ExpertBurst(); else LaunchStars(points);
                 Haptics.Play(Haptics.Kind.Win);
             }, tr);
             _tw.Run(0.55f + ResultDelay, p => { }, () =>
@@ -952,16 +952,18 @@ namespace CircuitCube.Game
                 r.Stats[0].text = _moves.ToString();
                 r.Stats[1].text = LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group)).ToString();
                 r.Stats[2].text = _board.LitLamps + "/" + _board.TotalLamps;
-                r.Badge.SetActive(points >= GameData.Rules.parScore);
+                bool expert = LevelScore.IsExpert(points);
+                r.Badge.SetActive(expert);                    // Expert: the badge alone, no stars
+                r.Stars.gameObject.SetActive(!expert);
                 // the stars say how well it went; the points and hint rule stay behind the scenes
                 r.Body.text = unlocksNext ? Loc.F("New shape unlocked: {0}!", Loc.T(GameData.Group(newGroup).name)) : "";
                 // stars already in the air fill the row as they land; without them the row fills at once
-                if (_starsInFlight == 0) r.Stars.SetPoints(points);
+                if (_starsInFlight == 0 && !expert) r.Stars.SetPoints(points);
                 r.PrimaryLabel.text = Loc.T("Next level");
                 UI.Dim.SetActive(true);
                 r.Open();
                 if (!_cheat) AppReview.Won(this, TotalWins());
-                if (_starsInFlight == 0)
+                if (_starsInFlight == 0 && !expert)
                     for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);
             }, UI.Result);   // its own owner: a second run on the board's transform would cancel the wind-up
         }
@@ -987,6 +989,13 @@ namespace CircuitCube.Game
         /// on the result card, which comes up while they are in the air. Each slot fills as its star lands;
         /// a half star (an odd score) pops into the next slot after the last whole one.
         /// </summary>
+        /// <summary>An Expert win: no stars fly; the result card shows the Expert badge. (The chosen effect comes here.)</summary>
+        void ExpertBurst()
+        {
+            GameAudio.Play(Sfx.Unlock, 1.15f, 0.45f);
+            Haptics.Play(Haptics.Kind.Win);
+        }
+
         void LaunchStars(int points)
         {
             int count = points / 2;

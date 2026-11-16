@@ -102,17 +102,27 @@ namespace CircuitCube.Core
             return par + Math.Max(min, (int)Math.Ceiling(par * pct / 100.0));
         }
 
-        public static int Points(int moves, int par, int hintsUsed, GameRules r, GroupData group = null)
+        /// <summary>Score of a level won without a hint or an undo, within par: Expert, shown as the comet.</summary>
+        public const int Expert = 7;
+
+        /// <summary>
+        /// Score of a win. Hints and undos never count as moves. Within par: <see cref="Expert"/> with no hint and no
+        /// undo, otherwise three stars (<see cref="GameRules.parScore"/>). Over par: <see cref="GameRules.overParScore"/>
+        /// less <see cref="GameRules.hintPenalty"/> per hint, never below <see cref="GameRules.minScore"/>.
+        /// </summary>
+        public static int Points(int moves, int par, int hintsUsed, int undosUsed, GameRules r, GroupData group = null)
         {
-            int baseScore = moves <= ExpertLimit(par, r, group) ? r.parScore : r.overParScore;
-            return Math.Max(r.minScore, baseScore - hintsUsed * r.hintPenalty);
+            if (moves <= ExpertLimit(par, r, group)) return hintsUsed + undosUsed == 0 ? Expert : r.parScore;
+            return Math.Max(r.minScore, r.overParScore - hintsUsed * r.hintPenalty);
         }
 
-        /// <summary>Whole stars of a score, half stars left out: 6 → 3, 5/4 → 2, 3 → 1.</summary>
-        public static int WholeStars(int points) => points <= 0 ? 0 : Math.Max(1, points / 2);
+        public static bool IsExpert(int points) => points >= Expert;
 
-        /// <summary>Stars of a score counted in halves: 6 → 6 (3 stars), 5 → 5 (2½), 4 → 4, 3 → 3 (1½), 0 → 0.</summary>
-        public static int HalfStars(int points) => points <= 0 ? 0 : points;
+        /// <summary>Whole stars of a score, half stars left out: Expert and 6 → 3, 5/4 → 2, 3 → 1.</summary>
+        public static int WholeStars(int points) => points <= 0 ? 0 : Math.Max(1, Math.Min(points, 6) / 2);
+
+        /// <summary>Stars of a score counted in halves: Expert and 6 → 6 (3 stars), 5 → 5 (2½), 4 → 4, 3 → 3, 0 → 0.</summary>
+        public static int HalfStars(int points) => points <= 0 ? 0 : Math.Min(points, 6);
 
         /// <summary>A star count given in halves, as players read it: "12", "12½".</summary>
         public static string StarText(int halves) => (halves / 2).ToString() + (halves % 2 == 1 ? "½" : "");

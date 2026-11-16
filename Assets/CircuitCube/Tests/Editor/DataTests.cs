@@ -85,19 +85,23 @@ namespace CircuitCube.Tests
             Assert.AreEqual(10 + 2, LevelScore.ExpertLimit(10, r));
             Assert.AreEqual(70 + 11, LevelScore.ExpertLimit(70, r));
             Assert.AreEqual(100 + 15, LevelScore.ExpertLimit(100, r));
-            Assert.AreEqual(6, LevelScore.Points(5, 5, 0, r));
-            Assert.AreEqual(6, LevelScore.Points(6, 5, 0, r));      // within the slack
-            Assert.AreEqual(5, LevelScore.Points(7, 5, 0, r));
-            Assert.AreEqual(6, LevelScore.Points(81, 70, 0, r));
-            Assert.AreEqual(5, LevelScore.Points(82, 70, 0, r));
-            Assert.AreEqual(5, LevelScore.Points(4, 5, 1, r));
-            Assert.AreEqual(3, LevelScore.Points(20, 5, 3, r));
+            Assert.AreEqual(7, LevelScore.Points(5, 5, 0, 0, r));      // Expert: par, no help
+            Assert.AreEqual(7, LevelScore.Points(6, 5, 0, 0, r));      // within the slack
+            Assert.AreEqual(5, LevelScore.Points(7, 5, 0, 0, r));
+            Assert.AreEqual(7, LevelScore.Points(81, 70, 0, 0, r));
+            Assert.AreEqual(5, LevelScore.Points(82, 70, 0, 0, r));
+            Assert.AreEqual(6, LevelScore.Points(4, 5, 1, 0, r));      // par with a hint: three stars
+            Assert.AreEqual(6, LevelScore.Points(4, 5, 0, 2, r));      // par with undos: three stars
+            Assert.AreEqual(4, LevelScore.Points(9, 5, 1, 0, r));      // over par with a hint
+            Assert.AreEqual(3, LevelScore.Points(20, 5, 3, 0, r));
             var sphere = new GroupData { expertSlackPercent = 20 };      // a group's own slack wins, its min falls back to the rule
             Assert.AreEqual(100 + 20, LevelScore.ExpertLimit(100, r, sphere));
             Assert.AreEqual(10 + 2, LevelScore.ExpertLimit(10, r, sphere));
             Assert.AreEqual(100 + 15, LevelScore.ExpertLimit(100, r, new GroupData()));
             r.expertSlackPercent = 0; r.expertSlackMin = 0;        // strict par still possible from the manifest
-            Assert.AreEqual(5, LevelScore.Points(6, 5, 0, r));
+            Assert.AreEqual(5, LevelScore.Points(6, 5, 0, 0, r));
+            Assert.AreEqual(3, LevelScore.WholeStars(7));
+            Assert.AreEqual(6, LevelScore.HalfStars(7));          // Expert counts as three stars
             Assert.AreEqual(3, LevelScore.WholeStars(6));
             Assert.AreEqual(2, LevelScore.WholeStars(5));
             Assert.AreEqual(5, LevelScore.HalfStars(5));         // 2½ stars

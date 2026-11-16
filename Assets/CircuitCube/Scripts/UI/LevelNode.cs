@@ -24,12 +24,12 @@ namespace CircuitCube.UI
         [Tooltip("Badge shown in place of the stars on a level won with the full score.")]
         public Image Expert;
 
-        /// <summary>Score that counts as Expert (three full stars).</summary>
-        public const int ExpertPoints = 6;
+        /// <summary>Score that counts as Expert: the comet in place of the stars.</summary>
+        public const int ExpertPoints = CircuitCube.Core.LevelScore.Expert;
 
         public void Set(int level, bool open, int points, Action onPick) => Set(level, open, points, onPick, open && points == 0);
 
-        /// <param name="points">The level's best score, 3-6 (0 = not won): shown as stars, with half stars.</param>
+        /// <param name="points">The level's best score, 3-7 (0 = not won): stars with half stars, 7 = the Expert comet.</param>
         /// <param name="current">The next level to play; highlighted like the mockup's level 12.</param>
         public void Set(int level, bool open, int points, Action onPick, bool current)
         {
