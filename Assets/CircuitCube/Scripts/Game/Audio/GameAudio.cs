@@ -62,7 +62,7 @@ namespace CircuitCube.Game
         public static void Music(MusicTrack track) => Instance?.SetTrack(track);
 
         /// <summary>Lower the music for a moment (the win fanfare and the stars).</summary>
-        public static void Duck(float seconds) { if (Instance != null) Instance._duckUntil = Time.unscaledTime + seconds; }
+        public static void Duck(float seconds) { if (Instance != null) Instance._duckUntil = Clock.Now + seconds; }
 
         void PlayEffect(Sfx id, float pitch, float delay)
         {
@@ -71,7 +71,7 @@ namespace CircuitCube.Game
             var e = Bank.Get(id);
             if (e == null || e.Clip == null) return;
             int k = (int)id;
-            float now = Time.unscaledTime + delay;
+            float now = Clock.Now + delay;
             if (k < _lastPlay.Length && delay <= 0f && _lastPlay[k] >= 0f && now - _lastPlay[k] < e.MinGap) return;
             if (k < _lastPlay.Length) _lastPlay[k] = now;
             var src = NextSource();
@@ -116,10 +116,10 @@ namespace CircuitCube.Game
                 if (_lastPlayFrame != Time.frameCount) PlayEffect(_clickBlocked ? Sfx.Blocked : Sfx.Button, 1f, 0f);
             }
             if (Bank == null) return;
-            float dt = Time.unscaledDeltaTime, step = Bank.FadeSeconds > 0f ? dt / Bank.FadeSeconds : 1f;
+            float dt = Clock.Dt, step = Bank.FadeSeconds > 0f ? dt / Bank.FadeSeconds : 1f;
             float level = !MusicOn ? 0f : _track == MusicTrack.Menu ? Bank.MenuVolume : _track == MusicTrack.Play ? Bank.PlayVolume : 0f;
             level *= CubeSave.Settings.musicVolume;
-            if (Time.unscaledTime < _duckUntil) level *= Bank.WinDuck;
+            if (Clock.Now < _duckUntil) level *= Bank.WinDuck;
             if (_current != null) _current.volume = Mathf.MoveTowards(_current.volume, level, step * Mathf.Max(level, 0.3f));
             if (_previous != null && _previous != _current)
             {

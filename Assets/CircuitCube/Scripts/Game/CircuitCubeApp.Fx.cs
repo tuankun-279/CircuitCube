@@ -141,7 +141,7 @@ namespace CircuitCube.Game
         void ResetMascot()
         {
             _menuShown = null;
-            _lastProgress = _lastLine = Time.unscaledTime;
+            _lastProgress = _lastLine = Clock.Now;
             _litForLine = 0;
             _saidNearly = _saidOverPar = false;
         }
@@ -151,7 +151,7 @@ namespace CircuitCube.Game
         {
             var m = UI.Hud.Mascot;
             if (m == null) return;
-            _lastProgress = Time.unscaledTime;
+            _lastProgress = Clock.Now;
             _board.LampCounts(_litBy, _totBy);
             int left = _board.TotalLamps - _board.LitLamps;
             string line = null;
@@ -159,7 +159,7 @@ namespace CircuitCube.Game
             if (left > 0 && left <= 2 && !_saidNearly) { _saidNearly = true; mood = Mascot.Mood.Excited; line = Praise.Pick(Praise.NearlyDone); }
             else if (color > 0 && color < 8 && _totBy[color] > 1 && _litBy[color] == _totBy[color]) line = Loc.F("{0} done!", CubeColors.EnergyName(color));
             else if (++_litForLine >= 3) { _litForLine = 0; line = Praise.Pick(Praise.Lit); }
-            if (line != null) { _lastLine = Time.unscaledTime; _litForLine = 0; }
+            if (line != null) { _lastLine = Clock.Now; _litForLine = 0; }
             m.Say(mood, line);
         }
 
@@ -168,7 +168,7 @@ namespace CircuitCube.Game
         {
             var m = UI.Hud.Mascot;
             if (m == null || _state != State.Playing || CardOpen || _level == null) return;
-            float now = Time.unscaledTime;
+            float now = Clock.Now;
             if (now - _lastLine < LineGap) return;
             int par = LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group));
             bool stuck = now - _lastProgress > StuckSeconds;

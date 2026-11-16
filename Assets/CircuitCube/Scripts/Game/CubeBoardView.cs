@@ -478,7 +478,7 @@ namespace CircuitCube.Game
             ref var s = ref _t[index];
             s.TurnFrom = s.Rot;
             s.TurnTo = s.TurnTo + steps;
-            s.TurnStart = Time.unscaledTime;
+            s.TurnStart = Clock.Now;
             s.TurnTime = duration >= 0f ? duration : _look.TurnTime;
             if (s.TurnTime <= 0f) s.Rot = s.TurnTo;
         }
@@ -512,7 +512,7 @@ namespace CircuitCube.Game
                 // the side facing the camera cracks first
                 s.FlyDelay = (1f - (Vector3.Dot(n, toCam) + 1f) * 0.5f) * _look.ShatterStagger + R(0f, 0.04f);
             }
-            _shatterStart = Time.unscaledTime;
+            _shatterStart = Clock.Now;
             _shattered = false;
         }
 
@@ -575,7 +575,7 @@ namespace CircuitCube.Game
 
             Matrix4x4 board = transform.localToWorldMatrix * Matrix4x4.Scale(Vector3.one * ContentScale);
             Vector3 camPos = _cam.transform.position;
-            float now = Time.time, unscaled = Time.unscaledTime;
+            float now = Time.time, unscaled = Clock.Now;
             var look = _look;
             float onLen = BoardLook.Length(look.LampOnHalo), litLen = Mathf.Max(0.01f, BoardLook.Length(look.LampLitHalo));
             float breathLen = Mathf.Max(0.01f, BoardLook.Length(look.SourceBreath));

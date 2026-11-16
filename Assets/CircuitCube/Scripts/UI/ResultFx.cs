@@ -57,7 +57,7 @@ namespace CircuitCube.UI
         public bool Busy { get; private set; }
         Coroutine _shineLoop;
 
-        static float T => Time.unscaledTime;
+        static float T => Clock.Now;
 
         void OnDisable() { Busy = false; _shineLoop = null; }
 

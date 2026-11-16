@@ -52,14 +52,14 @@ namespace CircuitCube.UI
             if (Drop != null) Drop.gameObject.SetActive(false);
             foreach (var s in Sparks) if (s != null) s.gameObject.SetActive(false);
             if (Face != null) Face.sprite = Idle;
-            _nextBlink = Time.unscaledTime + 3f;
+            _nextBlink = Clock.Now + 3f;
         }
 
         /// <summary>Change mood; a non-empty <paramref name="line"/> shows in the bubble.</summary>
         public void Say(Mood mood, string line)
         {
             _mood = mood;
-            _moodStart = Time.unscaledTime;
+            _moodStart = Clock.Now;
             if (Face != null) Face.sprite = SpriteFor(mood);
             if (Drop != null) Drop.gameObject.SetActive(mood == Mood.Think);
             bool sparks = mood == Mood.Happy || mood == Mood.Excited;
@@ -68,7 +68,7 @@ namespace CircuitCube.UI
             {
                 BubbleText.text = line;
                 Bubble.gameObject.SetActive(true);
-                _lineStart = Time.unscaledTime;
+                _lineStart = Clock.Now;
             }
         }
 
@@ -79,7 +79,7 @@ namespace CircuitCube.UI
         void Update()
         {
             if (Body == null) return;
-            float now = Time.unscaledTime, t = now - _moodStart;
+            float now = Clock.Now, t = now - _moodStart;
             if (_mood != Mood.Idle && t > MoodSeconds)
             {
                 _mood = Mood.Idle;

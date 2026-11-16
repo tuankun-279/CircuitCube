@@ -1093,7 +1093,7 @@ namespace CircuitCube.Game
         void Update()
         {
             RefitOnResize();
-            float dt = Time.unscaledDeltaTime;
+            float dt = Clock.Dt;
             RewardedAds.Tick();
             AppUpdates.Tick();
             CloudSave.Tick();
@@ -1229,7 +1229,7 @@ namespace CircuitCube.Game
             int index = _board.Pick(Cam.ScreenPointToRay(screenPos));
             if (index >= 0) { _lastEmptyTap = -1f; TapTile(index); return; }
             // two taps next to the board zoom back out
-            float now = Time.unscaledTime;
+            float now = Clock.Now;
             if (_zoom > 1.02f && _lastEmptyTap >= 0f && now - _lastEmptyTap < DoubleTapTime && (screenPos - _lastEmptyTapPos).magnitude < _dragThreshold * 4f)
             {
                 _lastEmptyTap = -1f;
