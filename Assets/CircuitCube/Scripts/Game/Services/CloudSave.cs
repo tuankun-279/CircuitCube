@@ -34,6 +34,7 @@ namespace CircuitCube.Game
 #if CC_PLAYGAMES && UNITY_ANDROID && !UNITY_EDITOR
             try
             {
+                if (!GameInfo.ApplicationIdInitialized()) { Debug.LogWarning("[CloudSave] off: no Play Games app id (Window > Google Play Games > Setup)"); return; }
                 PlayGamesPlatform.Activate();
                 PlayGamesPlatform.Instance.Authenticate(status =>
                 {
