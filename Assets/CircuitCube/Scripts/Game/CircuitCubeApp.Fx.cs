@@ -1,6 +1,7 @@
 using CircuitCube.Core;
 using CircuitCube.UI;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace CircuitCube.Game
 {
@@ -86,6 +87,42 @@ namespace CircuitCube.Game
                 var pop = row.Stars[k].transform;
                 _tw.Run(0.35f, p => pop.localScale = Vector3.one * Mathf.LerpUnclamped(2.4f, 1f, ResultFx.Bezier(0.2f, 1.6f, 0.4f, 1f, p)), () => pop.localScale = Vector3.one, pop);
             }, null);
+        }
+
+        float _dimAlpha = -1f;
+
+        /// <summary>
+        /// The result card fades in while it rises from below (the mockup's rise: 120 px, cubic-bezier(.2,1.2,.4,1)),
+        /// stretched over <paramref name="seconds"/>; the dim behind it fades in with it.
+        /// </summary>
+        void RiseCard(Card r, float seconds)
+        {
+            var panel = (RectTransform)r.transform.Find("Panel");
+            var group = r.GetComponent<CanvasGroup>();
+            var dim = UI.Dim != null ? UI.Dim.GetComponent<Graphic>() : null;
+            if (dim != null && _dimAlpha < 0f) _dimAlpha = dim.color.a;
+            if (r.Anim != null) r.Anim.Stop();
+            r.transform.localScale = Vector3.one;
+            float from = -120f * 880f / 314f;
+            _tw.Run(seconds, p =>
+            {
+                float e = ResultFx.Bezier(0.2f, 1.2f, 0.4f, 1f, p);
+                if (panel != null) panel.anchoredPosition = new Vector2(0f, Mathf.LerpUnclamped(from, 0f, e));
+                float a = Mathf.Clamp01(p / 0.7f);
+                if (group != null) group.alpha = a;
+                if (dim != null) { var c = dim.color; c.a = _dimAlpha * a; dim.color = c; }
+            }, ResetCardRise, panel);
+        }
+
+        void ResetCardRise()
+        {
+            var r = UI.Result;
+            var panel = (RectTransform)r.transform.Find("Panel");
+            if (panel != null) panel.anchoredPosition = Vector2.zero;
+            var group = r.GetComponent<CanvasGroup>();
+            if (group != null) group.alpha = 1f;
+            var dim = UI.Dim != null ? UI.Dim.GetComponent<Graphic>() : null;
+            if (dim != null && _dimAlpha >= 0f) { var c = dim.color; c.a = _dimAlpha; dim.color = c; }
         }
 
         /// <summary>One Expert: the letters leave the broken box 0.2 s apart and land in the card.</summary>

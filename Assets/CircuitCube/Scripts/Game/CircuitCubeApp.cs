@@ -235,6 +235,7 @@ namespace CircuitCube.Game
             UI.Unlock.gameObject.SetActive(false);
             UI.Settings.gameObject.SetActive(false);
             UI.Dim.SetActive(false);
+            ResetCardRise();
             if (UI.Fx != null) UI.Fx.HideAll();
             if (UI.FlyingStars != null) foreach (var st in UI.FlyingStars) if (st != null) st.gameObject.SetActive(false);
             _starsInFlight = 0;
@@ -980,12 +981,13 @@ namespace CircuitCube.Game
                 r.PrimaryLabel.text = Loc.T("Next level");
                 UI.Dim.SetActive(true);
                 r.Open();
+                if (fx == WinFx.Constellation) RiseCard(r, ResultFx.ConstCardRise);   // rises in while the stars are drawn
                 if (!_cheat) AppReview.Won(this, TotalWins());
                 if (_starsInFlight == 0 && !expert)
                     for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);
                 if (fx == WinFx.Comets && UI.Fx != null) StartComets();
                 if (UI.Fx != null)
-                    UI.Fx.ShowPraise(Praise.Pick(PraiseFor(fx, points)), fx == WinFx.Comets ? 2.6f : fx == WinFx.Expert ? 2.05f : fx == WinFx.Constellation ? 1.1f : 1.0f);
+                    UI.Fx.ShowPraise(Praise.Pick(PraiseFor(fx, points)), fx == WinFx.Comets ? 2.6f : fx == WinFx.Expert ? 2.05f : fx == WinFx.Constellation ? ResultFx.ConstPraiseAfterCard : 1.0f);
             }, UI.Result);   // its own owner: a second run on the board's transform would cancel the wind-up
         }
 

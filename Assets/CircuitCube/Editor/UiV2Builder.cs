@@ -137,6 +137,7 @@ namespace CircuitCube.EditorTools
                 // ---- result card: neon word where the stars are, praise above the card
                 var r = ui.Result;
                 var panel = (RectTransform)r.transform.Find("Panel");
+                if (r.GetComponent<CanvasGroup>() == null) r.gameObject.AddComponent<CanvasGroup>();   // the constellations fade the card in
                 // laid out from the approved mockup (390 px phone, card 314 px wide = 880 units, so 1 px = 2.803 units):
                 // letter boxes 36 x 44 px, 40 px apart, centred 124 px below the card top; sprites carry 90 px of glow
                 var w = Fresh(panel, "ExpertWord", TopC, TopC, Half, new Vector2(0, -348), new Vector2(700, 160));

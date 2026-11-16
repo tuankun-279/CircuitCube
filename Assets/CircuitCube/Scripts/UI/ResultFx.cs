@@ -505,7 +505,7 @@ namespace CircuitCube.UI
         /// <summary>
         /// Three-star streak, after the approved mockup, from the moment the box breaks: the lamps' lights stay where
         /// they were (0.15 s), light rises from them to the points of three small stars (0.7 s, 0.25 s apart), each
-        /// star is drawn in one stroke (1.25 s), the card comes up (2.6 s, the caller opens it) and the stars fly down
+        /// star is drawn in one stroke (1.25 s), the card fades in rising from below while they are drawn (1.25 s, the caller opens it) and the stars fly down
         /// into the card's star slots (2.7 s, 0.2 s apart). <paramref name="card"/> is the result panel at rest.
         /// </summary>
         public void PlayConstellations(Vector3[] lamps, int[] colors, int lampCount, RectTransform card, RectTransform[] slots, Action<int> landed, Action done)
@@ -515,7 +515,10 @@ namespace CircuitCube.UI
             StartCoroutine(Const_(lamps, colors, lampCount, card, slots, landed, done));
         }
 
-        public const float ConstCardAt = 2.6f, ConstDropAt = 2.7f;
+        /// <summary>The card starts to rise as the first star is drawn and is up before they fly (seconds from the break).</summary>
+        public const float ConstCardAt = 1.25f, ConstCardRise = 1.3f, ConstDropAt = 2.7f;
+        /// <summary>The praise comes 3.7 s after the break, as in the mockup.</summary>
+        public const float ConstPraiseAfterCard = 3.7f - ConstCardAt;
 
         IEnumerator Const_(Vector3[] lamps, int[] colors, int lampCount, RectTransform card, RectTransform[] slots, Action<int> landed, Action done)
         {
