@@ -9,7 +9,7 @@ namespace CircuitCube
     /// </summary>
     public static class Clock
     {
-        public static float Now => Time.captureDeltaTime > 0f ? Time.time : Clock.Now;
-        public static float Dt => Time.captureDeltaTime > 0f ? Time.deltaTime : Clock.Dt;
+        public static float Now => Time.captureDeltaTime > 0f ? Time.time : Time.unscaledTime;
+        public static float Dt => Time.captureDeltaTime > 0f ? Time.deltaTime : Time.unscaledDeltaTime;
     }
 }
