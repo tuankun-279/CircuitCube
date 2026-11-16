@@ -919,7 +919,7 @@ namespace CircuitCube.Game
         }
 
         /// <summary>Expert (7) at par with no help, 6 at par with hints or undos, less over par (rules from the manifest).</summary>
-        int PointsFor() => LevelScore.Points(_moves, _level.Par, _hintsUsed, _undosUsed, GameData.Rules, GameData.Group(_group));
+        int PointsFor() => _forcePoints >= 0 ? _forcePoints : LevelScore.Points(_moves, _level.Par, _hintsUsed, _undosUsed, GameData.Rules, GameData.Group(_group));
 
         void Win()
         {
@@ -1298,5 +1298,39 @@ namespace CircuitCube.Game
         public void DebugShowShapes() => ShowShapes();
         public void DebugShowLevels(int group) => ShowLevels(group);
         public void DebugWin() { if (_state == State.Playing) Win(); }
+
+        int _forcePoints = -1;
+
+        /// <summary>Debug results to win with, in the debug menu's button order.</summary>
+        public static readonly string[] DebugResults = { "1.5 stars", "2.5 stars", "3 stars", "3-star streak", "Expert", "Expert streak" };
+
+        /// <summary>
+        /// Win the level in play (or start <paramref name="group"/> / <paramref name="level"/> first) with a set result, so
+        /// every result screen can be checked: <see cref="DebugResults"/> lists the kinds. The streak counters are set
+        /// for that one win and then put back, and nothing is saved.
+        /// </summary>
+        public void DebugWinAs(int kind, int group, int level)
+        {
+            if (_state == State.Playing && !_busy) { WinAs(kind); return; }
+            if (_state == State.Playing) return;
+            StartLevel(group, level, true);
+            _tw.Run(0.8f, p => { }, () => { if (_state == State.Playing && !_busy) WinAs(kind); }, UI.Hud);   // a moment to see the board
+        }
+
+        void WinAs(int kind)
+        {
+            int[] points = { 3, 5, GameData.Rules.parScore, GameData.Rules.parScore, LevelScore.Expert, LevelScore.Expert };
+            int es = PlayerPrefs.GetInt(ExpertStreakKey, 0), ss = PlayerPrefs.GetInt(StarStreakKey, 0);
+            PlayerPrefs.SetInt(ExpertStreakKey, kind == 5 ? CometStreak - 1 : 0);
+            PlayerPrefs.SetInt(StarStreakKey, kind == 3 ? ConstellationStreak - 1 : 0);
+            _cheat = true;
+            _forcePoints = points[Mathf.Clamp(kind, 0, points.Length - 1)];
+            try { Win(); }
+            finally
+            {
+                _forcePoints = -1;
+                PlayerPrefs.SetInt(ExpertStreakKey, es); PlayerPrefs.SetInt(StarStreakKey, ss);
+            }
+        }
     }
 }

@@ -10,6 +10,8 @@ namespace CircuitCube.UI
     /// <summary>
     /// Debug menu (prefab Prefabs/UI/DebugMenu.prefab). F1 shows or hides it. Only in the editor and development
     /// builds; release builds switch it off. Pick a shape group, type a level, Play; or unlock shapes.
+    /// The Win row ends the level in play (or starts one) with a set result: 1.5, 2.5 or 3 stars, a three-star streak,
+    /// Expert or an Expert streak, to check each result screen.
     /// Keys: F2 dark / light, F3 skip ads, F5 reset every lesson, F6 (editor) play the Level Lab import zips.
     /// Levels started here show their lessons again.
     /// </summary>
@@ -22,6 +24,8 @@ namespace CircuitCube.UI
         public TMP_InputField LevelInput;
         public Button PlayButton, UnlockShapeButton, UnlockAllButton, ResetButton, CloseButton;
         public TMP_Text Status;
+        [Tooltip("Win with a set result, in CircuitCubeApp.DebugResults order (1.5 stars ... Expert streak).")]
+        public Button[] WinButtons = new Button[0];
 
         int _group;
 
@@ -39,6 +43,11 @@ namespace CircuitCube.UI
             ResetButton.onClick.AddListener(ResetAll);
             CloseButton.onClick.AddListener(() => Panel.SetActive(false));
             LevelInput.onSubmit.AddListener(_ => PlayLevel());
+            for (int i = 0; i < WinButtons.Length; i++)
+            {
+                int k = i;
+                if (WinButtons[i] != null) WinButtons[i].onClick.AddListener(() => WinAs(k));
+            }
             Panel.SetActive(false);
             Select(0);
         }
@@ -105,6 +114,16 @@ namespace CircuitCube.UI
             level = Mathf.Min(level, GameData.MaxLevel(_group));
             Panel.SetActive(false);
             App.DebugStart(_group, level);
+        }
+
+        /// <summary>Win the level in play with a set result; from the menus, start the level typed here (or the next one) first.</summary>
+        void WinAs(int kind)
+        {
+            if (_group >= GameData.GroupCount) return;
+            int level = int.TryParse(LevelInput.text, out int l) && l >= 1 ? l : CubeSave.Unlocked(_group);
+            level = Mathf.Clamp(level, 1, GameData.MaxLevel(_group));
+            Panel.SetActive(false);
+            App.DebugWinAs(kind, _group, level);
         }
 
         void UnlockShape()
