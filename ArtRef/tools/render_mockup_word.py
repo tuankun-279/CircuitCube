@@ -18,7 +18,9 @@ items['fx_ping']=(48+2*8,56+2*8,'<i style="position:absolute;left:8px;top:8px;wi
 items['fx_word_shine']=(60,56,'<i style="position:absolute;left:12px;top:0;width:36px;height:56px;background:linear-gradient(90deg,transparent,#fffbe8dd,transparent);transform:skewX(-20deg)"></i>')
 import numpy as np
 from PIL import Image
-BG=np.array([23,22,38])/255.0   # the game's result card colour
+import os
+BG=np.array([int(x) for x in os.environ.get('BG','23,22,38').split(',')])/255.0   # the game's result card colour (dark theme; light theme: 255,255,255)
+SUFFIX=os.environ.get('SUFFIX','')
 def to_lin(c): return np.where(c<=0.04045,c/12.92,((c+0.055)/1.055)**2.4)
 def to_srgb(c): return np.where(c<=0.0031308,c*12.92,1.055*np.power(np.clip(c,0,1),1/2.4)-0.055)
 def linear_fix(path):
@@ -27,7 +29,7 @@ def linear_fix(path):
     D=to_lin(np.asarray(Image.open(path).convert('RGB')).astype(float)/255.0)
     B=to_lin(BG)[None,None,:]
     a1=np.max(np.where(B>0,(B-D)/np.maximum(B,1e-6),0),axis=2)
-    a2=np.max((D-B)/(1-B),axis=2)
+    a2=np.max(np.where(B<0.999,(D-B)/np.maximum(1-B,1e-6),0),axis=2)
     a=np.clip(np.maximum(np.maximum(a1,a2),0),0,1)
     a[:2,:]=0; a[-2:,:]=0; a[:,:2]=0; a[:,-2:]=0   # the page edge rounds into a part pixel
     X=D-B+a[...,None]*B
@@ -43,10 +45,10 @@ async def main():
         b=await p.chromium.launch(executable_path='/usr/bin/google-chrome',args=['--allow-file-access-from-files'])
         for name,(w,h,html) in items.items():
             pg=await b.new_page(viewport={'width':w,'height':h},device_scale_factor=S)
-            await pg.set_content(f'<html><head><style>{FONT}html,body{{margin:0;background:#171626}}</style></head><body>{html}</body></html>')
+            await pg.set_content(f'<html><head><style>{FONT}html,body{{margin:0;background:rgb({','.join(str(int(round(c*255))) for c in BG)})}}</style></head><body>{html}</body></html>')
             await pg.wait_for_timeout(300)
-            await pg.screenshot(path=f'/tmp/wr/out/{name}.png')
-            linear_fix(f'/tmp/wr/out/{name}.png')
+            await pg.screenshot(path=f'/tmp/wr/out/{name}{SUFFIX}.png')
+            linear_fix(f'/tmp/wr/out/{name}{SUFFIX}.png')
             await pg.close()
         # reference: the whole word on the card colour, as in the mockup
         pg=await b.new_page(viewport={'width':314,'height':120},device_scale_factor=2)

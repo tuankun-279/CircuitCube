@@ -42,7 +42,7 @@ namespace CircuitCube.EditorTools
                 ti.textureType = TextureImporterType.Sprite;
                 ti.spriteImportMode = SpriteImportMode.Single;
                 ti.mipmapEnabled = false;
-                ti.maxTextureSize = path.Contains("/Backgrounds/") ? 2048 : name == "app_icon" || path.Contains("/Expert/") || name == "fx_boom_core" ? 1024 : 512;   // the neon word and the blast keep full size
+                ti.maxTextureSize = path.Contains("/Backgrounds/") ? 2048 : name == "app_icon" || path.Contains("/Expert/") || name.StartsWith("fx_boom_core") ? 1024 : 512;   // the neon word and the blast keep full size
                 // sprites are packed into the UI atlas, which is compressed once; the full-screen backgrounds are not
                 ti.textureCompression = path.Contains("/Backgrounds/") ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed;
                 if (System.Array.IndexOf(NineSlice, name) >= 0)

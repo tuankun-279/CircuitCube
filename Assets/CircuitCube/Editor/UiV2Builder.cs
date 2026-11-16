@@ -207,6 +207,15 @@ namespace CircuitCube.EditorTools
                 for (int i = 0; i < 15; i++) fx.Dots[i] = Hidden(Pic(layer, "Dot" + i, Half, Half, Half, Vector2.zero, new Vector2(157, 157), S("fx_star_dot"), UiRole.None));
                 foreach (var g in layer.GetComponentsInChildren<Graphic>(true)) g.raycastTarget = false;
                 ui.Fx = fx;
+                // glow sprites are baked for the card colour: the light theme swaps in the "_light" copies
+                foreach (var img in root.GetComponentsInChildren<Image>(true))
+                {
+                    if (img.sprite == null || !(img.transform.IsChildOf(layer) || img.transform.IsChildOf(w))) continue;
+                    var light = S(img.sprite.name + "_light");
+                    if (light == null) continue;
+                    var ts = img.GetComponent<ThemeSprite>() ?? img.gameObject.AddComponent<ThemeSprite>();
+                    ts.Dark = img.sprite; ts.Light = light;
+                }
 
                 // ---- HUD: lamp tray instead of the chips and the dots, mascot under the top-right buttons
                 var hud = ui.Hud;
