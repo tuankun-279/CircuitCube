@@ -981,7 +981,7 @@ namespace CircuitCube.Game
                 r.PrimaryLabel.text = Loc.T("Next level");
                 UI.Dim.SetActive(true);
                 r.Open();
-                if (fx == WinFx.Constellation) RiseCard(r, ResultFx.ConstCardRise);   // rises in while the stars are drawn
+                if (fx == WinFx.Constellation) RiseCard(r, ResultFx.ConstCardRise);   // rises in once the stars are drawn
                 if (!_cheat) AppReview.Won(this, TotalWins());
                 if (_starsInFlight == 0 && !expert)
                     for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);

@@ -505,7 +505,7 @@ namespace CircuitCube.UI
         /// <summary>
         /// Three-star streak, after the approved mockup, from the moment the box breaks: the lamps' lights stay where
         /// they were (0.15 s), light rises from them to the points of three small stars (0.7 s, 0.25 s apart), each
-        /// star is drawn in one stroke (1.25 s), the card fades in rising from below while they are drawn (1.25 s, the caller opens it) and the stars fly down
+        /// star is drawn in one stroke (1.25 s), once the last star is drawn the card rises in (2.8 s, the caller opens it) and the stars fly down
         /// into the card's star slots (2.7 s, 0.2 s apart). <paramref name="card"/> is the result panel at rest.
         /// </summary>
         public void PlayConstellations(Vector3[] lamps, int[] colors, int lampCount, RectTransform card, RectTransform[] slots, Action<int> landed, Action done)
@@ -516,9 +516,13 @@ namespace CircuitCube.UI
         }
 
         /// <summary>The card starts to rise as the first star is drawn and is up before they fly (seconds from the break).</summary>
-        public const float ConstCardAt = 1.25f, ConstCardRise = 1.3f, ConstDropAt = 2.7f;
-        /// <summary>The praise comes 3.7 s after the break, as in the mockup.</summary>
-        public const float ConstPraiseAfterCard = 3.7f - ConstCardAt;
+        /// <summary>
+        /// The last star is drawn by 2.65 s; a beat later the card rises in (0.55 s, as in the mockup), and once it is up
+        /// the stars fly into it, so the card never comes up under the stars (seconds from the break).
+        /// </summary>
+        public const float ConstCardAt = 2.8f, ConstCardRise = 0.55f, ConstDropAt = 3.45f;
+        /// <summary>The praise comes 1 s after the stars start to fly, as in the mockup.</summary>
+        public const float ConstPraiseAfterCard = ConstDropAt + 1f - ConstCardAt;
 
         IEnumerator Const_(Vector3[] lamps, int[] colors, int lampCount, RectTransform card, RectTransform[] slots, Action<int> landed, Action done)
         {
@@ -526,9 +530,11 @@ namespace CircuitCube.UI
             int perStar = 5, stars = Mathf.Min(3, Mathf.Min(Dots.Length / perStar, Lines.Length / perStar));
             int glows = Mathf.Min(lampCount, Mathf.Min(LampGlows.Length, stars * perStar));
             for (int i = 0; i < glows; i++) StartCoroutine(LampGlow(LampGlows[i], Local(lamps[i]), CubeColors.Energy(colors[i])));
-            // star centres from the mockup: 85 px left and right of the card centre 23 px above its top, the middle one 48 px above
+            // star layout from the mockup (85 px apart, the middle one 25 px higher), lifted clear of the card and its
+            // mascot so nothing overlaps when the card comes up: the side stars' lowest points sit above the mascot
             Vector2 top = Local(card.TransformPoint(new Vector3(card.rect.center.x, card.rect.yMax, 0f)));
-            var centers = new[] { top + new Vector2(-MockupPx(85f), MockupPx(23f)), top + new Vector2(0f, MockupPx(48f)), top + new Vector2(MockupPx(85f), MockupPx(23f)) };
+            float lift = MockupPx(23f) + 150f;
+            var centers = new[] { top + new Vector2(-MockupPx(85f), lift), top + new Vector2(0f, lift + MockupPx(25f)), top + new Vector2(MockupPx(85f), lift) };
             float r = MockupPx(34f);
             int[] order = { 0, 2, 4, 1, 3, 0 };
             for (int s = 0; s < stars; s++)
