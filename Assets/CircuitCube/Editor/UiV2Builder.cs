@@ -225,9 +225,10 @@ namespace CircuitCube.EditorTools
                 if (hud.LampsLabel != null) hud.LampsLabel.gameObject.SetActive(false);
                 var tray = Fresh(t, "LampTray", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 196), new Vector2(1000, 130));
                 var row = tray.gameObject.AddComponent<HorizontalLayoutGroup>();
-                row.spacing = 22; row.childAlignment = TextAnchor.LowerCenter;
-                row.childControlWidth = row.childControlHeight = false;
-                row.childForceExpandWidth = row.childForceExpandHeight = false;
+                row.spacing = 16; row.childAlignment = TextAnchor.LowerCenter;
+                // up to three colours keep their 300 width; more share the tray (see LampGroup.Fit)
+                row.childControlWidth = true; row.childControlHeight = false;
+                row.childForceExpandWidth = false; row.childForceExpandHeight = false;
                 hud.LampTray = tray;
                 hud.GroupPrefab = AssetDatabase.LoadAssetAtPath<LampGroup>(LampGroupPrefab);
                 Place(t, "Tip", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 410), new Vector2(980, 100));
@@ -291,6 +292,9 @@ namespace CircuitCube.EditorTools
                 g.PipOn = S("ui_circle"); g.PipOff = S("fx_pip_ring");
                 g.Label = Label(rt, "Label", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 14), new Vector2(-20, 44), "Yellow 3/4", 32, UiRole.Text);
                 g.Label.fontStyle = FontStyles.Bold;
+                g.Label.enableAutoSizing = true; g.Label.fontSizeMin = 18; g.Label.fontSizeMax = 32;
+                var le = go.AddComponent<LayoutElement>();
+                le.minWidth = 120; le.preferredWidth = 300; le.flexibleWidth = 0;
                 var f = Fresh(rt, "Formula", TopC, TopC, new Vector2(0.5f, 0), new Vector2(0, 8), new Vector2(190, 46));
                 Img(f, S("ui_pill"), UiRole.Chip, true);
                 var fr = Fresh(f, "Row", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero);

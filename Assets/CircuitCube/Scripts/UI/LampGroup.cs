@@ -7,7 +7,7 @@ namespace CircuitCube.UI
     /// <summary>
     /// One colour in the lamp tray above Undo/Restart (prefab item, built by Build 1.2.0 FX): a pip per lamp (filled
     /// when lit), the colour's name with lit / total, and for a mixed colour the formula tag above it
-    /// (source + source → colour). Pips beyond <see cref="Pips"/> are summed in the label only.
+    /// (source + source → colour). With more lamps than <see cref="Pips"/>, the pips show the lit share.
     /// </summary>
     public sealed class LampGroup : MonoBehaviour
     {
@@ -31,7 +31,7 @@ namespace CircuitCube.UI
                 bool on = i < shown;
                 p.gameObject.SetActive(on);
                 if (!on) continue;
-                bool litPip = i < lit;
+                bool litPip = i < (total <= Pips.Length ? lit : Mathf.RoundToInt(lit * (float)shown / total));   // more lamps than pips: pips show the share
                 p.sprite = litPip ? PipOn : PipOff;
                 p.color = litPip ? color : new Color(color.r, color.g, color.b, 0.6f);
             }
@@ -42,5 +42,19 @@ namespace CircuitCube.UI
         }
 
         public void Forget() { _lit = _total = -1; }
+
+        // the tray shares its width between the colours: the pip row shrinks to fit a narrow group
+        void OnRectTransformDimensionsChange() => Fit();
+        void OnEnable() => Fit();
+
+        void Fit()
+        {
+            if (Pips.Length == 0 || Pips[0] == null) return;
+            var row = (RectTransform)Pips[0].transform.parent;
+            float room = ((RectTransform)transform).rect.width - 20f;
+            float need = row.rect.width;
+            float k = need > 0f ? Mathf.Clamp01(room / need) : 1f;
+            row.localScale = new Vector3(k, k, 1f);
+        }
     }
 }
