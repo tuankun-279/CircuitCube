@@ -158,7 +158,7 @@ namespace CircuitCube.Game
             var mood = Mascot.Mood.Happy;
             if (left > 0 && left <= 2 && !_saidNearly) { _saidNearly = true; mood = Mascot.Mood.Excited; line = Praise.Pick(Praise.NearlyDone); }
             else if (color > 0 && color < 8 && _totBy[color] > 1 && _litBy[color] == _totBy[color]) line = Loc.F("{0} done!", CubeColors.EnergyName(color));
-            else if (++_litForLine >= 3) { _litForLine = 0; line = Praise.Pick(Praise.Lit); }
+            else if (_board.LitLamps == 1 || ++_litForLine >= 2) { _litForLine = 0; line = Praise.Pick(Praise.Lit); }
             if (line != null) { _lastLine = Clock.Now; _litForLine = 0; }
             m.Say(mood, line);
         }
