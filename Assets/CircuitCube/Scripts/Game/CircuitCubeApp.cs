@@ -1281,6 +1281,7 @@ namespace CircuitCube.Game
             var camData = Cam != null ? Cam.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>() : null;
             if (camData != null) camData.renderPostProcessing = bloom;
             if (_board != null) _board.ApplyTheme();
+            if (_board != null && UI.Hud.LampTray != null) UpdateLampTray(true);   // the energy colours change with the theme
         }
 
         public void SetTheme(string mode)

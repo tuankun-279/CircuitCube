@@ -18,6 +18,22 @@ namespace CircuitCube.EditorTools
         /// <summary>UI/Common shapes that stretch with 9-slice borders.</summary>
         public static readonly string[] NineSlice = { "ui_button", "ui_card", "ui_pill", "ui_square", "ui_bar", "ui_card_shadow", "ui_frame", "ui_bubble" };
 
+        /// <summary>Sprites rendered from the mockups, with their 9-slice border in pixels (corner plus glow).</summary>
+        static readonly System.Collections.Generic.Dictionary<string, float> ExactBorders = new System.Collections.Generic.Dictionary<string, float>
+        {
+            { "fx_seg", 15 }, { "fx_seg_glow", 34 }, { "fx_seg_glow_light", 34 }, { "fx_bar_glow", 45 }, { "fx_bar_glow_light", 45 },
+            { "fx_tag", 37 }, { "fx_tag_light", 37 },
+        };
+
+        static void SetBorder(TextureImporter ti, float b)
+        {
+            ti.spriteBorder = new Vector4(b, b, b, b);
+            var settings = new TextureImporterSettings();
+            ti.ReadTextureSettings(settings);
+            settings.spriteMeshType = SpriteMeshType.FullRect;
+            ti.SetTextureSettings(settings);
+        }
+
         void OnPreprocessTexture()
         {
             string path = assetPath.Replace('\\', '/');
@@ -45,7 +61,8 @@ namespace CircuitCube.EditorTools
                 ti.maxTextureSize = path.Contains("/Backgrounds/") ? 2048 : name == "app_icon" || path.Contains("/Expert/") || name.StartsWith("fx_boom_core") ? 1024 : 512;   // the neon word and the blast keep full size
                 // sprites are packed into the UI atlas, which is compressed once; the full-screen backgrounds are not
                 ti.textureCompression = path.Contains("/Backgrounds/") ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed;
-                if (System.Array.IndexOf(NineSlice, name) >= 0)
+                if (ExactBorders.TryGetValue(name, out float eb)) SetBorder(ti, eb);
+                else if (System.Array.IndexOf(NineSlice, name) >= 0)
                 {
                     float b = Border(path);
                     if (b <= 0f) return;   // leave it unmarked so the next import tries again

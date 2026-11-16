@@ -36,7 +36,7 @@ namespace CircuitCube.Game
                 case 2: return Hex(0x4FA3FF);   // blue
                 case 4: return Hex(0xFFC928);   // yellow
                 case 3: return Hex(0xB072FF);   // purple
-                case 5: return Hex(0xFF9433);   // orange
+                case 5: return Hex(0xE8661A);   // orange: deeper than yellow so colour-blind players can tell them apart
                 case 6: return Hex(0x43D88A);   // green
                 case 7: return Hex(0xF4F4F4);   // white
                 default: return WireOff;

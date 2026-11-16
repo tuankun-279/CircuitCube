@@ -223,9 +223,9 @@ namespace CircuitCube.EditorTools
                 if (hud.Legend != null) hud.Legend.gameObject.SetActive(false);
                 if (hud.LampDots != null) hud.LampDots.gameObject.SetActive(false);
                 if (hud.LampsLabel != null) hud.LampsLabel.gameObject.SetActive(false);
-                var tray = Fresh(t, "LampTray", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 196), new Vector2(1000, 130));
+                var tray = Fresh(t, "LampTray", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 196), new Vector2(1024, 108));
                 var row = tray.gameObject.AddComponent<HorizontalLayoutGroup>();
-                row.spacing = 16; row.childAlignment = TextAnchor.LowerCenter;
+                row.spacing = 6 * 2.77f; row.childAlignment = TextAnchor.LowerCenter;   // mockup: 6 px gaps
                 // up to three colours keep their 300 width; more share the tray (see LampGroup.Fit)
                 row.childControlWidth = true; row.childControlHeight = false;
                 row.childForceExpandWidth = false; row.childForceExpandHeight = false;
@@ -271,43 +271,97 @@ namespace CircuitCube.EditorTools
         /// <summary>A neon letter sprite: the mockup's 36 x 44 px box plus 90 px of glow on each side, in canvas units.</summary>
         static readonly Vector2 LetterSize = new Vector2(605, 628);
 
-        /// <summary>The lamp tray item: card, a row of pips, the count, and the formula tag above for a mixed colour.</summary>
+        /// <summary>
+        /// The lamp tray item, option A of the approved mockup (390 px phone, 1 px = 2.77 units): a 118 px card with
+        /// 7 px padding, a 7 px bar split into one cell per lamp (2 px gaps, 2 px corners, 6 px glow on lit cells) or one
+        /// continuous bar past 12 lamps (8 px glow), the name and count in 11 px bold under it with a tick once done,
+        /// and the formula tag (16 px high, 3 px above the card) for a mixed colour.
+        /// </summary>
         static void BuildLampGroupPrefab()
         {
+            const float k = 2.77f;
             var go = new GameObject("LampGroup", typeof(RectTransform));
             try
             {
                 var rt = (RectTransform)go.transform;
-                rt.sizeDelta = new Vector2(300, 118);
+                rt.sizeDelta = new Vector2(118 * k, 108);
                 var g = go.AddComponent<LampGroup>();
                 g.Group = go.AddComponent<CanvasGroup>();
-                Img(rt, S("ui_card"), UiRole.Card, true).GetComponent<ThemeRole>().Alpha = 0.92f;
-                var pips = Fresh(rt, "Pips", TopC, TopC, TopC, new Vector2(0, -22), new Vector2(280, 34));
-                var row = pips.gameObject.AddComponent<HorizontalLayoutGroup>();
-                row.spacing = 8; row.childAlignment = TextAnchor.MiddleCenter;
-                row.childControlWidth = row.childControlHeight = false;
-                row.childForceExpandWidth = row.childForceExpandHeight = false;
-                g.Pips = new Image[8];
-                for (int i = 0; i < 8; i++) g.Pips[i] = Pic(pips, "Pip" + i, Half, Half, Half, Vector2.zero, new Vector2(28, 28), S("ui_circle"), UiRole.None);
-                g.PipOn = S("ui_circle"); g.PipOff = S("fx_pip_ring");
-                g.Label = Label(rt, "Label", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 14), new Vector2(-20, 44), "Yellow 3/4", 32, UiRole.Text);
-                g.Label.fontStyle = FontStyles.Bold;
-                g.Label.enableAutoSizing = true; g.Label.fontSizeMin = 18; g.Label.fontSizeMax = 32;
+                Img(rt, S("ui_card"), UiRole.Card, true).GetComponent<ThemeRole>().Alpha = 0.93f;
+                Pic(rt, "Border", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, S("ui_frame"), UiRole.Track, true);
                 var le = go.AddComponent<LayoutElement>();
-                le.minWidth = 120; le.preferredWidth = 300; le.flexibleWidth = 0;
-                var f = Fresh(rt, "Formula", TopC, TopC, new Vector2(0.5f, 0), new Vector2(0, 8), new Vector2(190, 46));
-                Img(f, S("ui_pill"), UiRole.Chip, true);
+                le.minWidth = 120; le.preferredWidth = 118 * k; le.flexibleWidth = 0;
+
+                float pad = 7 * k, barH = 7 * k;
+                // cells
+                var segs = Fresh(rt, "Cells", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -pad), new Vector2(-2 * pad, barH));
+                var row = segs.gameObject.AddComponent<HorizontalLayoutGroup>();
+                row.spacing = 2 * k; row.childAlignment = TextAnchor.MiddleCenter;
+                row.childControlWidth = row.childControlHeight = true;
+                row.childForceExpandWidth = row.childForceExpandHeight = true;
+                g.SegRow = segs.gameObject;
+                g.Segs = new Image[12];
+                g.SegGlows = new Image[12];
+                for (int i = 0; i < 12; i++)
+                {
+                    var c = Pic(segs, "Cell" + i, Half, Half, Half, Vector2.zero, new Vector2(20, barH), S("fx_seg"), UiRole.None, true);
+                    c.pixelsPerUnitMultiplier = 1.35f;
+                    var gl = Pic(c.transform, "Glow", Vector2.zero, Vector2.one, Half, Vector2.zero, new Vector2(12 * k, 12 * k), S("fx_seg_glow"), UiRole.None, true);
+                    gl.pixelsPerUnitMultiplier = 1.35f;
+                    g.Segs[i] = c; g.SegGlows[i] = gl;
+                }
+                // continuous bar
+                var bar = Fresh(rt, "Bar", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -pad), new Vector2(-2 * pad, barH));
+                g.Bar = bar.gameObject;
+                g.BarTrack = Img(bar, S("ui_pill"), UiRole.None, true);
+                var fill = Fresh(bar, "Fill", Vector2.zero, new Vector2(0.5f, 1), new Vector2(0, 0.5f), Vector2.zero, Vector2.zero);
+                g.BarFill = fill;
+                g.BarFillImage = Img(fill, S("ui_pill"), UiRole.None, true);
+                g.BarGlow = Pic(fill, "Glow", Vector2.zero, Vector2.one, Half, Vector2.zero, new Vector2(16 * k, 16 * k), S("fx_bar_glow"), UiRole.None, true);
+                g.BarGlow.pixelsPerUnitMultiplier = 1.35f;
+                bar.gameObject.SetActive(false);
+
+                // name and count, a tick in front once the colour is done
+                var nameRow = Fresh(rt, "Name", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, pad - 4), new Vector2(-12, 40));
+                var nr = nameRow.gameObject.AddComponent<HorizontalLayoutGroup>();
+                nr.spacing = 4 * k; nr.childAlignment = TextAnchor.MiddleCenter;
+                nr.childControlWidth = true; nr.childControlHeight = true;
+                nr.childForceExpandWidth = false; nr.childForceExpandHeight = false;
+                g.Check = Pic(nameRow, "Tick", Half, Half, Half, Vector2.zero, new Vector2(13 * k, 13 * k), Icon("icon_check"), UiRole.None);
+                var tle = g.Check.gameObject.AddComponent<LayoutElement>();
+                tle.preferredWidth = tle.minWidth = 13 * k; tle.preferredHeight = tle.minHeight = 13 * k;
+                g.Check.gameObject.SetActive(false);
+                g.Label = Label(nameRow, "Label", Half, Half, Half, Vector2.zero, new Vector2(200, 40), "Yellow 3/4", 30, UiRole.Text);
+                g.Label.fontStyle = FontStyles.Bold;
+                g.Label.enableAutoSizing = false;
+                g.Label.textWrappingMode = TextWrappingModes.NoWrap;
+
+                // formula tag above the card
+                var f = Fresh(rt, "Formula", TopC, TopC, new Vector2(0.5f, 0), new Vector2(0, 3 * k), new Vector2(164, 16 * k));
+                var tag = Img(f, S("fx_tag"), UiRole.None, true);
+                tag.pixelsPerUnitMultiplier = 1.35f;
                 var fr = Fresh(f, "Row", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero);
                 var frow = fr.gameObject.AddComponent<HorizontalLayoutGroup>();
-                frow.spacing = 6; frow.childAlignment = TextAnchor.MiddleCenter;
+                frow.spacing = 2 * k; frow.childAlignment = TextAnchor.MiddleCenter;
                 frow.childControlWidth = frow.childControlHeight = false;
                 frow.childForceExpandWidth = frow.childForceExpandHeight = false;
-                g.FormulaA = Pic(fr, "A", Half, Half, Half, Vector2.zero, new Vector2(24, 24), S("ui_circle"), UiRole.None);
-                Pic(fr, "Plus", Half, Half, Half, Vector2.zero, new Vector2(22, 22), Icon("icon_plus"), UiRole.TextMuted);
-                g.FormulaB = Pic(fr, "B", Half, Half, Half, Vector2.zero, new Vector2(24, 24), S("ui_circle"), UiRole.None);
-                Pic(fr, "Arrow", Half, Half, Half, Vector2.zero, new Vector2(26, 22), Icon("icon_arrow"), UiRole.TextMuted);
-                g.FormulaResult = Pic(fr, "Result", Half, Half, Half, Vector2.zero, new Vector2(24, 24), S("ui_circle"), UiRole.None);
+                float dot = 8 * k;
+                g.FormulaA = Pic(fr, "A", Half, Half, Half, Vector2.zero, new Vector2(dot, dot), S("ui_circle"), UiRole.None);
+                Pic(fr, "Plus", Half, Half, Half, Vector2.zero, new Vector2(7 * k, 7 * k), Icon("icon_plus"), UiRole.TextMuted);
+                g.FormulaB = Pic(fr, "B", Half, Half, Half, Vector2.zero, new Vector2(dot, dot), S("ui_circle"), UiRole.None);
+                Pic(fr, "Arrow", Half, Half, Half, Vector2.zero, new Vector2(8 * k, 7 * k), Icon("icon_arrow"), UiRole.TextMuted);
+                g.FormulaResult = Pic(fr, "Result", Half, Half, Half, Vector2.zero, new Vector2(dot, dot), S("ui_circle"), UiRole.None);
                 g.Formula = f.gameObject;
+
+                // light theme copies of the glow and tag sprites
+                foreach (var img in go.GetComponentsInChildren<Image>(true))
+                {
+                    if (img.sprite == null) continue;
+                    var light = S(img.sprite.name + "_light");
+                    if (light == null) continue;
+                    var ts = img.GetComponent<ThemeSprite>() ?? img.gameObject.AddComponent<ThemeSprite>();
+                    ts.Dark = img.sprite; ts.Light = light;
+                }
                 foreach (var gr in go.GetComponentsInChildren<Graphic>(true)) gr.raycastTarget = false;
                 PrefabUtility.SaveAsPrefabAsset(go, LampGroupPrefab);
             }
