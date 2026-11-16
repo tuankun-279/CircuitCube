@@ -51,6 +51,7 @@ namespace CircuitCube.EditorTools
             ZoomUi();
             TutorialUi();
             Ui120();
+            Ui120Fx();
             Debug.Log("[CircuitCube] UI V2 built.");
         }
 
@@ -112,6 +113,169 @@ namespace CircuitCube.EditorTools
             var sp = S("ui_pill");
             float border = sp != null ? Mathf.Max(sp.border.x, sp.border.z) : height / 2f;
             return Mathf.Max(1f, border * 2f / height);
+        }
+
+        const string LampGroupPrefab = "Assets/CircuitCube/Prefabs/UI/LampGroup.prefab";
+
+        /// <summary>
+        /// Version 1.2.0 play and win feel, all in UI.prefab (plus the LampGroup item prefab): the win effect layer
+        /// (flying EXPERT letters, burst, comets, gold mascot overlay, constellation dots and lines), the neon word and
+        /// the praise line in the result card, the lamp tray above Undo/Restart in place of the colour chips and lamp
+        /// dots, and the mascot with its speech bubble under the top-right buttons. Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/Circuit Cube/Art V2/Build 1.2.0 FX (win effects, lamp tray, mascot)")]
+        public static void Ui120Fx()
+        {
+            BuildLampGroupPrefab();
+            var root = PrefabUtility.LoadPrefabContents(UiPrefab);
+            try
+            {
+                var ui = root.GetComponent<UIRoot>();
+                var safe = root.transform.Find("SafeArea");
+                string[] word = { "expert_E", "expert_X", "expert_P", "expert_E", "expert_R", "expert_T" };
+
+                // ---- result card: neon word where the stars are, praise above the card
+                var r = ui.Result;
+                var panel = (RectTransform)r.transform.Find("Panel");
+                var w = Fresh(panel, "ExpertWord", TopC, TopC, TopC, new Vector2(0, -262), new Vector2(560, 150));
+                var letters = new Image[6];
+                for (int i = 0; i < 6; i++)
+                    letters[i] = Pic(w, "L" + i, Half, Half, Half, new Vector2((i - 2.5f) * 86f, 0), new Vector2(104, 122), S(word[i]), UiRole.None);
+                var mask = Fresh(w, "ShineMask", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero);
+                mask.gameObject.AddComponent<RectMask2D>();
+                var shine = Pic(mask, "Shine", Half, Half, Half, new Vector2(-400, 0), new Vector2(110, 190), S("fx_shine"), UiRole.None);
+                shine.preserveAspect = false;
+                w.gameObject.SetActive(false);
+                var praise = Label(panel, "Praise", TopC, TopC, new Vector2(0.5f, 0), new Vector2(0, 150), new Vector2(940, 110), "Brilliant!", 72, UiRole.None);
+                praise.fontStyle = FontStyles.Bold | FontStyles.Italic;
+                praise.color = new Color(1f, 0.878f, 0.541f);
+                praise.outlineWidth = 0.18f; praise.outlineColor = new Color32(122, 67, 0, 255);
+                praise.raycastTarget = false;
+                praise.gameObject.SetActive(false);
+
+                // ---- effect layer over everything
+                var layer = Fresh(safe, "Fx", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero);
+                layer.SetAsLastSibling();
+                var fx = layer.gameObject.AddComponent<ResultFx>();
+                fx.Layer = layer;
+                fx.ShakeRoot = panel;
+                fx.Word = w; fx.WordLetters = letters; fx.Shine = shine.rectTransform; fx.Praise = praise;
+                fx.FlyLetters = new Image[6];
+                for (int i = 0; i < 6; i++) fx.FlyLetters[i] = Hidden(Pic(layer, "Fly" + i, Half, Half, Half, Vector2.zero, new Vector2(104, 122), S(word[i]), UiRole.None));
+                fx.Core = Hidden(Pic(layer, "Core", Half, Half, Half, Vector2.zero, new Vector2(150, 150), S("fx_glow"), UiRole.None));
+                fx.Ring = Hidden(Pic(layer, "Ring", Half, Half, Half, Vector2.zero, new Vector2(110, 110), S("fx_ring"), UiRole.None));
+                fx.Sparks = new Image[12];
+                for (int i = 0; i < 12; i++) fx.Sparks[i] = Hidden(Pic(layer, "Spark" + i, Half, Half, Half, Vector2.zero, new Vector2(46, 46), S("fx_sparkle"), UiRole.None));
+                fx.Comets = new Image[15];
+                for (int i = 0; i < 15; i++)
+                {
+                    var c = Pic(layer, "Comet" + i, Half, Half, Half, Vector2.zero, new Vector2(330, 156), S("fx_comet"), UiRole.None);
+                    c.rectTransform.pivot = new Vector2(0.9f, 0.5f);   // the head leads
+                    fx.Comets[i] = Hidden(c);
+                }
+                var goldBody = Hidden(Pic(layer, "GoldBody", Half, Half, Half, Vector2.zero, new Vector2(240, 240), S("mascot_body"), UiRole.None));
+                fx.GoldFrame = Hidden(Pic(goldBody.transform, "GoldFrame", Half, Half, Half, Vector2.zero, new Vector2(246, 246), S("fx_frame_gold"), UiRole.None));
+                fx.GoldFace = Hidden(Pic(goldBody.transform, "GoldFace", Half, Half, Half, Vector2.zero, new Vector2(200, 180), S("face_excited_gold"), UiRole.None));
+                fx.GoldBody = goldBody;
+                fx.Beams = new[] { Hidden(Pic(layer, "Beam0", Half, Half, Half, Vector2.zero, new Vector2(80, 80), S("fx_glow"), UiRole.None)),
+                                   Hidden(Pic(layer, "Beam1", Half, Half, Half, Vector2.zero, new Vector2(80, 80), S("fx_glow"), UiRole.None)) };
+                fx.Dots = new Image[15];
+                fx.Lines = new Image[15];
+                for (int i = 0; i < 15; i++)
+                {
+                    fx.Lines[i] = Hidden(Pic(layer, "Line" + i, Half, Half, new Vector2(0, 0.5f), Vector2.zero, new Vector2(10, 16), S("fx_line"), UiRole.None));
+                    fx.Lines[i].preserveAspect = false;
+                }
+                for (int i = 0; i < 15; i++) fx.Dots[i] = Hidden(Pic(layer, "Dot" + i, Half, Half, Half, Vector2.zero, new Vector2(60, 60), S("fx_glow"), UiRole.None));
+                foreach (var g in layer.GetComponentsInChildren<Graphic>(true)) g.raycastTarget = false;
+                ui.Fx = fx;
+
+                // ---- HUD: lamp tray instead of the chips and the dots, mascot under the top-right buttons
+                var hud = ui.Hud;
+                var t = hud.transform;
+                if (hud.Legend != null) hud.Legend.gameObject.SetActive(false);
+                if (hud.LampDots != null) hud.LampDots.gameObject.SetActive(false);
+                if (hud.LampsLabel != null) hud.LampsLabel.gameObject.SetActive(false);
+                var tray = Fresh(t, "LampTray", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 196), new Vector2(1000, 130));
+                var row = tray.gameObject.AddComponent<HorizontalLayoutGroup>();
+                row.spacing = 22; row.childAlignment = TextAnchor.LowerCenter;
+                row.childControlWidth = row.childControlHeight = false;
+                row.childForceExpandWidth = row.childForceExpandHeight = false;
+                hud.LampTray = tray;
+                hud.GroupPrefab = AssetDatabase.LoadAssetAtPath<LampGroup>(LampGroupPrefab);
+                Place(t, "Tip", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 360), new Vector2(980, 100));
+
+                var m = Fresh(t, "Mascot", TopR, TopR, TopR, new Vector2(-36, -186), new Vector2(150, 150));
+                var mascot = m.gameObject.AddComponent<Mascot>();
+                var body = Fresh(m, "Body", Half, Half, Half, Vector2.zero, new Vector2(150, 150));
+                Img(body, S("mascot_body"), UiRole.None).raycastTarget = false;
+                mascot.Body = body;
+                mascot.Face = Pic(body, "Face", Half, Half, Half, new Vector2(0, -2), new Vector2(124, 112), S("face_idle"), UiRole.None);
+                mascot.Idle = S("face_idle"); mascot.Blink = S("face_blink"); mascot.Happy = S("face_happy");
+                mascot.Think = S("face_think"); mascot.Excited = S("face_excited");
+                mascot.Drop = Hidden(Pic(body, "Drop", Half, Half, Half, new Vector2(54, 26), new Vector2(30, 32), S("sweat_drop"), UiRole.None));
+                mascot.Sparks = new Image[5];
+                for (int i = 0; i < 5; i++) mascot.Sparks[i] = Hidden(Pic(body, "Spark" + i, Half, Half, Half, Vector2.zero, new Vector2(34, 34), S("fx_sparkle"), UiRole.None));
+                var bubble = Fresh(m, "Bubble", new Vector2(0, 1), new Vector2(0, 1), new Vector2(1, 1), new Vector2(-16, -8), new Vector2(560, 120));
+                var bimg = Img(bubble, S("ui_bubble"), UiRole.Text, true);
+                bimg.raycastTarget = false;
+                mascot.Bubble = bubble;
+                mascot.BubbleText = Label(bubble, "Text", Vector2.zero, Vector2.one, Half, new Vector2(-8, 0), new Vector2(-64, -26), "Almost there!", 34, UiRole.Card);
+                mascot.BubbleText.fontStyle = FontStyles.Bold;
+                mascot.BubbleText.enableAutoSizing = true; mascot.BubbleText.fontSizeMin = 24; mascot.BubbleText.fontSizeMax = 34;
+                mascot.BubbleText.raycastTarget = false;
+                bubble.gameObject.SetActive(false);
+                hud.Mascot = mascot;
+
+                foreach (var tx in root.GetComponentsInChildren<TMP_Text>(true))
+                    if (tx.GetComponent<LocText>() == null && tx.transform.IsChildOf(t)) tx.gameObject.AddComponent<LocText>();
+                PrefabUtility.SaveAsPrefabAsset(root, UiPrefab);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CircuitCube] 1.2.0 FX built.");
+        }
+
+        static Image Hidden(Image i) { i.gameObject.SetActive(false); return i; }
+
+        /// <summary>The lamp tray item: card, a row of pips, the count, and the formula tag above for a mixed colour.</summary>
+        static void BuildLampGroupPrefab()
+        {
+            var go = new GameObject("LampGroup", typeof(RectTransform));
+            try
+            {
+                var rt = (RectTransform)go.transform;
+                rt.sizeDelta = new Vector2(300, 118);
+                var g = go.AddComponent<LampGroup>();
+                g.Group = go.AddComponent<CanvasGroup>();
+                Img(rt, S("ui_card"), UiRole.Card, true).GetComponent<ThemeRole>().Alpha = 0.92f;
+                var pips = Fresh(rt, "Pips", TopC, TopC, TopC, new Vector2(0, -22), new Vector2(280, 34));
+                var row = pips.gameObject.AddComponent<HorizontalLayoutGroup>();
+                row.spacing = 8; row.childAlignment = TextAnchor.MiddleCenter;
+                row.childControlWidth = row.childControlHeight = false;
+                row.childForceExpandWidth = row.childForceExpandHeight = false;
+                g.Pips = new Image[8];
+                for (int i = 0; i < 8; i++) g.Pips[i] = Pic(pips, "Pip" + i, Half, Half, Half, Vector2.zero, new Vector2(28, 28), S("ui_circle"), UiRole.None);
+                g.PipOn = S("ui_circle"); g.PipOff = S("fx_pip_ring");
+                g.Label = Label(rt, "Label", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, 14), new Vector2(-20, 44), "Yellow 3/4", 32, UiRole.Text);
+                g.Label.fontStyle = FontStyles.Bold;
+                var f = Fresh(rt, "Formula", TopC, TopC, new Vector2(0.5f, 0), new Vector2(0, 8), new Vector2(190, 46));
+                Img(f, S("ui_pill"), UiRole.Chip, true);
+                var fr = Fresh(f, "Row", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero);
+                var frow = fr.gameObject.AddComponent<HorizontalLayoutGroup>();
+                frow.spacing = 6; frow.childAlignment = TextAnchor.MiddleCenter;
+                frow.childControlWidth = frow.childControlHeight = false;
+                frow.childForceExpandWidth = frow.childForceExpandHeight = false;
+                g.FormulaA = Pic(fr, "A", Half, Half, Half, Vector2.zero, new Vector2(24, 24), S("ui_circle"), UiRole.None);
+                Pic(fr, "Plus", Half, Half, Half, Vector2.zero, new Vector2(22, 22), Icon("icon_plus"), UiRole.TextMuted);
+                g.FormulaB = Pic(fr, "B", Half, Half, Half, Vector2.zero, new Vector2(24, 24), S("ui_circle"), UiRole.None);
+                Pic(fr, "Arrow", Half, Half, Half, Vector2.zero, new Vector2(26, 22), Icon("icon_arrow"), UiRole.TextMuted);
+                g.FormulaResult = Pic(fr, "Result", Half, Half, Half, Vector2.zero, new Vector2(24, 24), S("ui_circle"), UiRole.None);
+                g.Formula = f.gameObject;
+                foreach (var gr in go.GetComponentsInChildren<Graphic>(true)) gr.raycastTarget = false;
+                PrefabUtility.SaveAsPrefabAsset(go, LampGroupPrefab);
+            }
+            finally { Object.DestroyImmediate(go); }
         }
 
         /// <summary>A 0..1 slider on the right of a settings row; the row's switch is hidden (kept for older saves).</summary>

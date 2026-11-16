@@ -235,6 +235,7 @@ namespace CircuitCube.Game
             UI.Unlock.gameObject.SetActive(false);
             UI.Settings.gameObject.SetActive(false);
             UI.Dim.SetActive(false);
+            if (UI.Fx != null) UI.Fx.HideAll();
             if (UI.FlyingStars != null) foreach (var st in UI.FlyingStars) if (st != null) st.gameObject.SetActive(false);
             _starsInFlight = 0;
         }
@@ -283,6 +284,7 @@ namespace CircuitCube.Game
 
             var h = UI.Home;
             h.Show();
+            SlideIn(h);
             var info = GameData.Group(g);
             int total = Mathf.Max(1, info.levelCount);
             int next = CubeSave.Unlocked(g);
@@ -306,6 +308,7 @@ namespace CircuitCube.Game
             GameAudio.Music(MusicTrack.Menu);
             var s = UI.Shapes;
             s.Show();
+            SlideIn(s);
             s.StarsLabel.text = LevelScore.StarText(CubeSave.TotalStarHalves);
             int next = 0;
             for (int g = 0; g < GameData.GroupCount; g++)
@@ -374,6 +377,7 @@ namespace CircuitCube.Game
             CubeSave.MarkLevelsSeen(group);
             var lv = UI.Levels;
             lv.Show();
+            SlideIn(lv);
             var info = GameData.Group(group);
             lv.Title.text = Loc.T(info.name);
             int unlocked = CubeSave.Unlocked(group);
@@ -499,6 +503,11 @@ namespace CircuitCube.Game
             // the first levels with mixed colours spell the mixes out
             string mixes = CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null;
             if (mixes != null) hud.Tip.text = mixes;
+            ResetMascot();
+            if (hud.Mascot != null) hud.Mascot.Say(Mascot.Mood.Idle, null);
+            if (hud.LampTray != null) SetupLampTray();
+            else
+            {
             int chips = 0;
             var seen = new HashSet<int>();
             foreach (int c in _level.Colors)
@@ -513,6 +522,7 @@ namespace CircuitCube.Game
             int dots = 0;
             for (int i = 0; i < _board.TotalLamps; i++) Slot(hud.LampDots, hud.DotTemplate, ref dots, template);
             HideRest(hud.LampDots, dots, template);
+            }
             UpdateHud();
             StartLesson(group, number, cheat);
 
@@ -771,6 +781,7 @@ namespace CircuitCube.Game
             if (lit == _shownLit && total == _shownTotal) return;
             _shownLit = lit;
             _shownTotal = total;
+            if (hud.LampTray != null) { UpdateLampTray(); return; }
             hud.LampsLabel.text = string.Concat(Num(lit), " / ", Num(total), " ", Loc.T("lamps lit"));
             int n = 0;
             for (int i = 0; i < hud.LampDots.childCount; i++)
@@ -797,7 +808,7 @@ namespace CircuitCube.Game
             if (_moves == 4 && !CubeSave.SeenHowTo) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = (CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null) ?? ""; }
             _board.AnimateRotation(index, 1);
             bool solved = _board.Refresh();
-            if (!solved && _board.NewlyLitColor != 0) { GameAudio.Lamp(_board.NewlyLitColor); Haptics.Play(Haptics.Kind.Lamp); }
+            if (!solved && _board.NewlyLitColor != 0) { GameAudio.Lamp(_board.NewlyLitColor); Haptics.Play(Haptics.Kind.Lamp); MascotOnLamp(_board.NewlyLitColor); }
             UpdateHud();
             if (solved) Win();
         }
@@ -902,7 +913,7 @@ namespace CircuitCube.Game
             GameAnalytics.Log("hint_used", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("left", _hintsLeft));
             _board.AnimateRotation(pick, turns, 0.3f);
             bool solved = _board.Refresh();
-            if (!solved && _board.NewlyLitColor != 0) { GameAudio.Lamp(_board.NewlyLitColor); Haptics.Play(Haptics.Kind.Lamp); }
+            if (!solved && _board.NewlyLitColor != 0) { GameAudio.Lamp(_board.NewlyLitColor); Haptics.Play(Haptics.Kind.Lamp); MascotOnLamp(_board.NewlyLitColor); }
             UpdateHud();
             if (solved) Win();
         }
@@ -918,6 +929,8 @@ namespace CircuitCube.Game
             LessonOnWin();
             ResetZoom(true);   // the box breaks open in the framed view, so the stars fly from its centre
             int points = PointsFor();
+            var fx = UI.Fx != null ? StreakFor(points) : (LevelScore.IsExpert(points) ? WinFx.Expert : WinFx.Stars);
+            if (fx == WinFx.Constellation) StartConstellations(points);
             var wasOpen = new bool[GameData.GroupCount];
             for (int g = 0; g < wasOpen.Length; g++) wasOpen[g] = CubeSave.GroupOpen(g);
             if (!_cheat) { CubeSave.Complete(_group, _level.Number, points); CloudSave.MarkDirty(); }
@@ -940,7 +953,9 @@ namespace CircuitCube.Game
             _tw.Run(0.55f, p => tr.rotation = Quaternion.AngleAxis(200f * p * p, Vector3.up) * from, () =>
             {
                 board.Shatter();
-                if (LevelScore.IsExpert(points)) ExpertBurst(); else LaunchStars(points);
+                if (fx == WinFx.Expert && UI.Fx != null) StartExpertWord();
+                else if (fx == WinFx.Stars) LaunchStars(points);
+                else if (fx == WinFx.Comets || (fx == WinFx.Expert && UI.Fx == null)) ExpertBurst();
                 Haptics.Play(Haptics.Kind.Win);
             }, tr);
             _tw.Run(0.55f + ResultDelay, p => { }, () =>
@@ -953,8 +968,10 @@ namespace CircuitCube.Game
                 r.Stats[1].text = LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group)).ToString();
                 r.Stats[2].text = _board.LitLamps + "/" + _board.TotalLamps;
                 bool expert = LevelScore.IsExpert(points);
-                r.Badge.SetActive(expert);                    // Expert: the badge alone, no stars
+                bool word = expert && UI.Fx != null;
+                r.Badge.SetActive(expert && !word);           // Expert: the neon word (or the old badge), no stars
                 r.Stars.gameObject.SetActive(!expert);
+                if (!word && UI.Fx != null && UI.Fx.Word != null) UI.Fx.Word.gameObject.SetActive(false);
                 // the stars say how well it went; the points and hint rule stay behind the scenes
                 r.Body.text = unlocksNext ? Loc.F("New shape unlocked: {0}!", Loc.T(GameData.Group(newGroup).name)) : "";
                 // stars already in the air fill the row as they land; without them the row fills at once
@@ -965,6 +982,9 @@ namespace CircuitCube.Game
                 if (!_cheat) AppReview.Won(this, TotalWins());
                 if (_starsInFlight == 0 && !expert)
                     for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);
+                if (fx == WinFx.Comets && UI.Fx != null) StartComets();
+                if (UI.Fx != null)
+                    UI.Fx.ShowPraise(Praise.Pick(PraiseFor(fx, points)), fx == WinFx.Comets ? 2.6f : fx == WinFx.Expert ? 1.9f : fx == WinFx.Constellation ? 1.6f : 1.0f);
             }, UI.Result);   // its own owner: a second run on the board's transform would cancel the wind-up
         }
 
@@ -1078,6 +1098,7 @@ namespace CircuitCube.Game
             AppUpdates.Tick();
             CloudSave.Tick();
             TickContent();
+            TickMascot();
             _tw.Tick(dt);
             HandlePointer(dt);
             TickLesson(dt);

@@ -138,6 +138,7 @@ namespace CircuitCube.Game
             { "Lit!", "Sáng rồi!" },
             { "Almost there!", "Sắp xong rồi!" },
             { "Just a few more!", "Còn chút xíu nữa!" },
+            { "{0} done!", "Xong màu {0}!" },
             { "Rate Circuit Cube", "Đánh giá Circuit Cube" },
         };
     }

@@ -20,5 +20,7 @@ namespace CircuitCube.UI
         public RectTransform[] FlyingStars = new RectTransform[0];
         [Tooltip("First-time tutorial layer: pointer, speech bubble and Skip (built by Tools/Circuit Cube/Art V2/Build Tutorial UI).")]
         public TutorialOverlay Tutorial;
+        [Tooltip("Win effects over the result card (Expert word, comets, constellations, praise).")]
+        public ResultFx Fx;
     }
 }

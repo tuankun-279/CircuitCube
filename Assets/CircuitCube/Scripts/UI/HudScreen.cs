@@ -21,5 +21,11 @@ namespace CircuitCube.UI
         [Tooltip("Inactive template dot inside LampDots; copies are made for each lamp.")]
         public Image DotTemplate;
         public TMP_Text LampsLabel;
+        [Header("1.2.0")]
+        [Tooltip("Lamps per colour, above Undo/Restart; holds one LampGroup per colour.")]
+        public RectTransform LampTray;
+        public LampGroup GroupPrefab;
+        [Tooltip("Top-right mascot with moods and short lines.")]
+        public Mascot Mascot;
     }
 }

@@ -12,7 +12,8 @@ namespace CircuitCube.EditorTools
     /// Art/UI/Common                  9-slice and plain UI shapes (button, card, circle, pill, square, bar)
     /// Art/UI/Icons                   white icons, tinted by the theme
     /// Art/UI/Shapes/{Dark,Light}     shape group pictures per theme
-    /// Art/UI/Brand, Mascot           logo, app icon, robot faces
+    /// Art/UI/Brand, Mascot           logo, app icon, mascot body and faces
+    /// Art/UI/Expert, Fx              the neon EXPERT letters and the win effect sprites (comet, glow, ring...)
     /// Art/UI/Backgrounds             full-screen sky per theme
     /// Art/Fonts                      Inter and its TextMeshPro font assets
     /// Art/Atlases                    the UI sprite atlas and the board atlases (generated)
@@ -28,7 +29,7 @@ namespace CircuitCube.EditorTools
         public const string Fonts = Root + "/Fonts";
         public const string Atlases = Root + "/Atlases";
 
-        static readonly string[] UiFolders = { "Common", "Brand", "Mascot", "Backgrounds", "Icons" };
+        static readonly string[] UiFolders = { "Common", "Brand", "Mascot", "Backgrounds", "Icons", "Expert", "Fx" };
 
         /// <summary>
         /// A UI sprite by name: "ui_card", "mascot_win", "logo_mark", "Backgrounds/bg_dark", or "Dark/shape_cube" for

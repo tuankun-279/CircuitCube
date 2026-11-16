@@ -449,6 +449,29 @@ namespace CircuitCube.Game
             return lit == total;
         }
 
+        /// <summary>Lamps per colour set (index 1-7): how many there are and how many are lit right now.</summary>
+        public void LampCounts(int[] lit, int[] total)
+        {
+            System.Array.Clear(lit, 0, lit.Length);
+            System.Array.Clear(total, 0, total.Length);
+            for (int i = 0; i < _t.Length; i++)
+            {
+                var tile = _level.Tiles[i];
+                if (tile.Kind != TileKind.Lamp || tile.Color <= 0 || tile.Color >= total.Length) continue;
+                total[tile.Color]++;
+                if (_t[i].Lit) lit[tile.Color]++;
+            }
+        }
+
+        /// <summary>World centres of the lamps, up to the array's length; returns how many were written.</summary>
+        public int LampPositions(Vector3[] into)
+        {
+            int n = 0;
+            for (int i = 0; i < _t.Length && n < into.Length; i++)
+                if (_level.Tiles[i].Kind == TileKind.Lamp) into[n++] = CenterWorld(i);
+            return n;
+        }
+
         /// <summary>Turn a tile's wire by <paramref name="steps"/> (negative = back), with a small overshoot.</summary>
         public void AnimateRotation(int index, int steps, float duration = -1f)
         {
