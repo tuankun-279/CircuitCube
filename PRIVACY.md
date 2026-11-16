@@ -1,6 +1,6 @@
 # Circuit Cube – Privacy Policy
 
-*Last updated: 11 November 2026*
+*Last updated: 16 November 2026*
 
 **English** · [Tiếng Việt](#tiếng-việt)
 
@@ -8,7 +8,11 @@ Circuit Cube ("the game") is a puzzle game for Android made by an independent de
 
 ## What stays on your phone
 
-Your progress (levels beaten, stars, the level you are playing), your settings (sound, music, vibration, theme) and the level packs the game downloads are stored only on your device. Android may include them in your own device backup to your Google account if you have backup turned on. The developer cannot see this data.
+Your progress (levels beaten, stars, the level you are playing), your settings (sound, music, vibration, theme, language) and the level packs the game downloads are stored on your device. Android may include them in your own device backup to your Google account if you have backup turned on. The developer cannot see this data.
+
+## Cloud save (Google Play Games)
+
+If you sign in to **Google Play Games**, the game also saves your progress (levels beaten, stars and points) to your own Play Games account, so you can continue on another phone. The save is stored by Google in your account; the developer cannot see it. Signing in is optional: without it, progress stays on the device only. You can delete the cloud save at any time in the Google Play Games app (Profile → Settings → Delete Play Games account and data, or the game's saved data).
 
 ## Advertising (Google AdMob)
 
@@ -27,11 +31,15 @@ How Google uses this data: <https://policies.google.com/technologies/partner-sit
 
 The game uses **Google Analytics for Firebase** to understand how the game is played so it can be improved, for example: which levels are started and finished, how many moves they took, how often hints and undos are used, and whether an ad could be shown. Firebase collects these events together with an app instance ID, device information and your IP address (used for approximate location). This data is not used to identify you personally and is not sold.
 
+## Crash reports (Firebase Crashlytics)
+
+If the game crashes or hits a serious error, **Firebase Crashlytics** sends a crash report so the bug can be fixed: the error and where in the code it happened, device model, Android version, app version, free memory and an installation ID. Crash reports contain no personal information and are kept by Firebase for 90 days.
+
 Firebase privacy information: <https://firebase.google.com/support/privacy>
 
 ## Internet access
 
-The game connects to the internet to download new level packs (from GitHub / jsDelivr), to show ads and to send analytics. Those servers receive your IP address, as with any internet request.
+The game connects to the internet to download new level packs (from GitHub / jsDelivr), to show ads, to send analytics and crash reports, and to sync the cloud save. Those servers receive your IP address, as with any internet request.
 
 ## Children
 
@@ -41,7 +49,13 @@ The game is not directed at children under 13 and does not knowingly collect per
 
 - Change your ad consent: **Settings → Privacy options** (shown where the law requires it).
 - Reset or delete your advertising ID: Android **Settings → Google → Ads**.
-- Remove all data stored by the game: uninstall the game.
+- Remove all data stored by the game on your phone: uninstall the game.
+
+## Delete your data
+
+- **Cloud save:** delete it yourself in the Google Play Games app, or ask us (below) and we will tell you how.
+- **Analytics and crash reports:** these are not linked to your name or account. Analytics data is kept by Firebase for 2 months and crash reports for 90 days, then deleted automatically. To ask for earlier deletion, open an issue (below) with the subject "Delete my data – Circuit Cube"; we answer within 30 days.
+- **Advertising data** is held by Google: reset or delete your advertising ID in Android settings, and see <https://policies.google.com/technologies/partner-sites>.
 
 ## Changes
 
@@ -55,13 +69,17 @@ Questions or requests: open an issue at <https://github.com/tuankun-279/CircuitC
 
 ## Tiếng Việt
 
-*Cập nhật lần cuối: 11/11/2026*
+*Cập nhật lần cuối: 16/11/2026*
 
 Circuit Cube ("trò chơi") là trò chơi giải đố trên Android do một nhà phát triển độc lập (lokikun) làm. Trang này giải thích trò chơi dùng những dữ liệu gì và vì sao.
 
 ### Dữ liệu chỉ nằm trên điện thoại
 
-Tiến trình chơi (level đã qua, số sao, level đang chơi dở), cài đặt (âm thanh, nhạc, rung, giao diện) và các gói level trò chơi tải về chỉ được lưu trên máy của bạn. Nếu bạn bật sao lưu, Android có thể đưa chúng vào bản sao lưu vào tài khoản Google của chính bạn. Nhà phát triển không xem được dữ liệu này.
+Tiến trình chơi (level đã qua, số sao, level đang chơi dở), cài đặt (âm thanh, nhạc, rung, giao diện, ngôn ngữ) và các gói level trò chơi tải về được lưu trên máy của bạn. Nếu bạn bật sao lưu, Android có thể đưa chúng vào bản sao lưu vào tài khoản Google của chính bạn. Nhà phát triển không xem được dữ liệu này.
+
+### Lưu trên đám mây (Google Play Games)
+
+Nếu bạn đăng nhập **Google Play Games**, trò chơi lưu thêm tiến trình (level đã qua, số sao, điểm) vào tài khoản Play Games của chính bạn để chơi tiếp trên máy khác. Bản lưu do Google giữ trong tài khoản của bạn; nhà phát triển không xem được. Đăng nhập là tùy chọn: không đăng nhập thì tiến trình chỉ nằm trên máy. Bạn có thể xóa bản lưu bất cứ lúc nào trong ứng dụng Google Play Games.
 
 ### Quảng cáo (Google AdMob)
 
@@ -80,11 +98,15 @@ Cách Google dùng dữ liệu này: <https://policies.google.com/technologies/p
 
 Trò chơi dùng **Google Analytics for Firebase** để hiểu người chơi chơi thế nào và cải thiện trò chơi, ví dụ: level nào được bắt đầu và hoàn thành, mất bao nhiêu bước, hint và undo được dùng bao nhiêu lần, quảng cáo có hiện được không. Firebase thu thập các sự kiện này kèm mã cài đặt ứng dụng (app instance ID), thông tin thiết bị và địa chỉ IP (dùng cho vị trí gần đúng). Dữ liệu này không dùng để nhận diện cá nhân bạn và không được bán.
 
+### Báo lỗi (Firebase Crashlytics)
+
+Khi trò chơi bị văng hoặc gặp lỗi nghiêm trọng, **Firebase Crashlytics** gửi một báo cáo lỗi để sửa: lỗi gì và xảy ra ở đâu trong mã, đời máy, phiên bản Android, phiên bản trò chơi, bộ nhớ còn trống và một mã cài đặt. Báo cáo lỗi không chứa thông tin cá nhân và được Firebase giữ 90 ngày.
+
 Thông tin quyền riêng tư của Firebase: <https://firebase.google.com/support/privacy>
 
 ### Kết nối Internet
 
-Trò chơi kết nối Internet để tải gói level mới (từ GitHub / jsDelivr), hiện quảng cáo và gửi dữ liệu phân tích. Các máy chủ đó nhận địa chỉ IP của bạn, như mọi kết nối Internet khác.
+Trò chơi kết nối Internet để tải gói level mới (từ GitHub / jsDelivr), hiện quảng cáo, gửi dữ liệu phân tích và báo lỗi, và đồng bộ bản lưu đám mây. Các máy chủ đó nhận địa chỉ IP của bạn, như mọi kết nối Internet khác.
 
 ### Trẻ em
 
@@ -95,6 +117,12 @@ Trò chơi không hướng tới trẻ em dưới 13 tuổi và không cố ý t
 - Đổi lựa chọn đồng ý quảng cáo: **Settings → Privacy options** (hiện ở nơi luật yêu cầu).
 - Đặt lại hoặc xóa mã quảng cáo: **Cài đặt → Google → Quảng cáo** trên Android.
 - Xóa toàn bộ dữ liệu trò chơi lưu trên máy: gỡ cài đặt trò chơi.
+
+### Xóa dữ liệu của bạn
+
+- **Bản lưu đám mây:** tự xóa trong ứng dụng Google Play Games, hoặc liên hệ (bên dưới) để được hướng dẫn.
+- **Dữ liệu phân tích và báo lỗi:** không gắn với tên hay tài khoản của bạn. Firebase giữ dữ liệu phân tích 2 tháng và báo lỗi 90 ngày rồi tự xóa. Muốn xóa sớm hơn, tạo issue (bên dưới) với tiêu đề "Delete my data – Circuit Cube"; chúng tôi trả lời trong 30 ngày.
+- **Dữ liệu quảng cáo** do Google giữ: đặt lại hoặc xóa mã quảng cáo trong cài đặt Android, xem thêm <https://policies.google.com/technologies/partner-sites>.
 
 ### Thay đổi
 
