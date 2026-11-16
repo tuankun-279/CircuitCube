@@ -773,9 +773,9 @@ MonoBehaviour:
   m_fontSize: 32
   m_fontSizeBase: 32
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_fontSizeMax: 32
   m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
@@ -1143,6 +1143,7 @@ GameObject:
   - component: {fileID: 1909513171568326193}
   - component: {fileID: 200065955451035783}
   - component: {fileID: 5473050327858621175}
+  - component: {fileID: 7821528677449017739}
   m_Layer: 0
   m_Name: LampGroup
   m_TagString: Untagged
@@ -1265,6 +1266,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Role: 2
   Alpha: 0.92
+--- !u!114 &7821528677449017739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7849534145529502239}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IgnoreLayout: 0
+  m_MinWidth: 120
+  m_MinHeight: -1
+  m_PreferredWidth: 300
+  m_PreferredHeight: -1
+  m_FlexibleWidth: 0
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1
 --- !u!1 &8284686882096200238
 GameObject:
   m_ObjectHideFlags: 0
