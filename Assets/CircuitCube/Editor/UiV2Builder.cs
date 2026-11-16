@@ -137,10 +137,10 @@ namespace CircuitCube.EditorTools
                 // ---- result card: neon word where the stars are, praise above the card
                 var r = ui.Result;
                 var panel = (RectTransform)r.transform.Find("Panel");
-                var w = Fresh(panel, "ExpertWord", TopC, TopC, TopC, new Vector2(0, -262), new Vector2(560, 150));
+                var w = Fresh(panel, "ExpertWord", TopC, TopC, TopC, new Vector2(0, -298), new Vector2(520, 130));
                 var letters = new Image[6];
                 for (int i = 0; i < 6; i++)
-                    letters[i] = Pic(w, "L" + i, Half, Half, Half, new Vector2((i - 2.5f) * 86f, 0), new Vector2(104, 122), S(word[i]), UiRole.None);
+                    letters[i] = Pic(w, "L" + i, Half, Half, Half, new Vector2((i - 2.5f) * 80f, 0), new Vector2(94, 110), S(word[i]), UiRole.None);
                 var mask = Fresh(w, "ShineMask", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero);
                 mask.gameObject.AddComponent<RectMask2D>();
                 var shine = Pic(mask, "Shine", Half, Half, Half, new Vector2(-400, 0), new Vector2(110, 190), S("fx_shine"), UiRole.None);
@@ -149,7 +149,6 @@ namespace CircuitCube.EditorTools
                 var praise = Label(panel, "Praise", TopC, TopC, new Vector2(0.5f, 0), new Vector2(0, 150), new Vector2(940, 110), "Brilliant!", 72, UiRole.None);
                 praise.fontStyle = FontStyles.Bold | FontStyles.Italic;
                 praise.color = new Color(1f, 0.878f, 0.541f);
-                praise.outlineWidth = 0.18f; praise.outlineColor = new Color32(122, 67, 0, 255);
                 praise.raycastTarget = false;
                 praise.gameObject.SetActive(false);
 
@@ -161,7 +160,7 @@ namespace CircuitCube.EditorTools
                 fx.ShakeRoot = panel;
                 fx.Word = w; fx.WordLetters = letters; fx.Shine = shine.rectTransform; fx.Praise = praise;
                 fx.FlyLetters = new Image[6];
-                for (int i = 0; i < 6; i++) fx.FlyLetters[i] = Hidden(Pic(layer, "Fly" + i, Half, Half, Half, Vector2.zero, new Vector2(104, 122), S(word[i]), UiRole.None));
+                for (int i = 0; i < 6; i++) fx.FlyLetters[i] = Hidden(Pic(layer, "Fly" + i, Half, Half, Half, Vector2.zero, new Vector2(94, 110), S(word[i]), UiRole.None));
                 fx.Core = Hidden(Pic(layer, "Core", Half, Half, Half, Vector2.zero, new Vector2(150, 150), S("fx_glow"), UiRole.None));
                 fx.Ring = Hidden(Pic(layer, "Ring", Half, Half, Half, Vector2.zero, new Vector2(110, 110), S("fx_ring"), UiRole.None));
                 fx.Sparks = new Image[12];
@@ -203,7 +202,9 @@ namespace CircuitCube.EditorTools
                 row.childForceExpandWidth = row.childForceExpandHeight = false;
                 hud.LampTray = tray;
                 hud.GroupPrefab = AssetDatabase.LoadAssetAtPath<LampGroup>(LampGroupPrefab);
-                Place(t, "Tip", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 360), new Vector2(980, 100));
+                Place(t, "Tip", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 410), new Vector2(980, 100));
+                var tutorial = safe.Find("Tutorial");
+                if (tutorial != null) Place(tutorial, "Bubble", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 400), new Vector2(980, 150));
 
                 var m = Fresh(t, "Mascot", TopR, TopR, TopR, new Vector2(-36, -186), new Vector2(150, 150));
                 var mascot = m.gameObject.AddComponent<Mascot>();

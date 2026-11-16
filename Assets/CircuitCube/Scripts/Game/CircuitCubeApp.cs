@@ -502,7 +502,7 @@ namespace CircuitCube.Game
             hud.Tip.text = (group == 0 && number <= 3) || !CubeSave.SeenHowTo ? Loc.T("Drag to turn the shape  ·  Tap a tile to rotate it") : "";
             // the first levels with mixed colours spell the mixes out
             string mixes = CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null;
-            if (mixes != null) hud.Tip.text = mixes;
+            if (mixes != null && hud.LampTray == null) hud.Tip.text = mixes;   // the lamp tray shows the mix itself
             ResetMascot();
             if (hud.Mascot != null) hud.Mascot.Say(Mascot.Mood.Idle, null);
             if (hud.LampTray != null) SetupLampTray();
@@ -805,7 +805,7 @@ namespace CircuitCube.Game
             _moves++;
             _undo.Push(index);
             LessonTapped();
-            if (_moves == 4 && !CubeSave.SeenHowTo) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = (CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null) ?? ""; }
+            if (_moves == 4 && !CubeSave.SeenHowTo) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = (UI.Hud.LampTray == null && CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null) ?? ""; }
             _board.AnimateRotation(index, 1);
             bool solved = _board.Refresh();
             if (!solved && _board.NewlyLitColor != 0) { GameAudio.Lamp(_board.NewlyLitColor); Haptics.Play(Haptics.Kind.Lamp); MascotOnLamp(_board.NewlyLitColor); }
