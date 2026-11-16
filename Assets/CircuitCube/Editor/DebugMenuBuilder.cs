@@ -32,14 +32,15 @@ namespace CircuitCube.EditorTools
                 row.SetParent(panel, false);
                 row.anchorMin = row.anchorMax = new Vector2(0f, 1f);
                 row.pivot = new Vector2(0f, 1f);
-                row.anchoredPosition = new Vector2(0f, -1010f);
+                row.anchoredPosition = new Vector2(0f, -1025f);
                 row.sizeDelta = new Vector2(panel.sizeDelta.x, Extra);
 
                 var labelSrc = panel.Find("LevelLabel");
                 var label = Object.Instantiate(labelSrc.gameObject, row).GetComponent<RectTransform>();
                 label.name = "Label";
                 label.anchoredPosition = new Vector2(60f, -10f);
-                label.GetComponent<TMP_Text>().text = "Win as (in play or the level above)";
+                label.sizeDelta = new Vector2(820f, label.sizeDelta.y);
+                label.GetComponent<TMP_Text>().text = "Win as  (the level in play, or the level above)";
 
                 var template = panel.Find("Shape0");
                 var names = CircuitCubeApp.DebugResults;
