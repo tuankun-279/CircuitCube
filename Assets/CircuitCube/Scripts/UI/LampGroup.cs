@@ -52,7 +52,7 @@ namespace CircuitCube.UI
         {
             if (lit == _lit && total == _total && name == _name && color == _color && Formula.activeSelf == mixed) return;
             _lit = lit; _total = total; _color = color; _name = name; _a = mixA; _b = mixB; _mixed = mixed;
-            var track = Themes.Current != null ? Themes.Current.Get(UiRole.Track) : new Color32(42, 49, 80, 255);
+            var track = Themes.Current != null ? Themes.Current.Get(UiRole.Track) : (Color)new Color32(42, 49, 80, 255);
             var glow = color; glow.a = 0.67f;
             bool cells = total <= Segs.Length;
             SegRow.SetActive(cells);
