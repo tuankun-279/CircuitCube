@@ -106,6 +106,14 @@ namespace CircuitCube.EditorTools
             AssetDatabase.SaveAssets();
         }
 
+        /// <summary>Pixels-per-unit multiplier that makes the pill's 9-slice ends fit a bar this tall (round ends, no pinch).</summary>
+        static float PillScale(float height)
+        {
+            var sp = S("ui_pill");
+            float border = sp != null ? Mathf.Max(sp.border.x, sp.border.z) : height / 2f;
+            return Mathf.Max(1f, border * 2f / height);
+        }
+
         /// <summary>A 0..1 slider on the right of a settings row; the row's switch is hidden (kept for older saves).</summary>
         static Slider VolumeSlider(Transform row)
         {
@@ -113,12 +121,14 @@ namespace CircuitCube.EditorTools
             if (sw != null) sw.gameObject.SetActive(false);
             var label = row.Find("Label") as RectTransform;
             if (label != null) label.sizeDelta = new Vector2(-560, 0);
-            var area = Fresh(row, "Volume", new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-40, 0), new Vector2(-330, 72));
+            var area = Fresh(row, "Volume", new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-40, 0), new Vector2(-440, 72));   // 320 wide, clear of the label
             var hit = Img(area, null, UiRole.None);
             hit.color = new Color(1, 1, 1, 0);   // the whole strip takes the drag
-            var bg = Pic(area, "Track", new Vector2(0, 0.5f), new Vector2(1, 0.5f), Half, Vector2.zero, new Vector2(0, 20), S("ui_pill"), UiRole.Track, true);
-            var fillArea = Fresh(area, "Fill Area", new Vector2(0, 0.5f), new Vector2(1, 0.5f), Half, Vector2.zero, new Vector2(0, 20));
-            var fill = Pic(fillArea, "Fill", Vector2.zero, new Vector2(0, 1), new Vector2(0, 0.5f), Vector2.zero, new Vector2(20, 0), S("ui_pill"), UiRole.Primary, true);
+            var bg = Pic(area, "Track", new Vector2(0, 0.5f), new Vector2(1, 0.5f), Half, Vector2.zero, new Vector2(0, 22), S("ui_pill"), UiRole.Track, true);
+            bg.pixelsPerUnitMultiplier = PillScale(22);
+            var fillArea = Fresh(area, "Fill Area", new Vector2(0, 0.5f), new Vector2(1, 0.5f), Half, new Vector2(-11, 0), new Vector2(-22, 22));
+            var fill = Pic(fillArea, "Fill", Vector2.zero, new Vector2(0, 1), new Vector2(0, 0.5f), Vector2.zero, new Vector2(22, 0), S("ui_pill"), UiRole.Primary, true);
+            fill.pixelsPerUnitMultiplier = PillScale(22);
             var handleArea = Fresh(area, "Handle Slide Area", Vector2.zero, Vector2.one, Half, Vector2.zero, new Vector2(-56, 0));
             var knob = Pic(handleArea, "Handle", new Vector2(0, 0.5f), new Vector2(0, 0.5f), Half, Vector2.zero, new Vector2(56, 56), S("ui_circle"), UiRole.None);
             knob.color = Color.white;
