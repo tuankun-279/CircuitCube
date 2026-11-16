@@ -137,16 +137,19 @@ namespace CircuitCube.EditorTools
                 // ---- result card: neon word where the stars are, praise above the card
                 var r = ui.Result;
                 var panel = (RectTransform)r.transform.Find("Panel");
-                var w = Fresh(panel, "ExpertWord", TopC, TopC, TopC, new Vector2(0, -298), new Vector2(520, 130));
+                // laid out from the approved mockup (390 px phone, card 314 px wide = 880 units, so 1 px = 2.803 units):
+                // letter boxes 36 x 44 px, 40 px apart, centred 124 px below the card top; sprites carry 55 px of glow
+                var w = Fresh(panel, "ExpertWord", TopC, TopC, Half, new Vector2(0, -348), new Vector2(700, 160));
                 var letters = new Image[6];
                 for (int i = 0; i < 6; i++)
-                    letters[i] = Pic(w, "L" + i, Half, Half, Half, new Vector2((i - 2.5f) * 80f, 0), new Vector2(94, 110), S(word[i]), UiRole.None);
-                var mask = Fresh(w, "ShineMask", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero);
+                    letters[i] = Pic(w, "L" + i, Half, Half, Half, new Vector2((i - 2.5f) * 112.1f, 0), LetterSize, S(word[i]), UiRole.None);
+                // shine strip: 232 x 56 px, 2 px above the letter boxes
+                var mask = Fresh(w, "ShineMask", Half, Half, Half, new Vector2(0, -5), new Vector2(650, 157));
                 mask.gameObject.AddComponent<RectMask2D>();
-                var shine = Pic(mask, "Shine", Half, Half, Half, new Vector2(-400, 0), new Vector2(110, 190), S("fx_shine"), UiRole.None);
+                var shine = Pic(mask, "Shine", Half, Half, Half, new Vector2(-400, 0), new Vector2(168, 157), S("fx_word_shine"), UiRole.None);
                 shine.preserveAspect = false;
                 w.gameObject.SetActive(false);
-                var praise = Label(panel, "Praise", TopC, TopC, new Vector2(0.5f, 0), new Vector2(0, 150), new Vector2(940, 110), "Brilliant!", 72, UiRole.None);
+                var praise = Label(panel, "Praise", TopC, TopC, new Vector2(0.5f, 0), new Vector2(0, 146), new Vector2(940, 110), "Brilliant!", 84, UiRole.None);
                 praise.fontStyle = FontStyles.Bold | FontStyles.Italic;
                 praise.color = new Color(1f, 0.878f, 0.541f);
                 praise.raycastTarget = false;
@@ -160,11 +163,19 @@ namespace CircuitCube.EditorTools
                 fx.ShakeRoot = panel;
                 fx.Word = w; fx.WordLetters = letters; fx.Shine = shine.rectTransform; fx.Praise = praise;
                 fx.FlyLetters = new Image[6];
-                for (int i = 0; i < 6; i++) fx.FlyLetters[i] = Hidden(Pic(layer, "Fly" + i, Half, Half, Half, Vector2.zero, new Vector2(94, 110), S(word[i]), UiRole.None));
-                fx.Core = Hidden(Pic(layer, "Core", Half, Half, Half, Vector2.zero, new Vector2(150, 150), S("fx_glow"), UiRole.None));
-                fx.Ring = Hidden(Pic(layer, "Ring", Half, Half, Half, Vector2.zero, new Vector2(110, 110), S("fx_ring"), UiRole.None));
+                fx.HotLetters = new Image[6];
+                fx.Pings = new Image[6];
+                for (int i = 0; i < 6; i++)
+                {
+                    fx.FlyLetters[i] = Hidden(Pic(layer, "Fly" + i, Half, Half, Half, Vector2.zero, LetterSize, S(word[i]), UiRole.None));
+                    fx.HotLetters[i] = Pic(fx.FlyLetters[i].transform, "Hot", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, S(word[i] + "_hot"), UiRole.None);
+                    fx.Pings[i] = Hidden(Pic(layer, "Ping" + i, Half, Half, Half, Vector2.zero, new Vector2(157, 179), S("fx_ping"), UiRole.None));
+                }
+                // the mockup's burst: core 36 px (+80 px glow each side), ring 40 px (+24), 6 px dots (+20)
+                fx.Core = Hidden(Pic(layer, "Core", Half, Half, Half, Vector2.zero, new Vector2(549, 549), S("fx_boom_core"), UiRole.None));
+                fx.Ring = Hidden(Pic(layer, "Ring", Half, Half, Half, Vector2.zero, new Vector2(247, 247), S("fx_boom_ring"), UiRole.None));
                 fx.Sparks = new Image[12];
-                for (int i = 0; i < 12; i++) fx.Sparks[i] = Hidden(Pic(layer, "Spark" + i, Half, Half, Half, Vector2.zero, new Vector2(46, 46), S("fx_sparkle"), UiRole.None));
+                for (int i = 0; i < 12; i++) fx.Sparks[i] = Hidden(Pic(layer, "Spark" + i, Half, Half, Half, Vector2.zero, new Vector2(129, 129), S("fx_boom_dot"), UiRole.None));
                 fx.Comets = new Image[15];
                 for (int i = 0; i < 15; i++)
                 {
@@ -238,6 +249,9 @@ namespace CircuitCube.EditorTools
         }
 
         static Image Hidden(Image i) { i.gameObject.SetActive(false); return i; }
+
+        /// <summary>A neon letter sprite: the mockup's 36 x 44 px box plus 55 px of glow on each side, in canvas units.</summary>
+        static readonly Vector2 LetterSize = new Vector2(409, 432);
 
         /// <summary>The lamp tray item: card, a row of pips, the count, and the formula tag above for a mixed colour.</summary>
         static void BuildLampGroupPrefab()

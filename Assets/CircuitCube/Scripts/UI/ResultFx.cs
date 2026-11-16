@@ -29,6 +29,10 @@ namespace CircuitCube.UI
         [Header("Expert word")]
         [Tooltip("The six letters flying out of the box.")]
         public Image[] FlyLetters = new Image[6];
+        [Tooltip("White-hot copy of each flying letter (child of it), faded out as the letter cools.")]
+        public Image[] HotLetters = new Image[6];
+        [Tooltip("Thin ring that pings out of each letter as it lands.")]
+        public Image[] Pings = new Image[6];
         [Tooltip("The neon word in the result card, in place of the star row.")]
         public RectTransform Word;
         public Image[] WordLetters = new Image[6];
@@ -76,6 +80,7 @@ namespace CircuitCube.UI
         System.Collections.Generic.IEnumerable<Graphic> Each()
         {
             foreach (var x in FlyLetters) yield return x;
+            foreach (var x in Pings) yield return x;
             foreach (var x in WordLetters) yield return x;
             yield return Core; yield return Ring;
             foreach (var x in Sparks) yield return x;
@@ -92,6 +97,26 @@ namespace CircuitCube.UI
         Vector2 Local(Vector3 world) => Layer.InverseTransformPoint(world);
 
         static float Smooth(float p) => p * p * (3f - 2f * p);
+
+        /// <summary>CSS cubic-bezier(x1, y1, x2, y2) easing, so the motion matches the approved web mockup.</summary>
+        static float Bezier(float x1, float y1, float x2, float y2, float x)
+        {
+            if (x <= 0f) return 0f;
+            if (x >= 1f) return 1f;
+            float t = x;
+            for (int i = 0; i < 8; i++)
+            {
+                float u = 1f - t;
+                float bx = 3f * u * u * t * x1 + 3f * u * t * t * x2 + t * t * t - x;
+                float dx = 3f * u * u * x1 + 6f * u * t * (x2 - x1) + 3f * t * t * (1f - x2);
+                if (Mathf.Abs(bx) < 1e-5f || Mathf.Abs(dx) < 1e-6f) break;
+                t = Mathf.Clamp01(t - bx / dx);
+            }
+            float v = 1f - t;
+            return 3f * v * v * t * y1 + 3f * v * t * t * y2 + t * t * t;
+        }
+
+        static float EaseOut(float p) => Bezier(0f, 0f, 0.58f, 1f, p);
         static float OutBack(float t) { const float c = 1.7f; float u = t - 1f; return 1f + (c + 1f) * u * u * u + c * u * u; }
 
         static IEnumerator Wait(float s) { float end = T + s; while (T < end) yield return null; }
@@ -124,7 +149,49 @@ namespace CircuitCube.UI
         {
             var l = WordLetters[i];
             l.gameObject.SetActive(true);
-            StartCoroutine(Pop(l.transform, 1.45f, 0.28f));
+            l.transform.localScale = Vector3.one;
+            StartCoroutine(Flicker(l));
+            if (i < Pings.Length && Pings[i] != null) StartCoroutine(Ping(Pings[i], l.rectTransform));
+            landed?.Invoke(i);
+        }
+
+        /// <summary>Neon tube catching: 0.3, 1, 0.5, then full, in 0.1 s steps.</summary>
+        IEnumerator Flicker(Image l)
+        {
+            float t0 = T;
+            while (true)
+            {
+                float t = T - t0;
+                SetAlpha(l, t < 0.1f ? 0.3f : t < 0.2f ? 1f : t < 0.3f ? 0.5f : 1f);
+                if (t >= 0.3f) yield break;
+                yield return null;
+            }
+        }
+
+        IEnumerator Ping(Image ring, RectTransform at)
+        {
+            var rt = ring.rectTransform;
+            ring.gameObject.SetActive(true);
+            rt.anchoredPosition = Local(at.position);
+            float t0 = T;
+            while (true)
+            {
+                float p = Mathf.Clamp01((T - t0) / 0.5f), e = EaseOut(p);
+                rt.localScale = Vector3.one * Mathf.Lerp(0.4f, 1.8f, e);
+                SetAlpha(ring, Mathf.Lerp(0.9f, 0f, e));
+                if (p >= 1f) break;
+                yield return null;
+            }
+            ring.gameObject.SetActive(false);
+        }
+
+        /// <summary>A comet lands as a letter: in from 2.2 times its size (cubic-bezier(.2,1.6,.4,1), 0.35 s).</summary>
+        void LandPop(int i, Action<int> landed)
+        {
+            var l = WordLetters[i];
+            l.gameObject.SetActive(true);
+            SetAlpha(l, 1f);
+            StartCoroutine(Pop(l.transform, 2.2f, 0.35f));
             landed?.Invoke(i);
         }
 
@@ -134,7 +201,7 @@ namespace CircuitCube.UI
             while (true)
             {
                 float p = Mathf.Clamp01((T - t0) / dur);
-                t.localScale = Vector3.one * Mathf.LerpUnclamped(from, 1f, OutBack(p));
+                t.localScale = Vector3.one * Mathf.LerpUnclamped(from, 1f, Bezier(0.2f, 1.6f, 0.4f, 1f, p));
                 if (p >= 1f) yield break;
                 yield return null;
             }
@@ -152,17 +219,16 @@ namespace CircuitCube.UI
             var mask = (RectTransform)Shine.parent;
             float w = mask.rect.width, sw = Shine.rect.width;
             Shine.gameObject.SetActive(true);
+            float from = -w * 0.5f - sw * 0.5f, to = w * 0.7f + sw * 0.5f;   // mockup: left -50px to 120%
             while (true)
             {
                 float t0 = T;
-                while (T - t0 < 1.2f)
+                while (T - t0 < 2.6f)
                 {
-                    float p = Smooth(Mathf.Clamp01((T - t0) / 1.2f));
-                    Shine.anchoredPosition = new Vector2(Mathf.Lerp(-w * 0.5f - sw, w * 0.5f + sw, p), 0f);
+                    float p = Mathf.Clamp01((T - t0) / 1.17f);
+                    Shine.anchoredPosition = new Vector2(Mathf.Lerp(from, to, Bezier(0.42f, 0f, 0.58f, 1f, p)), 0f);
                     yield return null;
                 }
-                Shine.anchoredPosition = new Vector2(-w * 0.5f - sw * 2f, 0f);
-                yield return Wait(1.4f);
             }
         }
 
@@ -186,40 +252,52 @@ namespace CircuitCube.UI
             Core.gameObject.SetActive(true); Ring.gameObject.SetActive(true);
             var cr = Core.rectTransform; var rr = Ring.rectTransform;
             cr.anchoredPosition = at; rr.anchoredPosition = at;
+            SetAlpha(Ring, 0f);
             var dirs = new Vector2[Sparks.Length];
             for (int i = 0; i < Sparks.Length; i++)
             {
                 float a = i * Mathf.PI * 2f / Sparks.Length;
-                dirs[i] = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 220f;
+                dirs[i] = new Vector2(Mathf.Cos(a), -Mathf.Sin(a)) * MockupPx(120f);
                 Sparks[i].gameObject.SetActive(true);
+                Sparks[i].rectTransform.anchoredPosition = at;
+                SetAlpha(Sparks[i], 0f);
             }
             float t0 = T;
             while (true)
             {
-                float p = Mathf.Clamp01((T - t0) / 0.45f);
-                float core = p < 0.35f ? Mathf.Lerp(0.2f, 2.4f, p / 0.35f) : Mathf.Lerp(2.4f, 3.4f, (p - 0.35f) / 0.65f);
-                cr.localScale = Vector3.one * core;
-                SetAlpha(Core, p < 0.35f ? 1f : 1f - (p - 0.35f) / 0.65f);
-                rr.localScale = Vector3.one * Mathf.Lerp(0.3f, 4.5f, p);
-                SetAlpha(Ring, 1f - p);
+                float t = T - t0;
+                // core: cubic-bezier(.2,.8,.3,1) per keyframe segment, 0 -> 35 % grows to 2.4, then to 3.4 while fading
+                float pc = Mathf.Clamp01(t / 0.42f);
+                if (pc < 0.35f) { float e = Bezier(0.2f, 0.8f, 0.3f, 1f, pc / 0.35f); cr.localScale = Vector3.one * Mathf.Lerp(0.2f, 2.4f, e); SetAlpha(Core, 1f); }
+                else { float e = Bezier(0.2f, 0.8f, 0.3f, 1f, (pc - 0.35f) / 0.65f); cr.localScale = Vector3.one * Mathf.Lerp(2.4f, 3.4f, e); SetAlpha(Core, 1f - e); }
+                // ring and dots start 0.02 s later, ease-out over 0.45 s
+                float pr = Mathf.Clamp01((t - 0.02f) / 0.45f), er = EaseOut(pr);
+                bool started = t >= 0.02f;
+                rr.localScale = Vector3.one * Mathf.Lerp(0.3f, 6f, er);
+                SetAlpha(Ring, started ? 1f - er : 0f);
                 for (int i = 0; i < Sparks.Length; i++)
                 {
                     var s = Sparks[i].rectTransform;
-                    s.anchoredPosition = at + dirs[i] * Smooth(p);
-                    s.localScale = Vector3.one * Mathf.Lerp(1f, 0.4f, p);
-                    SetAlpha(Sparks[i], 1f - p);
+                    s.anchoredPosition = at + dirs[i] * er;
+                    s.localScale = Vector3.one * Mathf.Lerp(1f, 0.4f, er);
+                    SetAlpha(Sparks[i], started ? 1f - er : 0f);
                 }
-                if (p >= 1f) break;
+                if (pc >= 1f && pr >= 1f) break;
                 yield return null;
             }
             Core.gameObject.SetActive(false); Ring.gameObject.SetActive(false);
             foreach (var s in Sparks) s.gameObject.SetActive(false);
         }
 
+        /// <summary>A length in the 390 px wide mockup phone, in this layer's units (card 314 px = 880 units).</summary>
+        static float MockupPx(float px) => px * (880f / 314f);
+
         IEnumerator Letters(Vector2 core, float gap, float flight, Action<int> landed, Action done)
         {
             int n = FlyLetters.Length;
             int left = n;
+            yield return Wait(0.05f);
+            StartCoroutine(ShineAt(1.85f));
             for (int i = 0; i < n; i++)
             {
                 int k = i;
@@ -227,37 +305,53 @@ namespace CircuitCube.UI
                 if (i < n - 1) yield return Wait(gap);
             }
             while (left > 0) yield return null;
-            yield return Wait(0.15f);
-            StartShine();
             Busy = false;
             done?.Invoke();
         }
 
+        IEnumerator ShineAt(float delay) { yield return Wait(delay); StartShine(); }
+
+        // each letter rides out with a piece of the box (mockup angles, CSS degrees, y down)
+        static readonly float[] LetterAngles = { -150f, -110f, -70f, -30f, 200f, -10f };
+
+        /// <summary>
+        /// The mockup's flight, key for key: from a point 40 px off the blast, 28 % of the time out 115 px
+        /// (cubic-bezier(.1,.8,.3,1), scale .5 to 1.3, turn -90 to 8 degrees, white-hot), then into the slot
+        /// (cubic-bezier(.5,0,.3,1.35), a small overshoot, scale 1.3 to 1, turn 8 to 0, cooling down).
+        /// </summary>
         IEnumerator FlyLetter(int i, Vector2 core, float flight, Action arrive)
         {
             var img = FlyLetters[i];
+            var hot = i < HotLetters.Length ? HotLetters[i] : null;
             var rt = img.rectTransform;
             img.gameObject.SetActive(true);
+            if (hot != null) hot.gameObject.SetActive(true);
             SetAlpha(img, 1f);
-            // fan out around the box like the stars, then down into the slot from above
-            float x = -1f + 2f * i / Mathf.Max(1, FlyLetters.Length - 1);
-            Vector2 burst = new Vector2(x * 0.9f, 0.55f + 0.25f * (1f - Mathf.Abs(x))).normalized * 340f;
-            float spin = (x >= 0f ? -1f : 1f) * 300f;
+            float a = LetterAngles[i % LetterAngles.Length] * Mathf.Deg2Rad;
+            var dir = new Vector2(Mathf.Cos(a), -Mathf.Sin(a));
+            Vector2 start = core + dir * MockupPx(40f), burst = start + dir * MockupPx(115f);
             var slot = WordLetters[i].rectTransform;
-            float slotW = slot.rect.width;
             float t0 = T;
             while (true)
             {
                 float p = Mathf.Clamp01((T - t0) / flight);
-                Vector2 to = Local(slot.position);
-                Vector2 c1 = core + burst * 1.6f, c2 = to + Vector2.up * 140f;
-                float s = Smooth(p) * 0.6f + p * 0.4f, q = 1f - s;
-                rt.anchoredPosition = q * q * q * core + 3f * q * q * s * c1 + 3f * q * s * s * c2 + s * s * s * to;
-                float scaleTo = slotW / Mathf.Max(1f, rt.rect.width);
-                float grow = OutBack(Mathf.Clamp01(p / 0.3f));
-                float settle = Smooth(Mathf.Clamp01((p - 0.45f) / 0.55f));
-                rt.localScale = Vector3.one * Mathf.LerpUnclamped(0f, Mathf.Lerp(1.3f * scaleTo, scaleTo, settle), grow);
-                rt.localRotation = Quaternion.Euler(0f, 0f, spin * (1f - Smooth(p)));
+                Vector2 to = Local(slot.position);   // the slot rides up with the card
+                float scale, rot, heat;
+                if (p < 0.28f)
+                {
+                    float e = Bezier(0.1f, 0.8f, 0.3f, 1f, p / 0.28f);
+                    rt.anchoredPosition = Vector2.LerpUnclamped(start, burst, e);
+                    scale = Mathf.LerpUnclamped(0.5f, 1.3f, e); rot = Mathf.LerpUnclamped(-90f, 8f, e); heat = Mathf.LerpUnclamped(1f, 0.5f, e);
+                }
+                else
+                {
+                    float e = Bezier(0.5f, 0f, 0.3f, 1.35f, (p - 0.28f) / 0.72f);
+                    rt.anchoredPosition = Vector2.LerpUnclamped(burst, to, e);
+                    scale = Mathf.LerpUnclamped(1.3f, 1f, e); rot = Mathf.LerpUnclamped(8f, 0f, e); heat = Mathf.Clamp01(Mathf.LerpUnclamped(0.5f, 0f, e));
+                }
+                rt.localScale = Vector3.one * scale;
+                rt.localRotation = Quaternion.Euler(0f, 0f, -rot);   // CSS turns clockwise
+                if (hot != null) SetAlpha(hot, heat);
                 if (p >= 1f) break;
                 yield return null;
             }
@@ -300,7 +394,7 @@ namespace CircuitCube.UI
                 var from = to + new Vector2(420f, rect.yMax - to.y + 120f);
                 StartCoroutine(Streak(Comets[k], from, to, 0.5f + k * 0.3f, 0.45f, 1f, () =>
                 {
-                    LandLetter(k, landed);
+                    LandPop(k, landed);
                     StartCoroutine(Shake(4f, 0.22f));
                     left--;
                 }));

@@ -984,7 +984,7 @@ namespace CircuitCube.Game
                     for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);
                 if (fx == WinFx.Comets && UI.Fx != null) StartComets();
                 if (UI.Fx != null)
-                    UI.Fx.ShowPraise(Praise.Pick(PraiseFor(fx, points)), fx == WinFx.Comets ? 2.6f : fx == WinFx.Expert ? 1.9f : fx == WinFx.Constellation ? 1.6f : 1.0f);
+                    UI.Fx.ShowPraise(Praise.Pick(PraiseFor(fx, points)), fx == WinFx.Comets ? 2.6f : fx == WinFx.Expert ? 2.05f : fx == WinFx.Constellation ? 1.6f : 1.0f);
             }, UI.Result);   // its own owner: a second run on the board's transform would cancel the wind-up
         }
 
