@@ -3,28 +3,34 @@ using UnityEngine;
 namespace CircuitCube.Game
 {
     /// <summary>
-    /// Praise and encouragement shown on the result card (in place of a streak count) and during hard levels. Lines
+    /// Praise and encouragement: short lines on the result card (in place of a streak count), and the mascot's lines in the bottom corner during play. Lines
     /// are English keys for <see cref="Loc"/>; <see cref="Pick"/> avoids saying the same line twice in a row.
     /// </summary>
     public static class Praise
     {
-        /// <summary>An Expert win (par, no hint, no undo).</summary>
-        public static readonly string[] Expert = { "Brilliant!", "Flawless!", "Pure genius!", "Not a single wasted move!", "Expert work!" };
+        /// <summary>Result card: an Expert win (par, no hint, no undo).</summary>
+        public static readonly string[] Expert = { "Brilliant!", "Flawless!", "Genius!" };
 
-        /// <summary>Two or more Expert wins in a row (the comet effect).</summary>
-        public static readonly string[] ExpertStreak = { "Unstoppable!", "On fire!", "Comet streak!", "Legendary!", "Master of circuits!" };
+        /// <summary>Result card: Expert wins in a row (the comet effect).</summary>
+        public static readonly string[] ExpertStreak = { "Unstoppable!", "Legendary!", "On fire!" };
 
-        /// <summary>Three-star wins in a row, Expert counted as three stars (the constellation effect).</summary>
-        public static readonly string[] StarStreak = { "Shining bright!", "Great run!", "Star after star!", "You're a natural!", "Keep it glowing!" };
+        /// <summary>Result card: three-star wins in a row, Expert counted as three stars (the constellation effect).</summary>
+        public static readonly string[] StarStreak = { "Shining!", "Amazing!", "Great run!" };
 
-        /// <summary>Three stars won with a hint or an undo.</summary>
-        public static readonly string[] ThreeStars = { "Great job!", "Well played!", "Nicely done!", "All lit up!", "Smooth!" };
+        /// <summary>Result card: three stars won with a hint or an undo.</summary>
+        public static readonly string[] ThreeStars = { "Great job!", "Well played!", "Smooth!" };
 
-        /// <summary>Fewer than three stars: kind words and a nudge towards par.</summary>
-        public static readonly string[] Encourage = { "Solved! Try it without help for Expert.", "Every lamp is lit. Well done!", "Good job! Par is within reach.", "Fewer moves next time?", "Step by step, you're getting sharper." };
+        /// <summary>Result card: fewer than three stars.</summary>
+        public static readonly string[] Encourage = { "Well done!", "Good job!", "Keep going!" };
 
-        /// <summary>During a hard level (many moves, a restart, a long time): a calm tip.</summary>
-        public static readonly string[] Cheer = { "Take your time, the circuit will click.", "Tricky one! You've got this.", "Try one colour at a time.", "Spin the shape for a fresh look.", "Stuck? A hint lights the way." };
+        /// <summary>Mascot, during a hard level (many moves, a restart, a long time).</summary>
+        public static readonly string[] Cheer = { "Take your time, the circuit will click.", "Try one colour at a time.", "Spin the shape for a fresh look.", "Stuck? A hint lights the way." };
+
+        /// <summary>Mascot, now and then when a lamp lights.</summary>
+        public static readonly string[] Lit = { "That's it!", "Nice!", "Lit!" };
+
+        /// <summary>Mascot, when two lamps or fewer are left.</summary>
+        public static readonly string[] NearlyDone = { "Almost there!", "Just a few more!" };
 
         static string _last;
 
