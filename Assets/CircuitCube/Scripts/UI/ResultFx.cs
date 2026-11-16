@@ -530,11 +530,10 @@ namespace CircuitCube.UI
             int perStar = 5, stars = Mathf.Min(3, Mathf.Min(Dots.Length / perStar, Lines.Length / perStar));
             int glows = Mathf.Min(lampCount, Mathf.Min(LampGlows.Length, stars * perStar));
             for (int i = 0; i < glows; i++) StartCoroutine(LampGlow(LampGlows[i], Local(lamps[i]), CubeColors.Energy(colors[i])));
-            // star layout from the mockup (85 px apart, the middle one 25 px higher), lifted clear of the card and its
-            // mascot so nothing overlaps when the card comes up: the side stars' lowest points sit above the mascot
+            // star layout from the mockup (85 px apart, the middle one higher), clear of the card when it comes up:
+            // the side stars' lowest points just above the card's top edge, the middle star's above the mascot on it
             Vector2 top = Local(card.TransformPoint(new Vector3(card.rect.center.x, card.rect.yMax, 0f)));
-            float lift = MockupPx(23f) + 150f;
-            var centers = new[] { top + new Vector2(-MockupPx(85f), lift), top + new Vector2(0f, lift + MockupPx(25f)), top + new Vector2(MockupPx(85f), lift) };
+            var centers = new[] { top + new Vector2(-MockupPx(85f), 130f), top + new Vector2(0f, 210f), top + new Vector2(MockupPx(85f), 130f) };
             float r = MockupPx(34f);
             int[] order = { 0, 2, 4, 1, 3, 0 };
             for (int s = 0; s < stars; s++)
