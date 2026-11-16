@@ -305,7 +305,7 @@ namespace CircuitCube.EditorTools
                 for (int i = 0; i < 12; i++)
                 {
                     var c = Pic(segs, "Cell" + i, Half, Half, Half, Vector2.zero, new Vector2(20, barH), S("fx_seg"), UiRole.None, true);
-                    c.pixelsPerUnitMultiplier = 1.35f;
+                    c.pixelsPerUnitMultiplier = 1.35f;   // 2 px corners
                     var gl = Pic(c.transform, "Glow", Vector2.zero, Vector2.one, Half, Vector2.zero, new Vector2(12 * k, 12 * k), S("fx_seg_glow"), UiRole.None, true);
                     gl.pixelsPerUnitMultiplier = 1.35f;
                     g.Segs[i] = c; g.SegGlows[i] = gl;
@@ -314,9 +314,13 @@ namespace CircuitCube.EditorTools
                 var bar = Fresh(rt, "Bar", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -pad), new Vector2(-2 * pad, barH));
                 g.Bar = bar.gameObject;
                 g.BarTrack = Img(bar, S("ui_pill"), UiRole.None, true);
+                // a round-ended pill the bar's height (mockup: 4 px corners on a 7 px bar)
+                float pillMul = S("ui_pill").border.x / (barH * 0.5f);
+                g.BarTrack.pixelsPerUnitMultiplier = pillMul;
                 var fill = Fresh(bar, "Fill", Vector2.zero, new Vector2(0.5f, 1), new Vector2(0, 0.5f), Vector2.zero, Vector2.zero);
                 g.BarFill = fill;
                 g.BarFillImage = Img(fill, S("ui_pill"), UiRole.None, true);
+                g.BarFillImage.pixelsPerUnitMultiplier = pillMul;
                 g.BarGlow = Pic(fill, "Glow", Vector2.zero, Vector2.one, Half, Vector2.zero, new Vector2(16 * k, 16 * k), S("fx_bar_glow"), UiRole.None, true);
                 g.BarGlow.pixelsPerUnitMultiplier = 1.35f;
                 bar.gameObject.SetActive(false);

@@ -21,7 +21,7 @@ namespace CircuitCube.EditorTools
         /// <summary>Sprites rendered from the mockups, with their 9-slice border in pixels (corner plus glow).</summary>
         static readonly System.Collections.Generic.Dictionary<string, float> ExactBorders = new System.Collections.Generic.Dictionary<string, float>
         {
-            { "fx_seg", 15 }, { "fx_seg_glow", 34 }, { "fx_seg_glow_light", 34 }, { "fx_bar_glow", 45 }, { "fx_bar_glow_light", 45 },
+            { "fx_seg", 8 }, { "fx_seg_glow", 34 }, { "fx_seg_glow_light", 34 }, { "fx_bar_glow", 45 }, { "fx_bar_glow_light", 45 },
             { "fx_tag", 37 }, { "fx_tag_light", 37 },
         };
 

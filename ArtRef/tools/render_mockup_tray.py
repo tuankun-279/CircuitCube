@@ -13,7 +13,7 @@ def linear_fix(path,BG):
     Image.fromarray((np.dstack([to_srgb(np.clip(C,0,1)),a])*255+0.5).astype(np.uint8),'RGBA').save(path)
 # name: (w,h,html,bg for the linear fix or None for plain transparent)
 items={
- 'fx_seg':(24,11,'<i style="position:absolute;left:2px;top:2px;width:20px;height:7px;border-radius:2px;background:#fff"></i>',None),
+ 'fx_seg':(20,7,'<i style="position:absolute;left:0;top:0;width:20px;height:7px;border-radius:2px;background:#fff"></i>',None),
  'fx_seg_glow':(32,25,'<i style="position:absolute;left:6px;top:9px;width:20px;height:7px;border-radius:2px;box-shadow:0 0 6px #ffffffaa"></i>','dark'),
  'fx_bar_glow':(40,27,'<i style="position:absolute;left:8px;top:10px;width:24px;height:7px;border-radius:4px;box-shadow:0 0 8px #ffffff"></i>','dark'),
  'fx_tag':(40,20,'<i style="position:absolute;left:2px;top:2px;width:36px;height:16px;box-sizing:border-box;border-radius:8px;background:#1b1430;border:1px solid #2c3550"></i>',None),
