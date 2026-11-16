@@ -127,8 +127,8 @@ namespace CircuitCube.Game
             var st = UI.Settings;
             st.Close.onClick.AddListener(CloseSettings);
             st.Resume.onClick.AddListener(CloseSettings);
-            st.Restart.onClick.AddListener(() => { CloseSettings(); StartLevel(_group, _level.Number); });
-            st.Home.onClick.AddListener(() => { CloseSettings(); SaveInProgress(); ShowHome(); });
+            st.Restart.onClick.AddListener(() => { CloseSettings(); AppReview.Quit(); StartLevel(_group, _level.Number); });
+            st.Home.onClick.AddListener(() => { CloseSettings(); AppReview.Quit(); SaveInProgress(); ShowHome(); });
             st.ThemePicked += SetTheme;
             if (st.Privacy != null) st.Privacy.onClick.AddListener(() => RewardedAds.ShowPrivacyOptions());
             WireTutorial();
@@ -137,11 +137,15 @@ namespace CircuitCube.Game
         void Start()
         {
             GameAnalytics.Init();
+            CrashReports.Init();
             RewardedAds.Init();
+            Loc.Changed += OnLanguageChanged;
+            CloudSave.Init();
+            CubeSave.Merged += () => { if (InMenus) DebugRefresh(); };
             HideAll();
             UI.Splash.Show();
             UI.Splash.SetProgress(0f);
-            UI.Splash.Status.text = "Loading levels...  ·  v" + Application.version;
+            UI.Splash.Status.text = Loc.T("Loading levels...") + "  ·  v" + Application.version;
             GameData.Reload();
             // the bar gives the logo a moment on screen; Home waits a little longer for a new publish to come in
             _splashUntil = Time.realtimeSinceStartup + SplashWaitSeconds;
@@ -156,6 +160,7 @@ namespace CircuitCube.Game
         {
             if (!paused) return;
             SaveInProgress();
+            CloudSave.Flush();
             AppUpdates.OnPause();
         }
 
@@ -166,8 +171,8 @@ namespace CircuitCube.Game
         {
             if (_restartOffered || !AppUpdates.ReadyToInstall || CardOpen || _state == State.Playing || _state == State.Won) return;
             _restartOffered = true;
-            ShowTip("Update ready", "A new version of Circuit Cube has been downloaded. Restart now to finish updating; your progress is kept.",
-                "Restart", AppUpdates.Complete);
+            ShowTip(Loc.T("Update ready"), Loc.T("A new version of Circuit Cube has been downloaded. Restart now to finish updating; your progress is kept."),
+                Loc.T("Restart now"), AppUpdates.Complete);
         }
 
         // the player may switch the phone between light and dark while the game is in the background
@@ -281,11 +286,11 @@ namespace CircuitCube.Game
             var info = GameData.Group(g);
             int total = Mathf.Max(1, info.levelCount);
             int next = CubeSave.Unlocked(g);
-            h.PlayLabel.text = "Play";
-            h.GroupLabel.text = info.name;
+            h.PlayLabel.text = Loc.T("Play");
+            h.GroupLabel.text = Loc.T(info.name);
             h.StarsLabel.text = LevelScore.StarText(CubeSave.TotalStarHalves);
-            h.GroupName.text = info.name;
-            h.GroupProgress.text = info.endless ? "Level " + next : "Level " + Mathf.Min(next, total) + " / " + total;
+            h.GroupName.text = Loc.T(info.name);
+            h.GroupProgress.text = info.endless ? Loc.F("Level {0}", next) : Loc.F("Level {0} / {1}", Mathf.Min(next, total), total);
             h.GroupFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(CubeSave.Beaten(g) / (float)total), h.GroupFill.anchorMax.y);
             var icon = GroupIcon(g);
             if (icon != null) h.GroupIcon.sprite = icon;
@@ -310,13 +315,13 @@ namespace CircuitCube.Game
                 bool open = CubeSave.GroupOpen(g);
                 var rule = GameData.Unlock(g);
                 int pre = GameData.IndexOf(rule.group);
-                string hint = rule.IsNone || pre < 0 ? "" : "Beat level " + rule.cleared + " of " + GameData.Group(pre).name;
+                string hint = rule.IsNone || pre < 0 ? "" : Loc.F("Beat level {0} of {1}", rule.cleared, Loc.T(GameData.Group(pre).name));
                 int total = Mathf.Max(1, info.levelCount);
                 var card = Slot(s.List, s.CardPrefab, ref next);
                 string iconId = string.IsNullOrEmpty(info.icon) ? info.id : info.icon;
-                if (card.IconFor(iconId) != null) card.Set(iconId, info.name, info.blurb, open, info.endless ? CubeSave.Beaten(g) : Mathf.Min(CubeSave.Beaten(g), total),
+                if (card.IconFor(iconId) != null) card.Set(iconId, Loc.T(info.name), Loc.T(info.blurb), open, info.endless ? CubeSave.Beaten(g) : Mathf.Min(CubeSave.Beaten(g), total),
                     total, info.endless, hint, () => ShowLevels(group));
-                else card.Set(IconIndex(g), info.name, info.blurb, open, info.endless ? CubeSave.Beaten(g) : Mathf.Min(CubeSave.Beaten(g), total),
+                else card.Set(IconIndex(g), Loc.T(info.name), Loc.T(info.blurb), open, info.endless ? CubeSave.Beaten(g) : Mathf.Min(CubeSave.Beaten(g), total),
                     total, info.endless, hint, () => ShowLevels(group));
                 card.SetNew(CubeSave.HasNewLevels(g));
             }
@@ -370,14 +375,14 @@ namespace CircuitCube.Game
             var lv = UI.Levels;
             lv.Show();
             var info = GameData.Group(group);
-            lv.Title.text = info.name;
+            lv.Title.text = Loc.T(info.name);
             int unlocked = CubeSave.Unlocked(group);
             int total = Mathf.Max(1, info.levelCount);
-            lv.Subtitle.text = info.blurb;   // hidden in the V2 layout; kept for older prefabs
+            lv.Subtitle.text = Loc.T(info.blurb);   // hidden in the V2 layout; kept for older prefabs
             lv.StarsLabel.text = LevelScore.StarText(CubeSave.TotalStarHalves);
             int beaten = CubeSave.Beaten(group), groupHalves = 0;
             for (int l = 1; l <= beaten; l++) groupHalves += LevelScore.HalfStars(CubeSave.Points(group, l));
-            lv.ProgressValue.text = (info.endless ? beaten.ToString() : Mathf.Min(beaten, total) + " / " + total) + "  ·  " + LevelScore.StarText(groupHalves) + (groupHalves == 2 ? " star" : " stars");
+            lv.ProgressValue.text = (info.endless ? beaten.ToString() : Mathf.Min(beaten, total) + " / " + total) + "  ·  " + LevelScore.StarText(groupHalves) + " " + Loc.T(groupHalves == 2 ? "star" : "stars");
             lv.ProgressFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(beaten / (float)total), lv.ProgressFill.anchorMax.y);
             int next = 0;
             int count = info.endless ? Mathf.Max(total, ((unlocked + 11) / 4 + 1) * 4) : total;
@@ -416,9 +421,9 @@ namespace CircuitCube.Game
                 UI.Result.gameObject.SetActive(false);
                 var u = UI.Unlock;
                 var ng = GameData.Group(_unlockedGroup);
-                u.Caption.text = "NEW SHAPE UNLOCKED";
-                u.Title.text = ng.name;
-                u.Body.text = ng.blurb;
+                u.Caption.text = Loc.T("NEW SHAPE UNLOCKED");
+                u.Title.text = Loc.T(ng.name);
+                u.Body.text = Loc.T(ng.blurb);
                 var icon = GroupIcon(_unlockedGroup);
                 if (icon != null) u.Art.sprite = icon;
                 UI.Dim.SetActive(true);
@@ -458,8 +463,8 @@ namespace CircuitCube.Game
                 // Past the levels downloaded to this device and no connection to fetch more.
                 ShowLevels(group);
                 if (RemoteContent.NeedsUpdate) ShowUpdateTip();
-                else ShowTip("More levels need the internet",
-                    "Levels arrive ten at a time. Connect to the internet and open the game again to unlock the next ones.", "OK", null);
+                else ShowTip(Loc.T("More levels need the internet"),
+                    Loc.T("Levels arrive ten at a time. Connect to the internet and open the game again to unlock the next ones."), Loc.T("OK"), null);
                 return;
             }
             _cheat = cheat;
@@ -476,6 +481,7 @@ namespace CircuitCube.Game
             _levelCheck = data != null ? data.check ?? "" : "";
             if (!cheat) RestoreInProgress();
             _levelStartTime = Time.realtimeSinceStartup;
+            CrashReports.SetLevel(GameData.Group(group).id, number);
             _zoomLogged = false;
             GameAnalytics.Log("level_start", ("shape", GameData.Group(group).id), ("level", number), ("resumed", _moves > 0));
             _busy = false;
@@ -488,8 +494,8 @@ namespace CircuitCube.Game
 
             var hud = UI.Hud;
             hud.Show();
-            hud.Title.text = GameData.Group(group).name.ToUpperInvariant() + "  " + number;
-            hud.Tip.text = (group == 0 && number <= 3) || !CubeSave.SeenHowTo ? "Drag to turn the shape  ·  Tap a tile to rotate it" : "";
+            hud.Title.text = Loc.Upper(Loc.T(GameData.Group(group).name)) + "  " + number;
+            hud.Tip.text = (group == 0 && number <= 3) || !CubeSave.SeenHowTo ? Loc.T("Drag to turn the shape  ·  Tap a tile to rotate it") : "";
             // the first levels with mixed colours spell the mixes out
             string mixes = CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null;
             if (mixes != null) hud.Tip.text = mixes;
@@ -513,20 +519,36 @@ namespace CircuitCube.Game
             if (!CubeSave.SeenShape(group))
             {
                 var info = GameData.Group(group);
-                ShowTip("New shape: " + info.name, info.blurb + "\n\nThe rules are the same: turn tiles until every lamp gets exactly its colour.", "Let's go",
+                ShowTip(Loc.F("New shape: {0}", Loc.T(info.name)), Loc.T(info.blurb) + "\n\n" + Loc.T("The rules are the same: turn tiles until every lamp gets exactly its colour."), Loc.T("Let's go"),
                     () => CubeSave.MarkSeenShape(group));
             }
             else if (!CubeSave.SeenMix && MixFormula(_level.Colors) != null)   // only without the tutorial layer: the Mix lesson shows this
             {
-                ShowTip("Colours mix!",
-                    "When two power sources share one wire, their colours combine.\n\nRed + Blue = Purple\nRed + Yellow = Orange\nBlue + Yellow = Green\n\nA lamp lights only when it gets exactly its colour.",
-                    "Got it", () => CubeSave.SeenMix = true);
+                ShowTip(Loc.T("Colours mix!"),
+                    Loc.T("When two power sources share one wire, their colours combine.\n\nRed + Blue = Purple\nRed + Yellow = Orange\nBlue + Yellow = Green\n\nA lamp lights only when it gets exactly its colour."),
+                    Loc.T("Got it"), () => CubeSave.SeenMix = true);
             }
             else if (_contentNotice) ShowContentNotice();   // a publish came in during the last level
         }
 
         /// <summary>Won levels with mixed colours after which the HUD stops spelling the mixes out.</summary>
         const int MixFormulaWins = 10;
+
+        static int TotalWins()
+        {
+            int n = 0;
+            for (int g = 0; g < GameData.GroupCount; g++) n += CubeSave.Beaten(g);
+            return n;
+        }
+
+        /// <summary>Settings switched the language: menus redraw, the HUD rewrites its lines.</summary>
+        void OnLanguageChanged()
+        {
+            _shownMoves = _shownPar = _shownLit = _shownTotal = _shownHints = _shownUndos = -1;
+            if (_level != null && (_state == State.Playing || _state == State.Won))
+                UI.Hud.Title.text = Loc.Upper(Loc.T(GameData.Group(_group).name)) + "  " + _level.Number;
+            if (InMenus) DebugRefresh();
+        }
 
         // ---------------- Live content ----------------
 
@@ -577,11 +599,11 @@ namespace CircuitCube.Game
         {
             _contentNotice = false;
             GameAnalytics.Log("content_notice", ("version", GameData.Manifest != null ? GameData.Manifest.contentVersion : 0));
-            ShowTip("New levels are here", "Fresh levels just arrived while you were playing. Your progress and stars are kept.", "Nice", null);
+            ShowTip(Loc.T("New levels are here"), Loc.T("Fresh levels just arrived while you were playing. Your progress and stars are kept."), Loc.T("Nice"), null);
         }
 
-        void ShowUpdateTip() => ShowTip("Update to play more",
-            "New levels are out, and they need the latest version of Circuit Cube. Update the game to play them.", "Update",
+        void ShowUpdateTip() => ShowTip(Loc.T("Update to play more"),
+            Loc.T("New levels are out, and they need the latest version of Circuit Cube. Update the game to play them."), Loc.T("Update"),
             () => AppUpdates.Check(int.MaxValue));   // any newer version is a must here: the full-screen Play update
 
         void ShowTip(string title, string body, string button, System.Action onClose)
@@ -731,7 +753,7 @@ namespace CircuitCube.Game
             {
                 _shownMoves = _moves;
                 _shownPar = target;
-                hud.Status.text = string.Concat("MOVES ", Num(_moves), "  ·  PAR ", Num(target));
+                hud.Status.text = string.Concat(Loc.T("MOVES"), " ", Num(_moves), "  ·  ", Loc.T("PAR"), " ", Num(target));
             }
             if (_hintsLeft != _shownHints)
             {
@@ -749,7 +771,7 @@ namespace CircuitCube.Game
             if (lit == _shownLit && total == _shownTotal) return;
             _shownLit = lit;
             _shownTotal = total;
-            hud.LampsLabel.text = string.Concat(Num(lit), " / ", Num(total), " lamps lit");
+            hud.LampsLabel.text = string.Concat(Num(lit), " / ", Num(total), " ", Loc.T("lamps lit"));
             int n = 0;
             for (int i = 0; i < hud.LampDots.childCount; i++)
             {
@@ -765,8 +787,9 @@ namespace CircuitCube.Game
         {
             if (_state != State.Playing || _busy || CardOpen) return;
             var tile = _level.Tiles[index];
-            if (tile.Locked) { GameAudio.Play(Sfx.Blocked); return; }   // a hint fixed this tile
+            if (tile.Locked) { GameAudio.Play(Sfx.Blocked); Haptics.Play(Haptics.Kind.Blocked); return; }   // a hint fixed this tile
             GameAudio.Play(Sfx.Rotate);
+            Haptics.Play(Haptics.Kind.Turn);
             tile.Rot++;
             _moves++;
             _undo.Push(index);
@@ -774,7 +797,7 @@ namespace CircuitCube.Game
             if (_moves == 4 && !CubeSave.SeenHowTo) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = (CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null) ?? ""; }
             _board.AnimateRotation(index, 1);
             bool solved = _board.Refresh();
-            if (!solved && _board.NewlyLitColor != 0) GameAudio.Lamp(_board.NewlyLitColor);
+            if (!solved && _board.NewlyLitColor != 0) { GameAudio.Lamp(_board.NewlyLitColor); Haptics.Play(Haptics.Kind.Lamp); }
             UpdateHud();
             if (solved) Win();
         }
@@ -829,10 +852,10 @@ namespace CircuitCube.Game
                 () => { _busy = false; });
         }
 
-        void ShowHowTo() => ShowTip("How to play",
-            "Drag to turn the shape. Tap a tile to rotate it.\n\nConnect every lamp to a power source of its colour. "
+        void ShowHowTo() => ShowTip(Loc.T("How to play"),
+            Loc.T("Drag to turn the shape. Tap a tile to rotate it.\n\nConnect every lamp to a power source of its colour. "
             + "When two sources share a wire their colours mix: Red + Blue = Purple, Red + Yellow = Orange, Blue + Yellow = Green.\n\n"
-            + "Solve it in the fewest moves (par) for three stars.", "Got it", null);
+            + "Solve it in the fewest moves (par) for three stars."), Loc.T("Got it"), null);
 
         /// <summary>Fix one wrong tile. Each hint costs a rewarded ad; a level allows <see cref="HintsPerLevel"/> of them.</summary>
         void UseHint()
@@ -841,7 +864,7 @@ namespace CircuitCube.Game
             if (LessonFreeHint)
             {
                 DoHint();
-                LessonLearned("A hint turns one tile the right way. Each level has " + HintsPerLevel);
+                LessonLearned(Loc.F("A hint turns one tile the right way. Each level has {0}", HintsPerLevel));
                 return;
             }
             WithAd(AdPlacement.Hint, DoHint);
@@ -879,7 +902,7 @@ namespace CircuitCube.Game
             GameAnalytics.Log("hint_used", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("left", _hintsLeft));
             _board.AnimateRotation(pick, turns, 0.3f);
             bool solved = _board.Refresh();
-            if (!solved && _board.NewlyLitColor != 0) GameAudio.Lamp(_board.NewlyLitColor);
+            if (!solved && _board.NewlyLitColor != 0) { GameAudio.Lamp(_board.NewlyLitColor); Haptics.Play(Haptics.Kind.Lamp); }
             UpdateHud();
             if (solved) Win();
         }
@@ -897,7 +920,7 @@ namespace CircuitCube.Game
             int points = PointsFor();
             var wasOpen = new bool[GameData.GroupCount];
             for (int g = 0; g < wasOpen.Length; g++) wasOpen[g] = CubeSave.GroupOpen(g);
-            if (!_cheat) CubeSave.Complete(_group, _level.Number, points);
+            if (!_cheat) { CubeSave.Complete(_group, _level.Number, points); CloudSave.MarkDirty(); }
             if (!_cheat && MixFormula(_level.Colors) != null) CubeSave.MixWins++;
             int newGroup = -1;
             for (int g = 0; g < wasOpen.Length && newGroup < 0; g++) if (!wasOpen[g] && CubeSave.GroupOpen(g)) newGroup = g;
@@ -918,27 +941,26 @@ namespace CircuitCube.Game
             {
                 board.Shatter();
                 LaunchStars(points);
-#if UNITY_ANDROID || UNITY_IOS
-                if (CubeSave.Settings.vibration) Handheld.Vibrate();
-#endif
+                Haptics.Play(Haptics.Kind.Win);
             }, tr);
             _tw.Run(0.55f + ResultDelay, p => { }, () =>
             {
                 _busy = false;
                 var r = UI.Result;
-                r.Caption.text = GameData.Group(_group).name.ToUpperInvariant() + "  ·  LEVEL " + _level.Number;
-                r.Title.text = "Level complete";
+                r.Caption.text = Loc.Upper(Loc.T(GameData.Group(_group).name)) + "  ·  " + Loc.F("LEVEL {0}", _level.Number);
+                r.Title.text = Loc.T("Level complete");
                 r.Stats[0].text = _moves.ToString();
                 r.Stats[1].text = LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group)).ToString();
                 r.Stats[2].text = _board.LitLamps + "/" + _board.TotalLamps;
                 r.Badge.SetActive(points >= GameData.Rules.parScore);
                 // the stars say how well it went; the points and hint rule stay behind the scenes
-                r.Body.text = unlocksNext ? "New shape unlocked: " + GameData.Group(newGroup).name + "!" : "";
+                r.Body.text = unlocksNext ? Loc.F("New shape unlocked: {0}!", Loc.T(GameData.Group(newGroup).name)) : "";
                 // stars already in the air fill the row as they land; without them the row fills at once
                 if (_starsInFlight == 0) r.Stars.SetPoints(points);
-                r.PrimaryLabel.text = "Next level";
+                r.PrimaryLabel.text = Loc.T("Next level");
                 UI.Dim.SetActive(true);
                 r.Open();
+                if (!_cheat) AppReview.Won(this, TotalWins());
                 if (_starsInFlight == 0)
                     for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);
             }, UI.Result);   // its own owner: a second run on the board's transform would cancel the wind-up
@@ -1045,6 +1067,7 @@ namespace CircuitCube.Game
             float dt = Time.unscaledDeltaTime;
             RewardedAds.Tick();
             AppUpdates.Tick();
+            CloudSave.Tick();
             TickContent();
             _tw.Tick(dt);
             HandlePointer(dt);

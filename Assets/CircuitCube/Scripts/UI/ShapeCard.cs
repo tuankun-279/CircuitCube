@@ -47,7 +47,7 @@ namespace CircuitCube.UI
             if (Icons != null && group >= 0 && group < Icons.Length) Icon.sprite = Icons[group];
             Title.text = name;
             Blurb.text = blurb;
-            Progress.text = endless && beaten >= total ? beaten + " beaten" : beaten + " / " + total;
+            Progress.text = endless && beaten >= total ? Loc.F("{0} beaten", beaten) : beaten + " / " + total;
             ProgressMask.anchorMax = new Vector2(Mathf.Clamp01(beaten / (float)total), ProgressMask.anchorMax.y);
             LockedRoot.SetActive(!open);
             ProgressMask.parent.gameObject.SetActive(open);

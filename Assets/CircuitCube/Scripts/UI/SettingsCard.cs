@@ -19,6 +19,10 @@ namespace CircuitCube.UI
         public TMP_Text Title;
         public Button Close;
         public SwitchToggle Sound, Music, Vibration;
+        [Tooltip("Volume sliders (0..1) for effects and music; when set they replace the Sound and Music switches.")]
+        public Slider SoundVolume, MusicVolume;
+        [Tooltip("Language buttons in order: English, Vietnamese.")]
+        public Button[] LanguageButtons = new Button[0];
         [Tooltip("Theme buttons in order: system, light, dark.")]
         public Button[] ThemeButtons = new Button[3];
         public GameObject PauseActions;
@@ -41,8 +45,23 @@ namespace CircuitCube.UI
 
         void Awake()
         {
-            Sound.Changed += on => { CubeSave.Settings.sound = on; CubeSave.SaveSettings(); };
-            Music.Changed += on => { CubeSave.Settings.music = on; CubeSave.SaveSettings(); };
+            if (Sound != null) Sound.Changed += on => { CubeSave.Settings.sound = on; CubeSave.SaveSettings(); };
+            if (Music != null) Music.Changed += on => { CubeSave.Settings.music = on; CubeSave.SaveSettings(); };
+            if (SoundVolume != null)
+            {
+                SoundVolume.onValueChanged.AddListener(v => { CubeSave.Settings.soundVolume = v; CubeSave.Settings.sound = v > 0.001f; });
+                AddRelease(SoundVolume, () => { CubeSave.SaveSettings(); GameAudio.Play(Sfx.Button); });   // a sample at the new level
+            }
+            if (MusicVolume != null)
+            {
+                MusicVolume.onValueChanged.AddListener(v => { CubeSave.Settings.musicVolume = v; CubeSave.Settings.music = v > 0.001f; });
+                AddRelease(MusicVolume, CubeSave.SaveSettings);
+            }
+            for (int i = 0; i < LanguageButtons.Length; i++)
+            {
+                string lang = Loc.Languages[i];
+                LanguageButtons[i].onClick.AddListener(() => { Loc.Set(lang); ShowLanguage(); });
+            }
             Vibration.Changed += on => { CubeSave.Settings.vibration = on; CubeSave.SaveSettings(); };
             for (int i = 0; i < ThemeButtons.Length; i++)
             {
@@ -63,20 +82,23 @@ namespace CircuitCube.UI
         static string VersionText()
         {
             int code = AppUpdates.InstalledVersionCode;
-            return code > 0 ? "Version " + Application.version + " (" + code + ")" : "Version " + Application.version;
+            return code > 0 ? Loc.F("Version {0} ({1})", Application.version, code) : Loc.F("Version {0}", Application.version);
         }
 
         public void Open(bool paused)
         {
             gameObject.SetActive(true);
-            Title.text = paused ? "Paused" : "Settings";
+            Title.text = Loc.T(paused ? "Paused" : "Settings");
             PauseActions.SetActive(paused);
             bool privacy = Privacy != null && RewardedAds.PrivacyOptionsRequired;
             if (Privacy != null) Privacy.gameObject.SetActive(privacy);
             if (Panel != null) Panel.sizeDelta = new Vector2(Panel.sizeDelta.x, (paused ? PausedHeight : SettingsHeight) + (privacy ? PrivacyHeight : 0f));
             var s = CubeSave.Settings;
-            Sound.Set(s.sound);
-            Music.Set(s.music);
+            if (Sound != null) Sound.Set(s.sound);
+            if (Music != null) Music.Set(s.music);
+            if (SoundVolume != null) SoundVolume.SetValueWithoutNotify(s.sound ? s.soundVolume : 0f);
+            if (MusicVolume != null) MusicVolume.SetValueWithoutNotify(s.music ? s.musicVolume : 0f);
+            ShowLanguage();
             Vibration.Set(s.vibration);
             ShowTheme(s.theme);
             _versionTaps = 0;
@@ -84,15 +106,28 @@ namespace CircuitCube.UI
             if (Anim != null && Anim.GetClip("In") != null) { Anim.Stop(); Anim.Play("In"); }
         }
 
-        void ShowTheme(string mode)
+        /// <summary>Saves when the finger leaves a slider, not on every step of the drag.</summary>
+        static void AddRelease(Slider slider, Action done)
         {
-            int pick = Mathf.Max(0, Array.IndexOf(Modes, mode));
-            for (int i = 0; i < ThemeButtons.Length; i++)
+            var trigger = slider.GetComponent<UnityEngine.EventSystems.EventTrigger>();
+            if (trigger == null) trigger = slider.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+            var entry = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = UnityEngine.EventSystems.EventTriggerType.PointerUp };
+            entry.callback.AddListener(_ => done());
+            trigger.triggers.Add(entry);
+        }
+
+        void ShowLanguage() => Highlight(LanguageButtons, Array.IndexOf(Loc.Languages, Loc.Current));
+
+        void ShowTheme(string mode) => Highlight(ThemeButtons, Mathf.Max(0, Array.IndexOf(Modes, mode)));
+
+        static void Highlight(Button[] buttons, int pick)
+        {
+            for (int i = 0; i < buttons.Length; i++)
             {
                 bool on = i == pick;
-                var bg = ThemeButtons[i].GetComponent<ThemeRole>();
+                var bg = buttons[i].GetComponent<ThemeRole>();
                 if (bg != null) { bg.Role = on ? UiRole.Card : UiRole.Transparent; bg.Apply(); }
-                var label = ThemeButtons[i].GetComponentInChildren<TMP_Text>(true)?.GetComponent<ThemeRole>();
+                var label = buttons[i].GetComponentInChildren<TMP_Text>(true)?.GetComponent<ThemeRole>();
                 if (label != null) { label.Role = on ? UiRole.Text : UiRole.TextMuted; label.Apply(); }
             }
         }

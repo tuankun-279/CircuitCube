@@ -163,7 +163,7 @@ namespace CircuitCube.Game
         {
             if (_lesson != Lesson.Spin || _lessonWrapUp) return;
             _lessonSpun += degrees;
-            if (_lessonSpun >= 120f) LessonLearned("Now turn the tiles until every lamp lights up");
+            if (_lessonSpun >= 120f) LessonLearned(Loc.T("Now turn the tiles until every lamp lights up"));
         }
 
         /// <summary>A tile was turned by the player.</summary>
@@ -203,13 +203,13 @@ namespace CircuitCube.Game
             {
                 case Lesson.Tap: TickTap(tut, dt); break;
                 case Lesson.Spin:
-                    SetLessonText("Drag to spin the shape and see its other sides");
+                    SetLessonText(Loc.T("Drag to spin the shape and see its other sides"));
                     tut.Pointer.gameObject.SetActive(true);
                     tut.AnimateDrag(_lessonTime, new Vector2(0f, tut.Rect.rect.height * 0.04f), tut.Rect.rect.width * 0.45f);
                     break;
                 case Lesson.Hint:
                 {
-                    SetLessonText("Stuck? Tap the bulb for a free hint");
+                    SetLessonText(Loc.T("Stuck? Tap the bulb for a free hint"));
                     var hint = (RectTransform)UI.Hud.HintButton.transform;
                     bool canHint = UI.Hud.HintButton.interactable;
                     tut.Pointer.gameObject.SetActive(canHint);
@@ -218,9 +218,9 @@ namespace CircuitCube.Game
                 }
                 case Lesson.Colours:
                     if (_lessonStep == 0)
-                        LookAt(tut, FindTile(TileKind.Lamp, _lessonColorA), "Each lamp needs power of its own colour. This one needs " + CubeColors.EnergyName(_lessonColorA) + "...");
+                        LookAt(tut, FindTile(TileKind.Lamp, _lessonColorA), Loc.F("Each lamp needs power of its own colour. This one needs {0}...", CubeColors.EnergyName(_lessonColorA)));
                     else if (_lessonStep == 1)
-                        LookAt(tut, FindTile(TileKind.Lamp, _lessonColorB), "...and this one needs " + CubeColors.EnergyName(_lessonColorB) + ". Join each lamp to a source of its colour");
+                        LookAt(tut, FindTile(TileKind.Lamp, _lessonColorB), Loc.F("...and this one needs {0}. Join each lamp to a source of its colour", CubeColors.EnergyName(_lessonColorB)));
                     else { LessonLearned(null); break; }
                     NextStepAfter(StepSeconds + 0.8f);
                     break;
@@ -229,10 +229,10 @@ namespace CircuitCube.Game
                     int a = _lessonMix & -_lessonMix, b = _lessonMix & ~a;   // the two colours that make the mix
                     string mix = CubeColors.EnergyName(_lessonMix), na = CubeColors.EnergyName(a), nb = CubeColors.EnergyName(b);
                     if (!_lessonMixFull) _lessonStep = Mathf.Max(_lessonStep, 2);
-                    if (_lessonStep == 0) LookAt(tut, FindTile(TileKind.Source, a), "Colours mix! This is " + na + " power...");
-                    else if (_lessonStep == 1) LookAt(tut, FindTile(TileKind.Source, b), "...and this is " + nb + " power");
+                    if (_lessonStep == 0) LookAt(tut, FindTile(TileKind.Source, a), Loc.F("Colours mix! This is {0} power...", na));
+                    else if (_lessonStep == 1) LookAt(tut, FindTile(TileKind.Source, b), Loc.F("...and this is {0} power", nb));
                     else if (_lessonStep == 2)
-                        LookAt(tut, FindTile(TileKind.Lamp, _lessonMix), na + " + " + nb + " = " + mix + ". A " + mix.ToLowerInvariant() + " lamp needs both on the same wire");
+                        LookAt(tut, FindTile(TileKind.Lamp, _lessonMix), na + " + " + nb + " = " + mix + ". " + Loc.F("A {0} lamp needs both on the same wire", mix.ToLowerInvariant()));
                     else { LessonLearned(null); break; }
                     NextStepAfter(_lessonStep == 2 ? StepSeconds + 1.5f : StepSeconds);
                     break;
@@ -255,13 +255,13 @@ namespace CircuitCube.Game
         {
             if (_lessonStep == 0 && !_lessonTapped)
             {
-                LookAt(tut, FindTile(TileKind.Source, 0), "This is a power source");
+                LookAt(tut, FindTile(TileKind.Source, 0), Loc.T("This is a power source"));
                 NextStepAfter(StepSeconds - 0.6f);
                 return;
             }
             if (_lessonStep == 1 && !_lessonTapped)
             {
-                LookAt(tut, FindTile(TileKind.Lamp, 0), "Turn the tiles so the wires carry its power to every lamp");
+                LookAt(tut, FindTile(TileKind.Lamp, 0), Loc.T("Turn the tiles so the wires carry its power to every lamp"));
                 NextStepAfter(StepSeconds + 0.4f);
                 return;
             }
@@ -273,7 +273,7 @@ namespace CircuitCube.Game
             if (_lessonLitTime >= 0f)
             {
                 _lessonLitTime += dt;
-                SetLessonText("A lamp is lit! Light every lamp to finish the level");
+                SetLessonText(Loc.T("A lamp is lit! Light every lamp to finish the level"));
                 tut.Pointer.gameObject.SetActive(true);
                 PointAtUi(tut, UI.Hud.LampDots, false);
                 if (_lessonLitTime > StepSeconds) _lessonLitTime = -1f;
@@ -284,7 +284,7 @@ namespace CircuitCube.Game
             if (target >= 0)
             {
                 if (target != _lessonTarget) { _lessonTarget = target; _lessonTime = 0f; }
-                SetLessonText(_lessonTapped ? "Keep turning tiles until every lamp lights up" : "Tap this tile to turn it");
+                SetLessonText(Loc.T(_lessonTapped ? "Keep turning tiles until every lamp lights up" : "Tap this tile to turn it"));
                 tut.Pointer.gameObject.SetActive(true);
                 tut.ResetPointer();
                 tut.PointAt(Cam.WorldToScreenPoint(_board.CenterWorld(target)));
@@ -294,7 +294,7 @@ namespace CircuitCube.Game
             {
                 // the tiles left to turn are round the back
                 _lessonTarget = -1;
-                SetLessonText("Drag to spin the shape and find the other tiles");
+                SetLessonText(Loc.T("Drag to spin the shape and find the other tiles"));
                 tut.Pointer.gameObject.SetActive(true);
                 tut.AnimateDrag(_lessonTime, new Vector2(0f, tut.Rect.rect.height * 0.04f), tut.Rect.rect.width * 0.45f);
             }

@@ -50,7 +50,90 @@ namespace CircuitCube.EditorTools
             LevelGridV3();
             ZoomUi();
             TutorialUi();
+            Ui120();
             Debug.Log("[CircuitCube] UI V2 built.");
+        }
+
+        /// <summary>
+        /// Version 1.2.0 settings: volume sliders for effects and music in place of their switches (pill track, filled
+        /// pill, round knob), a language choice (English / Tiếng Việt) under the theme, and a <see cref="LocText"/> on
+        /// every text of the UI prefab so fixed labels follow the language. Run after <see cref="VersionUi"/>.
+        /// Safe to run again.
+        /// </summary>
+        [MenuItem("Tools/Circuit Cube/Art V2/Build 1.2.0 UI (volume, language)")]
+        public static void Ui120()
+        {
+            var root = PrefabUtility.LoadPrefabContents(UiPrefab);
+            try
+            {
+                var st = root.GetComponent<UIRoot>().Settings;
+                var panel = st.Panel;
+                var box = panel.Find("Switches");
+                st.SoundVolume = VolumeSlider(box.Find("Sound"));
+                st.MusicVolume = VolumeSlider(box.Find("Music"));
+
+                // language: label and a two-way segment like the theme one, below it
+                Label(panel, "LanguageLabel", TopC, TopC, TopC, new Vector2(0, -700), new Vector2(760, 44), "LANGUAGE", 28, UiRole.TextMuted, TextAnchor.MiddleLeft);
+                var seg = Fresh(panel, "Language", TopC, TopC, TopC, new Vector2(0, -752), new Vector2(760, 100));
+                Img(seg, S("ui_pill"), UiRole.Track, true).GetComponent<ThemeRole>().Alpha = 0.55f;
+                var names = new[] { "English", "Tiếng Việt" };
+                st.LanguageButtons = new Button[2];
+                for (int i = 0; i < 2; i++)
+                {
+                    var b = Fresh(seg, i == 0 ? "English" : "Vietnamese", new Vector2(i / 2f, 0), new Vector2((i + 1) / 2f, 1), Half, Vector2.zero, new Vector2(-12, -14));
+                    Img(b, S("ui_pill"), i == 0 ? UiRole.Card : UiRole.Transparent, true);
+                    Label(b, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, names[i], 34, i == 0 ? UiRole.Text : UiRole.TextMuted);
+                    st.LanguageButtons[i] = b.gameObject.AddComponent<Button>();
+                    b.gameObject.AddComponent<UiClickSound>();
+                }
+                var version = panel.Find("Version") as RectTransform;
+                if (version != null) version.anchoredPosition = new Vector2(0, -868);
+                if (st.Privacy != null) ((RectTransform)st.Privacy.transform).anchoredPosition = new Vector2(0, -930);
+                st.SettingsHeight = 990f;
+                st.PausedHeight = 1270f;
+
+                // fixed texts follow the language; the language names stay as they are
+                int added = 0;
+                foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    if (t.transform.parent != null && t.transform.parent.parent == seg) continue;
+                    if (t.GetComponent<LocText>() == null) { t.gameObject.AddComponent<LocText>(); added++; }
+                }
+                PrefabUtility.SaveAsPrefabAsset(root, UiPrefab);
+                Debug.Log("[CircuitCube] 1.2.0 UI built; LocText added to " + added + " texts.");
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>A 0..1 slider on the right of a settings row; the row's switch is hidden (kept for older saves).</summary>
+        static Slider VolumeSlider(Transform row)
+        {
+            var sw = row.Find("Switch");
+            if (sw != null) sw.gameObject.SetActive(false);
+            var label = row.Find("Label") as RectTransform;
+            if (label != null) label.sizeDelta = new Vector2(-560, 0);
+            var area = Fresh(row, "Volume", new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-40, 0), new Vector2(-330, 72));
+            var hit = Img(area, null, UiRole.None);
+            hit.color = new Color(1, 1, 1, 0);   // the whole strip takes the drag
+            var bg = Pic(area, "Track", new Vector2(0, 0.5f), new Vector2(1, 0.5f), Half, Vector2.zero, new Vector2(0, 20), S("ui_pill"), UiRole.Track, true);
+            var fillArea = Fresh(area, "Fill Area", new Vector2(0, 0.5f), new Vector2(1, 0.5f), Half, Vector2.zero, new Vector2(0, 20));
+            var fill = Pic(fillArea, "Fill", Vector2.zero, new Vector2(0, 1), new Vector2(0, 0.5f), Vector2.zero, new Vector2(20, 0), S("ui_pill"), UiRole.Primary, true);
+            var handleArea = Fresh(area, "Handle Slide Area", Vector2.zero, Vector2.one, Half, Vector2.zero, new Vector2(-56, 0));
+            var knob = Pic(handleArea, "Handle", new Vector2(0, 0.5f), new Vector2(0, 0.5f), Half, Vector2.zero, new Vector2(56, 56), S("ui_circle"), UiRole.None);
+            knob.color = Color.white;
+            var slider = area.gameObject.AddComponent<Slider>();
+            slider.fillRect = fill.rectTransform;
+            slider.handleRect = knob.rectTransform;
+            slider.targetGraphic = knob;
+            slider.direction = Slider.Direction.LeftToRight;
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.value = 1f;
+            var colors = slider.colors;
+            colors.pressedColor = new Color(0.82f, 0.82f, 0.82f, 1f);
+            slider.colors = colors;
+            return slider;
         }
 
         /// <summary>

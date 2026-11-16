@@ -47,14 +47,14 @@ namespace CircuitCube.Game
         {
             switch (set)
             {
-                case 1: return "Red";
-                case 2: return "Blue";
-                case 4: return "Yellow";
-                case 3: return "Purple";
-                case 5: return "Orange";
-                case 6: return "Green";
-                case 7: return "White";
-                default: return "None";
+                case 1: return Loc.T("Red");
+                case 2: return Loc.T("Blue");
+                case 4: return Loc.T("Yellow");
+                case 3: return Loc.T("Purple");
+                case 5: return Loc.T("Orange");
+                case 6: return Loc.T("Green");
+                case 7: return Loc.T("White");
+                default: return Loc.T("None");
             }
         }
     }

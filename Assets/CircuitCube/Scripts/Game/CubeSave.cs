@@ -11,7 +11,13 @@ namespace CircuitCube.Game
     //   save/groups/<id>.json                GroupProgress   cleared position + level in progress
     //   save/groups/<id>/stars-<k>.json      StarChunk       100 digits: score of serials k*100+1 … k*100+100
 
-    [Serializable] public class SaveSettings { public bool sound = true, music = true, vibration = true; public string theme = "system"; }
+    [Serializable] public class SaveSettings
+    {
+        public bool sound = true, music = true, vibration = true;
+        public string theme = "system";
+        public float soundVolume = 1f, musicVolume = 1f;   // 0..1, the sliders in Settings; 0 = muted
+        public string language = "";                        // "en", "vi"; empty = the phone's language
+    }
     [Serializable] public class GroupUnlock { public string id; public bool unlocked; }
     [Serializable] public class GroupSeen { public string id; public int levels; }
     [Serializable] public class PlayerProfile
@@ -57,7 +63,7 @@ namespace CircuitCube.Game
     /// rewrites two small files. The API keeps the names the game already used; groups are indices in manifest order.
     /// The first run after the update copies the old PlayerPrefs progress over.
     /// </summary>
-    public static class CubeSave
+    public static partial class CubeSave
     {
         public const int StarChunkSize = 100;
         const string MigratedKey = "cc.savev3";

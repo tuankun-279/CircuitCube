@@ -7,7 +7,7 @@ namespace CircuitCube.Game
     /// <summary>
     /// Plays the game's sounds and music (prefab Prefabs/Audio.prefab, placed in the scene). Two music sources cross-fade
     /// between the menu and level tracks; a small pool of sources plays the effects. The Sound and Music switches in
-    /// Settings mute effects and music. Buttons ask for their click through <see cref="Click"/>; it is skipped when the
+    /// Settings set the effects and music volume (0 mutes). Buttons ask for their click through <see cref="Click"/>; it is skipped when the
     /// same press already made a sound (a button that opens a card plays the card's sound only).
     /// </summary>
     public sealed class GameAudio : MonoBehaviour
@@ -35,8 +35,8 @@ namespace CircuitCube.Game
 
         void OnDestroy() { if (Instance == this) Instance = null; }
 
-        static bool SoundOn => CubeSave.Settings.sound;
-        static bool MusicOn => CubeSave.Settings.music;
+        static bool SoundOn => CubeSave.Settings.sound && CubeSave.Settings.soundVolume > 0.001f;
+        static bool MusicOn => CubeSave.Settings.music && CubeSave.Settings.musicVolume > 0.001f;
 
         /// <summary>Play an effect. <paramref name="delay"/> in seconds; <paramref name="pitch"/> multiplies the clip's pitch.</summary>
         public static void Play(Sfx id, float pitch = 1f, float delay = 0f) => Instance?.PlayEffect(id, pitch, delay);
@@ -76,7 +76,7 @@ namespace CircuitCube.Game
             if (k < _lastPlay.Length) _lastPlay[k] = now;
             var src = NextSource();
             src.clip = e.Clip;
-            src.volume = e.Volume;
+            src.volume = e.Volume * CubeSave.Settings.soundVolume;
             src.pitch = pitch * (e.PitchJitter > 0f ? 1f + Random.Range(-e.PitchJitter, e.PitchJitter) : 1f);
             if (delay > 0f) src.PlayScheduled(AudioSettings.dspTime + delay);
             else src.Play();
@@ -118,6 +118,7 @@ namespace CircuitCube.Game
             if (Bank == null) return;
             float dt = Time.unscaledDeltaTime, step = Bank.FadeSeconds > 0f ? dt / Bank.FadeSeconds : 1f;
             float level = !MusicOn ? 0f : _track == MusicTrack.Menu ? Bank.MenuVolume : _track == MusicTrack.Play ? Bank.PlayVolume : 0f;
+            level *= CubeSave.Settings.musicVolume;
             if (Time.unscaledTime < _duckUntil) level *= Bank.WinDuck;
             if (_current != null) _current.volume = Mathf.MoveTowards(_current.volume, level, step * Mathf.Max(level, 0.3f));
             if (_previous != null && _previous != _current)

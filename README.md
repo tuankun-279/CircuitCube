@@ -3,7 +3,7 @@
 A 3D circuit puzzle for mobile: rotate the tiles on a cube (and other shapes) so every lamp is lit by a source of the right colour.
 
 - **Engine:** Unity 6000.0.76f1 (URP), Android first.
-- **Version:** 0.1.1
+- **Version:** 1.2.0 (version code 4)
 
 ## Layout
 
@@ -29,11 +29,25 @@ See `Assets/CircuitCube/README.md` for the data format and editor menus.
 2. Press **Publish to game**. It starts the scheduled task "Circuit Cube: publish Level Lab levels", which checks
    every level (`Tools/LevelLab/publish.py`), commits `content/` to main, then pins that commit in
    `content/manifest.json` (`cdn` = the commit on jsDelivr). The status line in Level Lab shows the result.
-3. Players get it on their next start: the game reads `content/manifest.json` from GitHub
-   (`CircuitCubeApp.ContentBaseUrl`) and downloads new or edited levels around their position from the pinned commit.
+3. Players get it without restarting: the game reads `content/manifest.json` from GitHub
+   (`CircuitCubeApp.ContentBaseUrl`) at start (the splash waits up to 3.5 s for it), every 3 minutes and when it
+   comes back to the front, then downloads new or edited levels around their position from the pinned commit. A
+   player in a level finishes it first and then sees a "New levels are here" card.
 
 Unity is only needed to ship a new build: run Tools > Circuit Cube > Data > Copy Published Content into the Build so
 the build carries the latest publish for offline players.
+
+## Services (1.2.0)
+
+Each one is built only when its package is in `Packages/manifest.json` (version defines in `CircuitCube.asmdef`);
+without it the game runs as before.
+
+| Service | Package | Code | Set up outside Unity |
+| --- | --- | --- | --- |
+| Crash reports | `com.google.firebase.crashlytics` (CC_CRASHLYTICS) | `Game/Services/CrashReports.cs` | Firebase console > Crashlytics: enable |
+| Rating card | `com.google.play.review` (CC_REVIEW) | `Game/Services/AppReview.cs` | none (works from a Play install) |
+| Cloud save | `com.google.play.games` (CC_PLAYGAMES) | `Game/Services/CloudSave.cs`, `CubeSave.Cloud.cs` | Play Console > Play Games Services: create, add the Android credential (SHA-1 of the app signing key), Saved Games on; paste the resources into Window > Google Play Games > Setup > Android setup |
+| Vietnamese | built in | `Game/Loc.cs`, `Game/LocVi.cs`, `UI/LocText.cs` | none |
 
 ## Getting started
 

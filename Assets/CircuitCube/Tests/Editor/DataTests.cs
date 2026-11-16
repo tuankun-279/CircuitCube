@@ -184,5 +184,59 @@ namespace CircuitCube.Tests
                 if (Directory.Exists(dir)) Directory.Delete(dir, true);
             }
         }
+
+        [Test]
+        public void CloudMergeKeepsTheBestOfBoth()
+        {
+            Assert.AreEqual("6546", CubeSave.MaxPoints("6036", "0540"));
+            Assert.AreEqual("33", CubeSave.MaxPoints(null, "33"));
+            string old = CubeSave.Root;
+            string dir = Path.Combine(Path.GetTempPath(), "cc-cloud-test-" + System.Guid.NewGuid().ToString("N"));
+            try
+            {
+                CubeSave.Root = dir;
+                CubeSave.Unload();
+                CubeSave.Complete(0, 1, 6);
+                CubeSave.Complete(0, 2, 3);
+                var cloud = new CloudProgress { tutorial = 3, tips = 2 };
+                var g = new CloudGroup { id = GameData.GroupId(0), cleared = 5, unlocked = true };
+                g.stars.Add(new StarChunk { chunk = 0, points = "45444" });
+                cloud.groups.Add(g);
+                Assert.IsTrue(CubeSave.MergeCloud(cloud));
+                CubeSave.Unload();
+                Assert.AreEqual(5, CubeSave.Beaten(0));
+                Assert.AreEqual(6, CubeSave.Points(0, 1));   // the device's better score stays
+                Assert.AreEqual(5, CubeSave.Points(0, 2));   // the cloud's better score comes in
+                Assert.AreEqual(3, CubeSave.TutorialStep);
+                Assert.IsFalse(CubeSave.MergeCloud(CubeSave.ExportCloud()));   // merging itself changes nothing
+            }
+            finally
+            {
+                CubeSave.Root = old;
+                CubeSave.Unload();
+                if (Directory.Exists(dir)) Directory.Delete(dir, true);
+            }
+        }
+
+        [Test]
+        public void ReviewAsksAfterAStreakOnceAMonth()
+        {
+            Assert.IsFalse(AppReview.ShouldAsk(2, 20, -1, 100));
+            Assert.IsFalse(AppReview.ShouldAsk(3, 5, -1, 100));
+            Assert.IsTrue(AppReview.ShouldAsk(3, 8, -1, 100));
+            Assert.IsFalse(AppReview.ShouldAsk(5, 50, 90, 100));
+            Assert.IsTrue(AppReview.ShouldAsk(5, 50, 70, 100));
+        }
+
+        [Test]
+        public void VietnameseKeepsPlaceholders()
+        {
+            foreach (var kv in LocVi.Table)
+                for (int i = 0; i < 3; i++)
+                {
+                    string ph = "{" + i + "}";
+                    Assert.AreEqual(kv.Key.Contains(ph), kv.Value.Contains(ph), kv.Key);
+                }
+        }
     }
 }
