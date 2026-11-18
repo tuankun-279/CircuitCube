@@ -137,7 +137,8 @@ namespace CircuitCube.EditorTools
             // the HUD mascot speaks the notes: it may come up over the dim (a canvas of its own, sorted on while a note shows)
             if (ui.Hud.Mascot != null)
             {
-                var mc = ui.Hud.Mascot.GetComponent<Canvas>() ?? ui.Hud.Mascot.gameObject.AddComponent<Canvas>();
+                var mc = ui.Hud.Mascot.GetComponent<Canvas>();
+                if (mc == null) mc = ui.Hud.Mascot.gameObject.AddComponent<Canvas>();
                 mc.overrideSorting = false;
                 tut.Mascot = mc;
             }
