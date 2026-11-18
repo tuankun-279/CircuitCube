@@ -233,8 +233,6 @@ namespace CircuitCube.EditorTools
                 hud.LampTray = tray;
                 hud.GroupPrefab = AssetDatabase.LoadAssetAtPath<LampGroup>(LampGroupPrefab);
                 Place(t, "Tip", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 410), new Vector2(980, 100));
-                var tutorial = safe.Find("Tutorial");
-                if (tutorial != null) Place(tutorial, "Bubble", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 400), new Vector2(980, 150));
 
                 var m = Fresh(t, "Mascot", TopR, TopR, TopR, new Vector2(-36, -186), new Vector2(150, 150));
                 var mascot = m.gameObject.AddComponent<Mascot>();
@@ -538,42 +536,18 @@ namespace CircuitCube.EditorTools
         }
 
         /// <summary>
-        /// First-time tutorial layer right above the HUD: a pointer (ring and fingertip), a speech bubble at the bottom
-        /// with a Skip button. Hidden; only Skip catches touches. Safe to run again.
+        /// First-time tutorial layer right above the HUD (the 1.3.0 FTUE layer, see <see cref="Ui130Ftue"/>). Hidden.
+        /// Safe to run again.
         /// </summary>
         [MenuItem("Tools/Circuit Cube/Art V2/Build Tutorial UI")]
         public static void TutorialUi()
         {
+            // the 1.3.0 FTUE layer replaced the first tutorial (pointer and bottom bubble)
             var root = PrefabUtility.LoadPrefabContents(UiPrefab);
             try
             {
                 var ui = root.GetComponent<UIRoot>();
-                var safe = root.transform.Find("SafeArea");
-                var layer = Fresh(safe, "Tutorial", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero);
-                layer.SetSiblingIndex(ui.Hud.transform.GetSiblingIndex() + 1);   // over the HUD, under the dim and cards
-                var tut = layer.gameObject.AddComponent<TutorialOverlay>();
-
-                var pointer = Fresh(layer, "Pointer", Half, Half, Half, Vector2.zero, new Vector2(150, 150));
-                tut.Ring = Pic(pointer, "Ring", Half, Half, Half, Vector2.zero, new Vector2(150, 150), S("ui_circle"), UiRole.Accent);
-                tut.Dot = Pic(pointer, "Dot", Half, Half, Half, Vector2.zero, new Vector2(64, 64), S("ui_circle"), UiRole.Accent);
-                var core = Pic(tut.Dot.transform, "Core", Half, Half, Half, Vector2.zero, new Vector2(28, 28), S("ui_circle"), UiRole.OnPrimary);
-                tut.Core = core;
-                tut.Pointer = pointer;
-
-                var bubble = Fresh(layer, "Bubble", BottomC, BottomC, new Vector2(0.5f, 0), new Vector2(0, 300), new Vector2(980, 150));
-                Img(bubble, S("ui_card"), UiRole.Card, true).raycastTarget = false;
-                tut.Text = Label(bubble, "Text", new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(40, 0), new Vector2(-260, -24),
-                    "Tap this tile to turn it", 38, UiRole.Text, TextAnchor.MiddleLeft);
-                tut.Text.raycastTarget = false;
-                var skip = Fresh(bubble, "Skip", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-24, 0), new Vector2(180, 90));
-                Img(skip, S("ui_button"), UiRole.Secondary, true);
-                Label(skip, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, new Vector2(-12, -8), "Skip", 34, UiRole.OnSecondary).raycastTarget = false;
-                tut.Skip = skip.gameObject.AddComponent<Button>();
-                skip.gameObject.AddComponent<UiClickSound>();
-                tut.Bubble = bubble;
-
-                layer.gameObject.SetActive(false);
-                ui.Tutorial = tut;
+                BuildTutorialLayer(ui, root.transform.Find("SafeArea"));
                 PrefabUtility.SaveAsPrefabAsset(root, UiPrefab);
             }
             finally { PrefabUtility.UnloadPrefabContents(root); }
