@@ -89,7 +89,16 @@ namespace CircuitCube.Game
             ApplyTheme(CubeSave.Settings.theme);
 
             var home = UI.Home;
-            home.PlayButton.onClick.AddListener(() => StartLevel(CubeSave.CurrentGroup, CubeSave.Unlocked(CubeSave.CurrentGroup)));
+            home.PlayButton.onClick.AddListener(() =>
+            {
+                if (NeedsFtue && UI.Tutorial != null)
+                {
+                    if (CubeSave.TutorialStep <= 0) ShowWelcome();
+                    else StartFtueLevel(Mathf.Clamp(CubeSave.TutorialStep, 1, TutorialLevels.Count), false);
+                    return;
+                }
+                StartLevel(CubeSave.CurrentGroup, CubeSave.Unlocked(CubeSave.CurrentGroup));
+            });
             home.ShapesButton.onClick.AddListener(ShowShapes);
             home.LevelsButton.onClick.AddListener(() => ShowLevels(CubeSave.CurrentGroup));
             home.SettingsButton.onClick.AddListener(() => OpenSettings(false));
@@ -100,6 +109,7 @@ namespace CircuitCube.Game
             hud.RestartButton.onClick.AddListener(() =>
             {
                 if (_state != State.Playing || _busy || CardOpen) return;
+                if (InFtue) { StartFtueLevel(_ftue, false); return; }
                 GameAnalytics.Log("level_restart", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("moves", _moves));
                 StartLevel(_group, _level.Number);
             });
@@ -107,10 +117,13 @@ namespace CircuitCube.Game
             hud.UndoButton.onClick.AddListener(Undo);
             hud.HelpButton.onClick.AddListener(() => { if (_state == State.Playing && !CardOpen) ShowHowTo(); });
             if (hud.ZoomResetButton != null) hud.ZoomResetButton.onClick.AddListener(() => ResetZoom(true));
+            if (hud.ZoomIn != null) hud.ZoomIn.onClick.AddListener(() => { if (CanZoom) ZoomAt(new Vector2(Screen.width, Screen.height) * 0.5f, _zoom * ZoomStep); });
+            if (hud.ZoomOut != null) hud.ZoomOut.onClick.AddListener(() => { if (CanZoom) ZoomAt(new Vector2(Screen.width, Screen.height) * 0.5f, _zoom / ZoomStep); });
+            if (hud.ZoomFit != null) hud.ZoomFit.onClick.AddListener(() => { if (CanZoom) ResetZoom(true); });
 
             var r = UI.Result;
             r.Primary.onClick.AddListener(NextLevel);
-            r.SecondaryA.onClick.AddListener(() => StartLevel(_group, _level.Number));
+            r.SecondaryA.onClick.AddListener(() => { if (InFtue) StartFtueLevel(_ftue, false); else StartLevel(_group, _level.Number); });
             r.SecondaryB.onClick.AddListener(ShowHome);
             UI.Tip.Primary.onClick.AddListener(CloseTip);
 
@@ -127,9 +140,10 @@ namespace CircuitCube.Game
             var st = UI.Settings;
             st.Close.onClick.AddListener(CloseSettings);
             st.Resume.onClick.AddListener(CloseSettings);
-            st.Restart.onClick.AddListener(() => { CloseSettings(); AppReview.Quit(); StartLevel(_group, _level.Number); });
+            st.Restart.onClick.AddListener(() => { CloseSettings(); AppReview.Quit(); if (InFtue) StartFtueLevel(_ftue, false); else StartLevel(_group, _level.Number); });
             st.Home.onClick.AddListener(() => { CloseSettings(); AppReview.Quit(); SaveInProgress(); ShowHome(); });
             st.ThemePicked += SetTheme;
+            st.ZoomButtonsChanged += UpdateZoomPanel;
             if (st.Privacy != null) st.Privacy.onClick.AddListener(() => RewardedAds.ShowPrivacyOptions());
             WireTutorial();
         }
@@ -189,7 +203,7 @@ namespace CircuitCube.Game
         /// <summary>Remember the board of the level being played, so it continues where it stopped.</summary>
         void SaveInProgress()
         {
-            if (_state != State.Playing || _level == null || _cheat) return;
+            if (_state != State.Playing || _level == null || _cheat || InFtue) return;
             int serial = GameData.SerialAt(_group, _level.Number);
             if (serial <= 0) return;
             var ip = new InProgress { serial = serial, position = _level.Number, check = _levelCheck, moves = _moves, hintsUsed = _hintsUsed, undosUsed = _undosUsed };
@@ -267,6 +281,8 @@ namespace CircuitCube.Game
 
         void ShowHome()
         {
+            _ftue = 0;
+            ClearNotes();
             _state = State.Home;
             _busy = false;
             GameAudio.Music(MusicTrack.Menu);
@@ -420,6 +436,7 @@ namespace CircuitCube.Game
 
         void NextLevel()
         {
+            if (InFtue) { CloseCards(); ClearNotes(); FtueNext(); return; }
             if (_unlockedGroup >= 0)
             {
                 // offer the new shape first; "Later" comes back here with the offer cleared
@@ -462,6 +479,7 @@ namespace CircuitCube.Game
             _group = group;
             CubeSave.CurrentGroup = group;
             _tw.Clear();
+            _ftue = 0;
             var level = GameData.Build(group, number);
             if (level == null)
             {
@@ -525,6 +543,7 @@ namespace CircuitCube.Game
             HideRest(hud.LampDots, dots, template);
             }
             UpdateHud();
+            UpdateZoomPanel();
             StartLesson(group, number, cheat);
 
             if (!CubeSave.SeenShape(group))
@@ -601,7 +620,11 @@ namespace CircuitCube.Game
         void TickContent()
         {
             float now = Time.realtimeSinceStartup;
-            if (UI.Splash.gameObject.activeSelf && _splashShown && (_contentReady || now >= _splashUntil)) ShowHome();
+            if (UI.Splash.gameObject.activeSelf && _splashShown && (_contentReady || now >= _splashUntil))
+            {
+                if (NeedsFtue && CubeSave.TutorialStep <= 0 && UI.Tutorial != null) ShowWelcome();
+                else ShowHome();
+            }
             if (now >= _nextSync) SyncContent(false);
             if (_contentNotice && InMenus && !CardOpen) ShowContentNotice();
         }
@@ -697,12 +720,44 @@ namespace CircuitCube.Game
             _pan = Vector2.ClampMagnitude(_pan, reach);
             Cam.transform.position = _camFramed + new Vector3(_pan.x, _pan.y, 0f);
             var reset = UI.Hud.ZoomResetButton;
-            if (reset != null && reset.gameObject.activeSelf != (_zoom > 1.02f)) reset.gameObject.SetActive(_zoom > 1.02f);
+            bool buttons = UI.Hud.ZoomPanel != null && UI.Hud.ZoomPanel.activeSelf;   // the pill has its own fit button
+            if (reset != null && reset.gameObject.activeSelf != (_zoom > 1.02f && !buttons)) reset.gameObject.SetActive(_zoom > 1.02f && !buttons);
+            if (buttons) ShowZoomLevel();
             if (!_zoomLogged && _zoom > 1.25f && _state == State.Playing && _level != null)
             {
                 _zoomLogged = true;
                 GameAnalytics.Log("zoom_used", ("shape", GameData.Group(_group).id), ("level", _level.Number));
             }
+        }
+
+        /// <summary>Each press of the zoom buttons zooms in or out by this much.</summary>
+        const float ZoomStep = 1.4f;
+        int _shownZoom = -1;
+
+        /// <summary>The zoom pill on emulators (or when Settings turns it on), with a tip the first time.</summary>
+        void UpdateZoomPanel()
+        {
+            var hud = UI.Hud;
+            if (hud.ZoomPanel == null) return;
+            bool on = Emulator.ZoomButtonsOn && _state == State.Playing;
+            hud.ZoomPanel.SetActive(on);
+            bool tip = on && (CubeSave.Tips & CubeSave.TipZoom) == 0;
+            if (hud.ZoomTip != null) hud.ZoomTip.SetActive(tip);
+            if (tip) CubeSave.Tips |= CubeSave.TipZoom;
+            _shownZoom = -1;
+            ApplyZoom();
+        }
+
+        void ShowZoomLevel()
+        {
+            var hud = UI.Hud;
+            int tenths = Mathf.RoundToInt(_zoom * 10f);
+            if (tenths == _shownZoom) return;
+            _shownZoom = tenths;
+            if (hud.ZoomLevel != null) hud.ZoomLevel.text = (tenths / 10) + "." + (tenths % 10) + "x";
+            if (hud.ZoomIn != null) hud.ZoomIn.interactable = _zoom < MaxZoom - 0.01f;
+            if (hud.ZoomOut != null) hud.ZoomOut.interactable = _zoom > 1.01f;
+            if (hud.ZoomFit != null) hud.ZoomFit.interactable = _zoom > 1.01f;
         }
 
         /// <summary>World units per screen pixel in the plane through the board's centre.</summary>
@@ -759,7 +814,7 @@ namespace CircuitCube.Game
         void UpdateHud()
         {
             var hud = UI.Hud;
-            int target = LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group));   // the par players see includes the slack
+            int target = InFtue ? _level.Par : LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group));   // the par players see includes the slack
             if (_moves != _shownMoves || target != _shownPar)
             {
                 _shownMoves = _moves;
@@ -799,14 +854,15 @@ namespace CircuitCube.Game
         {
             if (_state != State.Playing || _busy || CardOpen) return;
             var tile = _level.Tiles[index];
+            if (!FtueAllowsTap(index)) return;   // the tutorial lets only its own tiles turn
             if (tile.Locked) { GameAudio.Play(Sfx.Blocked); Haptics.Play(Haptics.Kind.Blocked); return; }   // a hint fixed this tile
             GameAudio.Play(Sfx.Rotate);
             Haptics.Play(Haptics.Kind.Turn);
             tile.Rot++;
             _moves++;
             _undo.Push(index);
-            LessonTapped();
-            if (_moves == 4 && !CubeSave.SeenHowTo) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = (UI.Hud.LampTray == null && CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null) ?? ""; }
+            LessonTapped(index);
+            if (_moves == 4 && !CubeSave.SeenHowTo && !InFtue) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = (UI.Hud.LampTray == null && CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null) ?? ""; }
             _board.AnimateRotation(index, 1);
             bool solved = _board.Refresh();
             if (!solved && _board.NewlyLitColor != 0) { GameAudio.Lamp(_board.NewlyLitColor); Haptics.Play(Haptics.Kind.Lamp); MascotOnLamp(_board.NewlyLitColor); }
@@ -821,6 +877,7 @@ namespace CircuitCube.Game
         void Undo()
         {
             if (_state != State.Playing || _busy || CardOpen || _undosLeft <= 0 || !CanUndo()) return;
+            if (FtueFreeHelp) { DoUndo(); return; }
             WithAd(AdPlacement.Undo, DoUndo);
         }
 
@@ -846,7 +903,7 @@ namespace CircuitCube.Game
                 GameAudio.Play(Sfx.Undo);
                 _board.AnimateRotation(index, -1);
                 _board.Refresh();
-                GameAnalytics.Log("undo_used", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("left", _undosLeft));
+                if (!InFtue) GameAnalytics.Log("undo_used", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("left", _undosLeft));
                 break;
             }
             UpdateHud();
@@ -873,12 +930,7 @@ namespace CircuitCube.Game
         void UseHint()
         {
             if (_state != State.Playing || _busy || _hintsLeft <= 0 || CardOpen || !HasHintTile()) return;
-            if (LessonFreeHint)
-            {
-                DoHint();
-                LessonLearned(Loc.F("A hint turns one tile the right way. Each level has {0}", HintsPerLevel));
-                return;
-            }
+            if (FtueFreeHelp) { DoHint(); return; }
             WithAd(AdPlacement.Hint, DoHint);
         }
 
@@ -911,35 +963,44 @@ namespace CircuitCube.Game
             _hintsLeft--;
             _hintsUsed++;
             GameAudio.Play(Sfx.Hint);
-            GameAnalytics.Log("hint_used", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("left", _hintsLeft));
+            if (!InFtue) GameAnalytics.Log("hint_used", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("left", _hintsLeft));
             _board.AnimateRotation(pick, turns, 0.3f);
             bool solved = _board.Refresh();
+            LessonHinted();
             if (!solved && _board.NewlyLitColor != 0) { GameAudio.Lamp(_board.NewlyLitColor); Haptics.Play(Haptics.Kind.Lamp); MascotOnLamp(_board.NewlyLitColor); }
             UpdateHud();
             if (solved) Win();
         }
 
         /// <summary>Expert (7) at par with no help, 6 at par with hints or undos, less over par (rules from the manifest).</summary>
-        int PointsFor() => _forcePoints >= 0 ? _forcePoints : LevelScore.Points(_moves, _level.Par, _hintsUsed, _undosUsed, GameData.Rules, GameData.Group(_group));
+        int PointsFor() => _forcePoints >= 0 ? _forcePoints : LevelScore.Points(_moves, _level.Par, _hintsUsed, _undosUsed, GameData.Rules, InFtue ? FtueGroup : GameData.Group(_group));
 
         void Win()
         {
+            if (InFtue && _ftue != FtueResultLevel) { FtueWon(); return; }   // tutorial levels end with notes, not the card
             _busy = true;
             _state = State.Won;
             _spin = Vector2.zero;
-            LessonOnWin();
+            if (InFtue) HideNotes();
+            else
+            {
+                if (_lessonMix != 0) { CubeSave.Tips |= CubeSave.TipMix(_lessonMix); _lessonMix = 0; }
+                ClearNotes();
+            }
             ResetZoom(true);   // the box breaks open in the framed view, so the stars fly from its centre
             int points = PointsFor();
-            var fx = UI.Fx != null ? StreakFor(points) : (LevelScore.IsExpert(points) ? WinFx.Expert : WinFx.Stars);
+            if (UI.Fx != null) UI.Fx.SelectWord(Loc.Vietnamese);   // XUẤT SẮC in Vietnamese
+            var fx = UI.Fx != null && !InFtue ? StreakFor(points) : (LevelScore.IsExpert(points) ? WinFx.Expert : WinFx.Stars);
             var wasOpen = new bool[GameData.GroupCount];
             for (int g = 0; g < wasOpen.Length; g++) wasOpen[g] = CubeSave.GroupOpen(g);
-            if (!_cheat) { CubeSave.Complete(_group, _level.Number, points); CloudSave.MarkDirty(); }
-            if (!_cheat && MixFormula(_level.Colors) != null) CubeSave.MixWins++;
+            bool real = !_cheat && !InFtue;
+            if (real) { CubeSave.Complete(_group, _level.Number, points); CloudSave.MarkDirty(); }
+            if (real && MixFormula(_level.Colors) != null) CubeSave.MixWins++;
             int newGroup = -1;
             for (int g = 0; g < wasOpen.Length && newGroup < 0; g++) if (!wasOpen[g] && CubeSave.GroupOpen(g)) newGroup = g;
             bool unlocksNext = newGroup >= 0;
             _unlockedGroup = newGroup;
-            GameAnalytics.Log("level_complete", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("moves", _moves),
+            if (real) GameAnalytics.Log("level_complete", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("moves", _moves),
                 ("par", LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group))), ("stars", LevelScore.WholeStars(points)), ("expert", LevelScore.IsExpert(points)),
                 ("hints", _hintsUsed), ("undos", _undosUsed), ("seconds", Mathf.RoundToInt(Time.realtimeSinceStartup - _levelStartTime)));
             if (unlocksNext) GameAnalytics.Log("shape_unlocked", ("shape", GameData.Group(newGroup).id));
@@ -964,10 +1025,11 @@ namespace CircuitCube.Game
             {
                 _busy = false;
                 var r = UI.Result;
-                r.Caption.text = Loc.Upper(Loc.T(GameData.Group(_group).name)) + "  ·  " + Loc.F("LEVEL {0}", _level.Number);
+                r.Caption.text = InFtue ? Loc.F("TUTORIAL · {0} / {1}", _ftue, TutorialLevels.Count)
+                    : Loc.Upper(Loc.T(GameData.Group(_group).name)) + "  ·  " + Loc.F("LEVEL {0}", _level.Number);
                 r.Title.text = Loc.T("Level complete");
                 r.Stats[0].text = _moves.ToString();
-                r.Stats[1].text = LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group)).ToString();
+                r.Stats[1].text = (InFtue ? _level.Par : LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group))).ToString();
                 r.Stats[2].text = _board.LitLamps + "/" + _board.TotalLamps;
                 bool expert = LevelScore.IsExpert(points);
                 bool word = expert && UI.Fx != null;
@@ -981,8 +1043,9 @@ namespace CircuitCube.Game
                 r.PrimaryLabel.text = Loc.T("Next level");
                 UI.Dim.SetActive(true);
                 r.Open();
+                FtueOnResult();
                 if (fx == WinFx.Constellation) RiseCard(r, ResultFx.ConstCardRise);   // rises in once the stars are drawn
-                if (!_cheat) AppReview.Won(this, TotalWins());
+                if (real) AppReview.Won(this, TotalWins());
                 if (_starsInFlight == 0 && !expert)
                     for (int i = 0; i < points / 2; i++) GameAudio.Play(Sfx.Star, 1f + 0.12f * i, 0.3f + 0.25f * i);
                 if (fx == WinFx.Comets && UI.Fx != null) StartComets();

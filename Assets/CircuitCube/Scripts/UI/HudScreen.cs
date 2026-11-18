@@ -27,5 +27,12 @@ namespace CircuitCube.UI
         public LampGroup GroupPrefab;
         [Tooltip("Top-right mascot with moods and short lines.")]
         public Mascot Mascot;
+        [Header("1.3.0 zoom buttons (emulators)")]
+        [Tooltip("Pill on the right edge with zoom in, zoom out and fit; shown on emulators or when Settings turns it on.")]
+        public GameObject ZoomPanel;
+        public Button ZoomIn, ZoomOut, ZoomFit;
+        public TMP_Text ZoomLevel;
+        [Tooltip("One-time tip beside the pill.")]
+        public GameObject ZoomTip;
     }
 }

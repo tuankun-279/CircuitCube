@@ -19,6 +19,8 @@ namespace CircuitCube.UI
         public TMP_Text Title;
         public Button Close;
         public SwitchToggle Sound, Music, Vibration;
+        [Tooltip("Zoom buttons in a level (on by itself on emulators).")]
+        public SwitchToggle ZoomButtons;
         [Tooltip("Volume sliders (0..1) for effects and music; when set they replace the Sound and Music switches.")]
         public Slider SoundVolume, MusicVolume;
         [Tooltip("Language buttons in order: English, Vietnamese.")]
@@ -39,6 +41,9 @@ namespace CircuitCube.UI
         int _versionTaps;
 
         static readonly string[] Modes = { "system", "light", "dark" };
+
+        /// <summary>Raised when the player turns the zoom buttons on or off.</summary>
+        public event Action ZoomButtonsChanged;
 
         /// <summary>Raised with the theme mode the player picked.</summary>
         public event Action<string> ThemePicked;
@@ -63,6 +68,7 @@ namespace CircuitCube.UI
                 LanguageButtons[i].onClick.AddListener(() => { Loc.Set(lang); ShowLanguage(); });
             }
             Vibration.Changed += on => { CubeSave.Settings.vibration = on; CubeSave.SaveSettings(); };
+            if (ZoomButtons != null) ZoomButtons.Changed += on => { CubeSave.Settings.zoomButtons = on ? 1 : 0; CubeSave.SaveSettings(); ZoomButtonsChanged?.Invoke(); };
             for (int i = 0; i < ThemeButtons.Length; i++)
             {
                 string mode = Modes[i];
@@ -100,6 +106,7 @@ namespace CircuitCube.UI
             if (MusicVolume != null) MusicVolume.SetValueWithoutNotify(s.music ? s.musicVolume : 0f);
             ShowLanguage();
             Vibration.Set(s.vibration);
+            if (ZoomButtons != null) ZoomButtons.Set(Emulator.ZoomButtonsOn);
             ShowTheme(s.theme);
             _versionTaps = 0;
             if (VersionLabel != null) VersionLabel.text = VersionText();

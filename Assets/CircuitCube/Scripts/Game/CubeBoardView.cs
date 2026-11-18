@@ -554,6 +554,19 @@ namespace CircuitCube.Game
         /// <summary>Centre of a tile in world space.</summary>
         public Vector3 CenterWorld(int index) => transform.TransformPoint(_t[index].Center * ContentScale);
 
+        /// <summary>The screen rectangle round a tile's corners (for the tutorial's lit hole).</summary>
+        public Rect ScreenRect(int index, Camera cam)
+        {
+            var corners = _level.Topo.Cells[index].Corners;
+            Vector2 min = new Vector2(float.MaxValue, float.MaxValue), max = new Vector2(float.MinValue, float.MinValue);
+            foreach (var c in corners)
+            {
+                Vector2 p = cam.WorldToScreenPoint(transform.TransformPoint(new Vector3(c.X, c.Y, c.Z) * ContentScale));
+                min = Vector2.Min(min, p); max = Vector2.Max(max, p);
+            }
+            return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+        }
+
         /// <summary>The visible tile a screen ray hits first, or -1. No colliders: ray against each tile's polygon.</summary>
         public int Pick(Ray ray)
         {

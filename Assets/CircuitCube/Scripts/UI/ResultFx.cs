@@ -40,6 +40,11 @@ namespace CircuitCube.UI
         [Tooltip("Light streak swept across the word (inside a RectMask2D the size of the word).")]
         public RectTransform Shine;
 
+        [Header("Vietnamese word (XUẤT SẮC, 7 letters)")]
+        public RectTransform WordVi;
+        public Image[] WordLettersVi = new Image[7], FlyLettersVi = new Image[7], HotLettersVi = new Image[7];
+        public RectTransform ShineVi;
+
         [Header("Burst")]
         public Image Core, Ring;
         public Image[] Sparks = new Image[0];
@@ -62,6 +67,28 @@ namespace CircuitCube.UI
         public TMP_Text Praise;
 
         public bool Busy { get; private set; }
+
+        RectTransform _wordEn, _shineEn;
+        Image[] _wordEnLetters, _flyEn, _hotEn;
+        bool _vi;
+
+        /// <summary>
+        /// The word for the game's language: the English letters or the Vietnamese ones (the fields above then point
+        /// at that set). Call before an Expert effect.
+        /// </summary>
+        public void SelectWord(bool vietnamese)
+        {
+            if (_wordEn == null) { _wordEn = Word; _shineEn = Shine; _wordEnLetters = WordLetters; _flyEn = FlyLetters; _hotEn = HotLetters; }
+            if (WordVi == null) vietnamese = false;
+            if (vietnamese == _vi) return;
+            HideAll();
+            _vi = vietnamese;
+            Word = vietnamese ? WordVi : _wordEn;
+            Shine = vietnamese ? ShineVi : _shineEn;
+            WordLetters = vietnamese ? WordLettersVi : _wordEnLetters;
+            FlyLetters = vietnamese ? FlyLettersVi : _flyEn;
+            HotLetters = vietnamese ? HotLettersVi : _hotEn;
+        }
         Coroutine _shineLoop;
 
         static float T => Clock.Now;
@@ -75,6 +102,8 @@ namespace CircuitCube.UI
             Busy = false;
             foreach (var g in Each()) if (g != null) g.gameObject.SetActive(false);
             if (Word != null) Word.gameObject.SetActive(false);
+            if (WordVi != null) WordVi.gameObject.SetActive(false);
+            if (_wordEn != null) _wordEn.gameObject.SetActive(false);
             if (Praise != null) Praise.gameObject.SetActive(false);
             if (Shine != null) Shine.gameObject.SetActive(false);
             if (ShakeRoot != null) ShakeRoot.anchoredPosition = Vector2.zero;
@@ -83,6 +112,7 @@ namespace CircuitCube.UI
         System.Collections.Generic.IEnumerable<Graphic> Each()
         {
             foreach (var x in FlyLetters) yield return x;
+            foreach (var x in FlyLettersVi) yield return x;
             foreach (var x in Pings) yield return x;
             foreach (var x in WordLetters) yield return x;
             yield return Core; yield return Ring;
@@ -317,6 +347,7 @@ namespace CircuitCube.UI
 
         // each letter rides out with a piece of the box (mockup angles, CSS degrees, y down)
         static readonly float[] LetterAngles = { -150f, -110f, -70f, -30f, 200f, -10f };
+        static readonly float[] LetterAnglesVi = { -155f, -125f, -95f, -65f, -35f, 200f, -10f };
 
         /// <summary>
         /// The mockup's flight, key for key: from a point 40 px off the blast, 28 % of the time out 115 px
@@ -331,7 +362,8 @@ namespace CircuitCube.UI
             img.gameObject.SetActive(true);
             if (hot != null) hot.gameObject.SetActive(true);
             SetAlpha(img, 1f);
-            float a = LetterAngles[i % LetterAngles.Length] * Mathf.Deg2Rad;
+            var angles = _vi ? LetterAnglesVi : LetterAngles;
+            float a = angles[i % angles.Length] * Mathf.Deg2Rad;
             var dir = new Vector2(Mathf.Cos(a), -Mathf.Sin(a));
             Vector2 start = core + dir * MockupPx(40f), burst = start + dir * MockupPx(115f);
             var slot = WordLetters[i].rectTransform;
@@ -380,7 +412,7 @@ namespace CircuitCube.UI
         IEnumerator Comets_(RectTransform mascot, Action<int> landed, Action done)
         {
             var rect = Layer.rect;
-            int big = Mathf.Min(6, Comets.Length), small = Comets.Length - big;
+            int big = Mathf.Min(WordLetters.Length, Comets.Length), small = Comets.Length - big;
             for (int k = 0; k < small; k++)
             {
                 var c = Comets[big + k];

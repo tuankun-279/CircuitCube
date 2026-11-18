@@ -192,6 +192,7 @@ namespace CircuitCube.Game
         {
             var m = UI.Hud.Mascot;
             if (m == null) return;
+            if (InFtue) { m.Say(Mascot.Mood.Happy, null); return; }   // the tutorial's notes do the talking
             _lastProgress = Clock.Now;
             _board.LampCounts(_litBy, _totBy);
             int left = _board.TotalLamps - _board.LitLamps;
@@ -208,7 +209,7 @@ namespace CircuitCube.Game
         void TickMascot()
         {
             var m = UI.Hud.Mascot;
-            if (m == null || _state != State.Playing || CardOpen || _level == null) return;
+            if (m == null || _state != State.Playing || CardOpen || _level == null || InFtue) return;
             float now = Clock.Now;
             if (now - _lastLine < LineGap) return;
             int par = LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group));

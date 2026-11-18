@@ -25,9 +25,18 @@ namespace CircuitCube.EditorTools
             { "fx_tag", 37 }, { "fx_tag_light", 37 },
         };
 
-        static void SetBorder(TextureImporter ti, float b)
+        /// <summary>FTUE sprites rendered from the mockups whose corners differ (left, bottom, right, top in pixels).</summary>
+        static readonly System.Collections.Generic.Dictionary<string, Vector4> ExactBorders4 = new System.Collections.Generic.Dictionary<string, Vector4>
         {
-            ti.spriteBorder = new Vector4(b, b, b, b);
+            { "ftue_note", new Vector4(197, 227, 197, 167) }, { "ftue_hole", new Vector4(288, 288, 288, 288) },
+            { "ftue_bubble", new Vector4(227, 265, 227, 189) },
+        };
+
+        static void SetBorder(TextureImporter ti, float b) => SetBorder(ti, new Vector4(b, b, b, b));
+
+        static void SetBorder(TextureImporter ti, Vector4 b)
+        {
+            ti.spriteBorder = b;
             var settings = new TextureImporterSettings();
             ti.ReadTextureSettings(settings);
             settings.spriteMeshType = SpriteMeshType.FullRect;
@@ -58,10 +67,11 @@ namespace CircuitCube.EditorTools
                 ti.textureType = TextureImporterType.Sprite;
                 ti.spriteImportMode = SpriteImportMode.Single;
                 ti.mipmapEnabled = false;
-                ti.maxTextureSize = path.Contains("/Backgrounds/") ? 2048 : name == "app_icon" || path.Contains("/Expert/") || name.StartsWith("fx_boom_core") ? 1024 : 512;   // the neon word and the blast keep full size
+                ti.maxTextureSize = path.Contains("/Backgrounds/") ? 2048 : name == "app_icon" || path.Contains("/Expert/") || path.Contains("/Ftue/") || name.StartsWith("fx_boom_core") ? 1024 : 512;   // the neon word and the blast keep full size
                 // sprites are packed into the UI atlas, which is compressed once; the full-screen backgrounds are not
                 ti.textureCompression = path.Contains("/Backgrounds/") ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed;
                 if (ExactBorders.TryGetValue(name, out float eb)) SetBorder(ti, eb);
+                else if (ExactBorders4.TryGetValue(name, out var eb4)) SetBorder(ti, eb4);
                 else if (System.Array.IndexOf(NineSlice, name) >= 0)
                 {
                     float b = Border(path);

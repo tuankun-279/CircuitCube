@@ -17,6 +17,7 @@ namespace CircuitCube.Game
         public string theme = "system";
         public float soundVolume = 1f, musicVolume = 1f;   // 0..1, the sliders in Settings; 0 = muted
         public string language = "";                        // "en", "vi"; empty = the phone's language
+        public int zoomButtons = -1;                        // zoom buttons in a level: -1 on emulators only, 0 off, 1 on
     }
     [Serializable] public class GroupUnlock { public string id; public bool unlocked; }
     [Serializable] public class GroupSeen { public string id; public int levels; }
@@ -321,6 +322,8 @@ namespace CircuitCube.Game
         public const int TipColours = 1;
         /// <summary>Bit in <see cref="Tips"/> for the lesson on one mixed colour (3 purple, 5 orange, 6 green).</summary>
         public static int TipMix(int color) => color == 3 ? 2 : color == 5 ? 4 : color == 6 ? 8 : 0;
+        /// <summary>Bit in <see cref="Tips"/>: the tip beside the zoom buttons was shown.</summary>
+        public const int TipZoom = 16;
 
         /// <summary>Test helper: mark every level of a group up to <paramref name="level"/> as beaten.</summary>
         public static void UnlockUpTo(int group, int level)

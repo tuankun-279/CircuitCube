@@ -29,7 +29,7 @@ namespace CircuitCube.EditorTools
         public const string Fonts = Root + "/Fonts";
         public const string Atlases = Root + "/Atlases";
 
-        static readonly string[] UiFolders = { "Common", "Brand", "Mascot", "Backgrounds", "Icons", "Expert", "Fx" };
+        static readonly string[] UiFolders = { "Common", "Brand", "Mascot", "Backgrounds", "Icons", "Expert", "Fx", "Ftue" };
 
         /// <summary>
         /// A UI sprite by name: "ui_card", "mascot_win", "logo_mark", "Backgrounds/bg_dark", or "Dark/shape_cube" for

@@ -44,7 +44,7 @@ namespace CircuitCube.EditorTools
             string path = ArtPaths.Atlases + "/UI.spriteatlasv2";
             var atlas = new SpriteAtlasAsset();
             var content = new List<Object>();
-            foreach (var folder in new[] { "Common", "Icons", "Shapes", "Mascot", "Expert", "Fx" })
+            foreach (var folder in new[] { "Common", "Icons", "Shapes", "Mascot", "Expert", "Fx", "Ftue" })
             {
                 var f = AssetDatabase.LoadAssetAtPath<DefaultAsset>(ArtPaths.UI + "/" + folder);
                 if (f != null) content.Add(f);

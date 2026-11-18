@@ -13,7 +13,7 @@ namespace CircuitCube.EditorTools
     /// bar with Undo and lamp dots, the result card with mascot and stat tiles, and the new-shape card.
     /// Everything is written into Prefabs/UI/UI.prefab; nothing is created at runtime. Safe to run again.
     /// </summary>
-    public static class UiV2Builder
+    public static partial class UiV2Builder
     {
         const string UiPrefab = "Assets/CircuitCube/Prefabs/UI/UI.prefab";
         const string Brand = "#2AA8B8";
@@ -52,6 +52,7 @@ namespace CircuitCube.EditorTools
             TutorialUi();
             Ui120();
             Ui120Fx();
+            Ui130Ftue();
             Debug.Log("[CircuitCube] UI V2 built.");
         }
 
