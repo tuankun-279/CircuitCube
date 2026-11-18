@@ -134,6 +134,13 @@ namespace CircuitCube.EditorTools
             tut.Note = note;
             note.gameObject.SetActive(false);
 
+            // the HUD mascot speaks the notes: it may come up over the dim (a canvas of its own, sorted on while a note shows)
+            if (ui.Hud.Mascot != null)
+            {
+                var mc = ui.Hud.Mascot.GetComponent<Canvas>() ?? ui.Hud.Mascot.gameObject.AddComponent<Canvas>();
+                mc.overrideSorting = false;
+                tut.Mascot = mc;
+            }
             BuildWelcome(tut, layer);
             BuildReady(tut, layer);
             layer.gameObject.SetActive(false);
@@ -211,7 +218,10 @@ namespace CircuitCube.EditorTools
             tt.offsetMin = new Vector2(0, 0); tt.offsetMax = new Vector2(0, -16 * U);
             tut.ReadySub = Ink(b, "Sub", "Moonbase is waiting for you to light it up!", 13, ReadySub, true, TextAnchor.LowerCenter);
             var st = (RectTransform)tut.ReadySub.transform;
-            st.offsetMin = new Vector2(0, 16 * U);
+            st.offsetMin = new Vector2(16 * U, 16 * U); st.offsetMax = new Vector2(-16 * U, 0);
+            tut.ReadySub.enableAutoSizing = true;
+            tut.ReadySub.fontSizeMax = tut.ReadySub.fontSize;
+            tut.ReadySub.fontSizeMin = Mathf.RoundToInt(10 * U);
             var go = Fresh(c, "Go", Half, Half, TopC, new Vector2(0, (422 - 600) * U), new Vector2(274, 56) * U);
             Img(go, S("ui_button"), UiRole.Primary, true);
             var gl = Label(go, "Label", Vector2.zero, Vector2.one, Half, new Vector2(-14 * U, 0), Vector2.zero, "I'm ready!", Mathf.RoundToInt(19 * U), UiRole.OnPrimary);

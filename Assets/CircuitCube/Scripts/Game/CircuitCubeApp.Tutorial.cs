@@ -504,7 +504,15 @@ namespace CircuitCube.Game
             for (int i = 0; i < s.Rings.Count; i++)
                 if (TargetRect(tut, s.Rings[i], out var r) && (s.Rings[i].Kind != Mark.Tile || Facing(s.Rings[i].Index, 0.12f))) tut.RingAt(i, r.center);
             if (s.Hand.Kind != Mark.None && TargetRect(tut, s.Hand, out var h) && (s.Hand.Kind != Mark.Tile || Facing(s.Hand.Index, 0.12f))) tut.HandAt(h.center);
-            if (s.Swipe) tut.ShowSwipe(new Vector2(0f, -tut.Rect.rect.height * 0.2f));
+            if (s.Swipe) tut.ShowSwipe(new Vector2(0f, -tut.Rect.rect.height * 0.2f), SwipeLeft(s.WaitTile));
+        }
+
+        /// <summary>Which way to drag to bring a tile round to the front: towards the side it is on, seen from the camera.</summary>
+        bool SwipeLeft(int tile)
+        {
+            if (tile < 0) return true;
+            float x = Cam.transform.InverseTransformDirection(_board.NormalWorld(tile)).x;
+            return x > 0f;   // a tile facing right comes round with a drag to the left
         }
 
         /// <summary>Where a step target is, in the tutorial layer's coordinates.</summary>

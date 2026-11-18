@@ -22,6 +22,8 @@ namespace CircuitCube.UI
         public RectTransform Hand;
         public RectTransform Swipe;
         [Header("Note")]
+        [Tooltip("Canvas on the HUD mascot: sorted over the dim while a note shows, so the speaker stays lit.")]
+        public Canvas Mascot;
         public RectTransform Note;
         public TMP_Text NoteName, NoteText, NextLabel;
         public Button Skip;
@@ -59,6 +61,7 @@ namespace CircuitCube.UI
 
         float _t, _noteAt, _welcomeAt, _readyAt;
         Vector2 _handAt, _swipeAt;
+        float _swipeDir = 1f;
 
         /// <summary>A point on the screen in this layer's coordinates.</summary>
         public Vector2 Local(Vector2 screen)
@@ -82,6 +85,7 @@ namespace CircuitCube.UI
         {
             ClearMarks();
             if (Note != null) Note.gameObject.SetActive(false);
+            LiftMascot(false);
             if (TapCatcher != null) TapCatcher.gameObject.SetActive(false);
             if (Welcome != null) Welcome.SetActive(false);
             if (Ready != null) Ready.SetActive(false);
@@ -140,10 +144,13 @@ namespace CircuitCube.UI
             _handAt = local;
         }
 
-        public void ShowSwipe(Vector2 local)
+        /// <summary>The swipe arrow; <paramref name="left"/> turns it round (a drag to the left brings the right side to the front).</summary>
+        public void ShowSwipe(Vector2 local, bool left)
         {
             Swipe.gameObject.SetActive(true);
             _swipeAt = local;
+            _swipeDir = left ? -1f : 1f;
+            Swipe.localScale = new Vector3(_swipeDir, 1f, 1f);
         }
 
         /// <summary>The mascot's note; <paramref name="waitsForTap"/> shows "Next" and lets any tap move on.</summary>
@@ -156,10 +163,25 @@ namespace CircuitCube.UI
             NextLabel.gameObject.SetActive(waitsForTap);
             TapCatcher.gameObject.SetActive(waitsForTap);
             if (changed) _noteAt = _t;
+            LiftMascot(true);
         }
+
+        void LiftMascot(bool up)
+        {
+            if (Mascot == null || Mascot.overrideSorting == up) return;
+            Mascot.overrideSorting = up;
+            if (up)
+            {
+                var root = Mascot.transform.parent != null ? Mascot.transform.parent.GetComponentInParent<Canvas>() : null;
+                Mascot.sortingOrder = (root != null ? root.rootCanvas.sortingOrder : 0) + 1;
+            }
+        }
+
+        void OnDisable() => LiftMascot(false);
 
         public void HideNote()
         {
+            LiftMascot(false);
             Note.gameObject.SetActive(false);
             TapCatcher.gameObject.SetActive(false);
         }
@@ -206,7 +228,7 @@ namespace CircuitCube.UI
             if (Swipe != null && Swipe.gameObject.activeSelf)
             {
                 float p = Mathf.Repeat(_t, 1.6f) / 1.6f;
-                Swipe.anchoredPosition = _swipeAt + new Vector2(Mathf.Lerp(-30f, 30f, Mathf.SmoothStep(0f, 1f, p)) * u, 0f);
+                Swipe.anchoredPosition = _swipeAt + new Vector2(_swipeDir * Mathf.Lerp(-30f, 30f, Mathf.SmoothStep(0f, 1f, p)) * u, 0f);
                 var img = Swipe.GetComponent<Image>();
                 if (img != null) { var c = img.color; c.a = p < 0.15f ? p / 0.15f : p > 0.85f ? (1f - p) / 0.15f : 1f; img.color = c; }
             }
