@@ -117,9 +117,9 @@ namespace CircuitCube.Game
             hud.UndoButton.onClick.AddListener(Undo);
             hud.HelpButton.onClick.AddListener(() => { if (_state == State.Playing && !CardOpen) ShowHowTo(); });
             if (hud.ZoomResetButton != null) hud.ZoomResetButton.onClick.AddListener(() => ResetZoom(true));
-            if (hud.ZoomIn != null) hud.ZoomIn.onClick.AddListener(() => { if (CanZoom) ZoomAt(new Vector2(Screen.width, Screen.height) * 0.5f, _zoom * ZoomStep); });
-            if (hud.ZoomOut != null) hud.ZoomOut.onClick.AddListener(() => { if (CanZoom) ZoomAt(new Vector2(Screen.width, Screen.height) * 0.5f, _zoom / ZoomStep); });
-            if (hud.ZoomFit != null) hud.ZoomFit.onClick.AddListener(() => { if (CanZoom) ResetZoom(true); });
+            if (hud.ZoomIn != null) hud.ZoomIn.onClick.AddListener(() => { HideZoomTip(); if (CanZoom) ZoomAt(new Vector2(Screen.width, Screen.height) * 0.5f, _zoom * ZoomStep); });
+            if (hud.ZoomOut != null) hud.ZoomOut.onClick.AddListener(() => { HideZoomTip(); if (CanZoom) ZoomAt(new Vector2(Screen.width, Screen.height) * 0.5f, _zoom / ZoomStep); });
+            if (hud.ZoomFit != null) hud.ZoomFit.onClick.AddListener(() => { HideZoomTip(); if (CanZoom) ResetZoom(true); });
 
             var r = UI.Result;
             r.Primary.onClick.AddListener(NextLevel);
@@ -743,10 +743,18 @@ namespace CircuitCube.Game
             hud.ZoomPanel.SetActive(on);
             bool tip = on && (CubeSave.Tips & CubeSave.TipZoom) == 0;
             if (hud.ZoomTip != null) hud.ZoomTip.SetActive(tip);
-            if (tip) CubeSave.Tips |= CubeSave.TipZoom;
+            if (tip)
+            {
+                CubeSave.Tips |= CubeSave.TipZoom;
+                _tw.Run(ZoomTipSeconds, p => { }, HideZoomTip, hud.ZoomTip);
+            }
             _shownZoom = -1;
             ApplyZoom();
         }
+
+        const float ZoomTipSeconds = 6f;
+
+        void HideZoomTip() { if (UI.Hud.ZoomTip != null) UI.Hud.ZoomTip.SetActive(false); }
 
         void ShowZoomLevel()
         {
