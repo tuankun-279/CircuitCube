@@ -44,6 +44,11 @@ namespace CircuitCube.UI
             if (_busy || Icon == null || Label == null || _rect == null) return;
             _busy = true;
             float width = _rect.rect.width, icon = Icon.rect.width;
+            if (width <= 1f) { _busy = false; return; }   // not laid out yet
+            // both parts are placed from the button's middle
+            Icon.anchorMin = new Vector2(0.5f, Icon.anchorMin.y);
+            Icon.anchorMax = new Vector2(0.5f, Icon.anchorMax.y);
+            Icon.pivot = new Vector2(0.5f, Icon.pivot.y);
             var lr = (RectTransform)Label.transform;
             float room = Mathf.Max(10f, width - 2f * Padding - icon - Gap);
             lr.anchorMin = new Vector2(0.5f, 0f);
