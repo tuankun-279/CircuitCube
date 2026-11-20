@@ -1252,10 +1252,16 @@ namespace CircuitCube.Game
             }
 
             var mouse = Mouse.current;
+            // the wheel: also on emulators, where the mouse arrives as touches and the wheel only as scroll events
+            float notches = WheelNotches(mouse);
+            if (notches != 0f && CanZoom)
+            {
+                Vector2 at = mouse != null ? mouse.position.ReadValue() : (Vector2)UnityEngine.Input.mousePosition;
+                if (at.x <= 0f && at.y <= 0f) at = new Vector2(Screen.width, Screen.height) * 0.5f;   // no pointer position: zoom at the middle
+                if (!PointerOverUi(at)) { ZoomAt(at, _zoom * Mathf.Pow(WheelStep, notches)); HideZoomTip(); }
+            }
             if (mouse == null || ts != null && ts.primaryTouch.press.isPressed) return false;
             Vector2 mp = mouse.position.ReadValue();
-            float wheel = mouse.scroll.ReadValue().y;
-            if (wheel != 0f && CanZoom && !PointerOverUi(mp)) ZoomAt(mp, _zoom * Mathf.Pow(1.0015f, Mathf.Clamp(wheel, -480f, 480f)));
             if (mouse.rightButton.isPressed && CanZoom)
             {
                 if (_rightPanning) PanPixels(mp - _rightLast);
@@ -1264,6 +1270,26 @@ namespace CircuitCube.Game
             }
             else _rightPanning = false;
             return false;
+        }
+
+        /// <summary>Each notch of the mouse wheel zooms by this much.</summary>
+        const float WheelStep = 1.18f;
+
+        /// <summary>
+        /// Wheel notches this frame, up = zoom in. Windows reports 120 per notch, Android and PC emulators about 1, so
+        /// both are read as notches; the old input API is the fallback where no mouse device shows up.
+        /// </summary>
+        static float WheelNotches(Mouse mouse)
+        {
+            float w = mouse != null ? mouse.scroll.ReadValue().y : 0f;
+            if (w == 0f)
+            {
+                try { w = UnityEngine.Input.mouseScrollDelta.y; }
+                catch (System.InvalidOperationException) { w = 0f; }   // the old input API is turned off
+            }
+            if (w == 0f) return 0f;
+            float n = Mathf.Abs(w) >= 10f ? w / 120f : w;
+            return Mathf.Clamp(n, -4f, 4f);
         }
 
         void HandlePointer(float dt)
