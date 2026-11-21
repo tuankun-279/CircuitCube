@@ -166,7 +166,7 @@ namespace CircuitCube.Game
                 bool mixed = IsMixed(c);
                 int a = c & -c, b = c & ~a;
                 g.Set(CubeColors.Energy(c), CubeColors.EnergyName(c), _litBy[c], _totBy[c],
-                    mixed ? CubeColors.Energy(a) : Color.clear, mixed ? CubeColors.Energy(b) : Color.clear, mixed);
+                    mixed ? CubeColors.Energy(a) : Color.clear, mixed ? CubeColors.Energy(b) : Color.clear, mixed, c);
             }
             HideRest(hud.LampTray, n);
         }

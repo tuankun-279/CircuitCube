@@ -23,6 +23,7 @@ namespace CircuitCube.EditorTools
         {
             { "fx_seg", 8 }, { "fx_seg_glow", 34 }, { "fx_seg_glow_light", 34 }, { "fx_bar_glow", 45 }, { "fx_bar_glow_light", 45 },
             { "fx_tag", 37 }, { "fx_tag_light", 37 },
+            { "fx_tray_card", 52 }, { "fx_tray_border", 52 }, { "fx_tray_done", 142 }, { "fx_tray_done_light", 142 },
         };
 
         /// <summary>FTUE sprites rendered from the mockups whose corners differ (left, bottom, right, top in pixels).</summary>

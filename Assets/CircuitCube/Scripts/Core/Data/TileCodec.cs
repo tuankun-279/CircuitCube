@@ -85,7 +85,11 @@ namespace CircuitCube.Core
         }
     }
 
-    /// <summary>Score of a won level: 6 at par, at most 5 over par, minus hints, never below the minimum.</summary>
+    /// <summary>
+    /// Score of a won level. "Par" is the fewest taps to the player's own finished board (<see cref="LevelScore.MinTaps"/>),
+    /// so any valid way of connecting the lamps can reach Expert: 6 within the slack, at most 5 past it, minus hints,
+    /// never below the minimum.
+    /// </summary>
     public static class LevelScore
     {
         /// <summary>
@@ -117,6 +121,29 @@ namespace CircuitCube.Core
         }
 
         public static bool IsExpert(int points) => points >= Expert;
+
+        /// <summary>
+        /// Fewest taps that turn the starting board into the board the player finished with: per tile, the turns from
+        /// its starting rotation to its final wire layout (a straight wire matches after half a turn). Tiles a hint fixed
+        /// count nothing, since the hint turned them. Moves past this number are wasted moves, whatever way of
+        /// connecting the player found.
+        /// </summary>
+        public static int MinTaps(CubeTile[] tiles, int[] startRot)
+        {
+            int sum = 0;
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                var t = tiles[i];
+                if (t.Locked || startRot == null || i >= startRot.Length) continue;
+                int now = t.Current;
+                for (int k = 0; k < t.Ports; k++)
+                    if (Circuit.RotN(t.Sol, startRot[i] + k, t.Ports) == now) { sum += k; break; }
+            }
+            return sum;
+        }
+
+        /// <summary>Moves made past <see cref="MinTaps"/>: turning a tile too far, or turning it and back.</summary>
+        public static int Waste(int moves, int minTaps) => Math.Max(0, moves - minTaps);
 
         /// <summary>Whole stars of a score, half stars left out: Expert and 6 → 3, 5/4 → 2, 3 → 1.</summary>
         public static int WholeStars(int points) => points <= 0 ? 0 : Math.Max(1, Math.Min(points, 6) / 2);

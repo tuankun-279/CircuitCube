@@ -53,6 +53,7 @@ namespace CircuitCube.EditorTools
             Ui120();
             Ui120Fx();
             Ui130Ftue();
+            Ui140Score();
             FitLabels();
             Debug.Log("[CircuitCube] UI V2 built.");
         }
@@ -287,8 +288,14 @@ namespace CircuitCube.EditorTools
                 rt.sizeDelta = new Vector2(118 * k, 108);
                 var g = go.AddComponent<LampGroup>();
                 g.Group = go.AddComponent<CanvasGroup>();
-                Img(rt, S("ui_card"), UiRole.Card, true).GetComponent<ThemeRole>().Alpha = 0.93f;
-                Pic(rt, "Border", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, S("ui_frame"), UiRole.Track, true);
+                // option D: the glow (hidden until done) behind a card and border tinted in the colour
+                g.Done = Pic(rt, "Done", Vector2.zero, Vector2.one, Half, Vector2.zero, new Vector2(48 * k, 48 * k), S("fx_tray_done"), UiRole.None, true);
+                g.Done.pixelsPerUnitMultiplier = 1.35f;
+                g.Done.gameObject.SetActive(false);
+                g.Card = Pic(rt, "Card", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, S("fx_tray_card"), UiRole.None, true);
+                g.Card.pixelsPerUnitMultiplier = 1.35f;
+                g.Border = Pic(rt, "Border", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, S("fx_tray_border"), UiRole.None, true);
+                g.Border.pixelsPerUnitMultiplier = 1.35f;
                 var le = go.AddComponent<LayoutElement>();
                 le.minWidth = 120; le.preferredWidth = 118 * k; le.flexibleWidth = 0;
 
@@ -335,6 +342,12 @@ namespace CircuitCube.EditorTools
                 var tle = g.Check.gameObject.AddComponent<LayoutElement>();
                 tle.preferredWidth = tle.minWidth = 13 * k; tle.preferredHeight = tle.minHeight = 13 * k;
                 g.Check.gameObject.SetActive(false);
+                g.Symbol = Pic(nameRow, "Symbol", Half, Half, Half, Vector2.zero, new Vector2(14 * k, 14 * k), S("fx_sym_r"), UiRole.None);
+                var sle = g.Symbol.gameObject.AddComponent<LayoutElement>();
+                sle.preferredWidth = sle.minWidth = 14 * k; sle.preferredHeight = sle.minHeight = 14 * k;
+                g.Symbols = new Sprite[8];
+                string[] keys = { null, "r", "b", "p", "y", "o", "g", "w" };   // colour sets 1..7
+                for (int i = 1; i < 8; i++) g.Symbols[i] = S("fx_sym_" + keys[i]);
                 g.Label = Label(nameRow, "Label", Half, Half, Half, Vector2.zero, new Vector2(200, 40), "Yellow 3/4", 30, UiRole.Text);
                 g.Label.fontStyle = FontStyles.Bold;
                 g.Label.enableAutoSizing = false;

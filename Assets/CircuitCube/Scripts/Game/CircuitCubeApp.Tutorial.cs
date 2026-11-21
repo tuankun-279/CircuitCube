@@ -101,6 +101,7 @@ namespace CircuitCube.Game
             _cheat = false;
             _tw.Clear();
             _level = TutorialLevels.Build(n);
+            CaptureStart();
             _moves = 0;
             _hintsUsed = 0;
             _hintsLeft = HintsPerLevel;
@@ -109,7 +110,7 @@ namespace CircuitCube.Game
             _undo.Clear();
             _unlockedGroup = -1;
             _levelCheck = "";
-            _shownMoves = _shownPar = _shownLit = _shownTotal = _shownHints = _shownUndos = -1;
+            _shownMoves = _shownLit = _shownTotal = _shownHints = _shownUndos = _shownSecond = -1;
             _busy = false;
             _state = State.Playing;
             HideAll();
@@ -292,9 +293,9 @@ namespace CircuitCube.Game
                     Add("Undo and hints <b>don't count as moves</b>. But using them means no EXPERT!", Mascot.Mood.Excited, Wait.Tap, Phase.AfterWin).Dims.Add(Target.Of(Mark.Status));
                     break;
                 case 4:
-                    Add("Every level has a <b>Par</b>. Solve it within Par to get <b>3 stars</b>.", Mascot.Mood.Idle, Wait.Tap).Dims.Add(Target.Of(Mark.Status));
+                    Add("Every move counts. Turn each tile only as far as it needs for <b>3 stars</b>.", Mascot.Mood.Idle, Wait.Tap).Dims.Add(Target.Of(Mark.Status));
                     _steps.Add(new Step { Wait = Wait.Win, Phase = Phase.Play });   // the player solves it alone
-                    Add("Within Par, with no Undo or hints: you're an <b>EXPERT</b>!", Mascot.Mood.Excited, Wait.Tap, Phase.OnResult).Dims.Add(Target.Of(Mark.Word));
+                    Add("No wasted moves, no Undo or hints: you're an <b>EXPERT</b>!", Mascot.Mood.Excited, Wait.Tap, Phase.OnResult).Dims.Add(Target.Of(Mark.Word));
                     break;
                 case 5:
                     s = Add("A lamp only lights with power of <b>its own colour</b>. Red power lit the Red lamp.", Mascot.Mood.Idle, Wait.Tap);

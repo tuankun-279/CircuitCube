@@ -59,6 +59,12 @@ namespace CircuitCube.Game
         CubeBoardView _board;
         int _moves, _hintsLeft, _hintsUsed, _undosLeft, _undosUsed;
         float _levelStartTime;
+        /// <summary>Rotation of every tile when the level started, to count the fewest taps to the finished board.</summary>
+        int[] _startRot = new int[0];
+        /// <summary>Time spent playing the level: stops while a card is open, the app is in the background or an ad shows.</summary>
+        float _playSeconds;
+        int _shownSecond = -1;
+        string _statusFmt;
         bool _busy, _cheat;
         System.Action _tipClosed;
         readonly Stack<int> _undo = new Stack<int>();   // tiles the player turned, newest first
@@ -206,7 +212,7 @@ namespace CircuitCube.Game
             if (_state != State.Playing || _level == null || _cheat || InFtue) return;
             int serial = GameData.SerialAt(_group, _level.Number);
             if (serial <= 0) return;
-            var ip = new InProgress { serial = serial, position = _level.Number, check = _levelCheck, moves = _moves, hintsUsed = _hintsUsed, undosUsed = _undosUsed };
+            var ip = new InProgress { serial = serial, position = _level.Number, check = _levelCheck, moves = _moves, hintsUsed = _hintsUsed, undosUsed = _undosUsed, seconds = _playSeconds };
             var sb = new System.Text.StringBuilder(_level.Tiles.Length);
             for (int i = 0; i < _level.Tiles.Length; i++)
             {
@@ -228,6 +234,7 @@ namespace CircuitCube.Game
             for (int i = 0; i < _level.Tiles.Length; i++) _level.Tiles[i].Rot = ip.rotations[i] - '0';
             foreach (int i in ip.hintedTiles) if (i >= 0 && i < _level.Tiles.Length) _level.Tiles[i].Locked = true;
             _moves = ip.moves;
+            _playSeconds = ip.seconds;
             _hintsUsed = ip.hintsUsed;
             _hintsLeft = Mathf.Max(0, HintsPerLevel - _hintsUsed);
             _undosUsed = ip.undosUsed;
@@ -492,6 +499,7 @@ namespace CircuitCube.Game
             }
             _cheat = cheat;
             _level = level;
+            CaptureStart();
             _moves = 0;
             _hintsUsed = 0;
             _hintsLeft = HintsPerLevel;
@@ -499,7 +507,7 @@ namespace CircuitCube.Game
             _undosLeft = UndosPerLevel;
             _undo.Clear();
             _unlockedGroup = -1;
-            _shownMoves = _shownPar = _shownLit = _shownTotal = _shownHints = _shownUndos = -1;
+            _shownMoves = _shownLit = _shownTotal = _shownHints = _shownUndos = _shownSecond = -1;
             var data = GameData.LevelDataAt(group, number);
             _levelCheck = data != null ? data.check ?? "" : "";
             if (!cheat) RestoreInProgress();
@@ -574,7 +582,7 @@ namespace CircuitCube.Game
         /// <summary>Settings switched the language: menus redraw, the HUD rewrites its lines.</summary>
         void OnLanguageChanged()
         {
-            _shownMoves = _shownPar = _shownLit = _shownTotal = _shownHints = _shownUndos = -1;
+            _shownMoves = _shownLit = _shownTotal = _shownHints = _shownUndos = _shownSecond = -1;
             if (_level != null && (_state == State.Playing || _state == State.Won))
                 UI.Hud.Title.text = Loc.Upper(Loc.T(GameData.Group(_group).name)) + "  " + _level.Number;
             if (InMenus) DebugRefresh();
@@ -811,23 +819,42 @@ namespace CircuitCube.Game
 
         // ---------------- Play ----------------
 
-        int _shownMoves = -1, _shownPar = -1, _shownLit = -1, _shownTotal = -1, _shownHints = -1, _shownUndos = -1;
+        int _shownMoves = -1, _shownLit = -1, _shownTotal = -1, _shownHints = -1, _shownUndos = -1;
 
         /// <summary>Numbers as text without allocating for the values a level actually shows.</summary>
         static readonly string[] Numbers = BuildNumbers(1000);
         static string[] BuildNumbers(int n) { var a = new string[n]; for (int i = 0; i < n; i++) a[i] = i.ToString(); return a; }
         static string Num(int v) => v >= 0 && v < Numbers.Length ? Numbers[v] : v.ToString();
 
-        /// <summary>Only texts whose numbers changed are rebuilt, so a tap costs at most two short strings.</summary>
+        /// <summary>The tiles' rotations at the start, and the clock back to zero (a saved game restores its own time after).</summary>
+        void CaptureStart()
+        {
+            var tiles = _level.Tiles;
+            if (_startRot.Length != tiles.Length) _startRot = new int[tiles.Length];
+            for (int i = 0; i < tiles.Length; i++) _startRot[i] = tiles[i].Rot;
+            _playSeconds = 0f;
+        }
+
+        /// <summary>The clock runs while the board can be played; a long frame (back from the background) adds at most half a second.</summary>
+        void TickPlayClock()
+        {
+            if (_state != State.Playing || _level == null || CardOpen) return;
+            _playSeconds += Mathf.Min(Time.unscaledDeltaTime, 0.5f);
+            if ((int)_playSeconds != _shownSecond) UpdateHud();
+        }
+
+        /// <summary>Only texts whose numbers changed are rebuilt; moves and time go through SetText, which does not allocate.</summary>
         void UpdateHud()
         {
             var hud = UI.Hud;
-            int target = InFtue ? _level.Par : LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group));   // the par players see includes the slack
-            if (_moves != _shownMoves || target != _shownPar)
+            int sec = (int)_playSeconds;
+            if (_moves != _shownMoves || sec != _shownSecond)
             {
+                if (_shownMoves < 0 || _statusFmt == null)   // a new level or language: the line's words
+                    _statusFmt = Loc.T("MOVES") + " {0}  ·  <sprite name=\"clock\" tint=1> {1:00}:{2:00}";
                 _shownMoves = _moves;
-                _shownPar = target;
-                hud.Status.text = string.Concat(Loc.T("MOVES"), " ", Num(_moves), "  ·  ", Loc.T("PAR"), " ", Num(target));
+                _shownSecond = sec;
+                hud.Status.SetText(_statusFmt, _moves, sec / 60, sec % 60);
             }
             if (_hintsLeft != _shownHints)
             {
@@ -932,7 +959,7 @@ namespace CircuitCube.Game
         void ShowHowTo() => ShowTip(Loc.T("How to play"),
             Loc.T("Drag to turn the shape. Tap a tile to rotate it.\n\nConnect every lamp to a power source of its colour. "
             + "When two sources share a wire their colours mix: Red + Blue = Purple, Red + Yellow = Orange, Blue + Yellow = Green.\n\n"
-            + "Solve it in the fewest moves (par) for three stars."), Loc.T("Got it"), null);
+            + "Solve it with as few wasted moves as you can for three stars."), Loc.T("Got it"), null);
 
         /// <summary>Fix one wrong tile. Each hint costs a rewarded ad; a level allows <see cref="HintsPerLevel"/> of them.</summary>
         void UseHint()
@@ -981,7 +1008,10 @@ namespace CircuitCube.Game
         }
 
         /// <summary>Expert (7) at par with no help, 6 at par with hints or undos, less over par (rules from the manifest).</summary>
-        int PointsFor() => _forcePoints >= 0 ? _forcePoints : LevelScore.Points(_moves, _level.Par, _hintsUsed, _undosUsed, GameData.Rules, InFtue ? FtueGroup : GameData.Group(_group));
+        int PointsFor() => _forcePoints >= 0 ? _forcePoints : LevelScore.Points(_moves, MinTaps(), _hintsUsed, _undosUsed, GameData.Rules, InFtue ? FtueGroup : GameData.Group(_group));
+
+        /// <summary>Fewest taps from the start to the board as it is now.</summary>
+        int MinTaps() => LevelScore.MinTaps(_level.Tiles, _startRot);
 
         void Win()
         {
@@ -1009,8 +1039,8 @@ namespace CircuitCube.Game
             bool unlocksNext = newGroup >= 0;
             _unlockedGroup = newGroup;
             if (real) GameAnalytics.Log("level_complete", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("moves", _moves),
-                ("par", LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group))), ("stars", LevelScore.WholeStars(points)), ("expert", LevelScore.IsExpert(points)),
-                ("hints", _hintsUsed), ("undos", _undosUsed), ("seconds", Mathf.RoundToInt(Time.realtimeSinceStartup - _levelStartTime)));
+                ("par", LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group))), ("waste", LevelScore.Waste(_moves, MinTaps())), ("stars", LevelScore.WholeStars(points)), ("expert", LevelScore.IsExpert(points)),
+                ("hints", _hintsUsed), ("undos", _undosUsed), ("seconds", Mathf.RoundToInt(_playSeconds)));
             if (unlocksNext) GameAnalytics.Log("shape_unlocked", ("shape", GameData.Group(newGroup).id));
             _board.Celebrate();
             GameAudio.Play(Sfx.Win);
@@ -1037,7 +1067,8 @@ namespace CircuitCube.Game
                     : Loc.Upper(Loc.T(GameData.Group(_group).name)) + "  ·  " + Loc.F("LEVEL {0}", _level.Number);
                 r.Title.text = Loc.T("Level complete");
                 r.Stats[0].text = _moves.ToString();
-                r.Stats[1].text = (InFtue ? _level.Par : LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group))).ToString();
+                int played = (int)_playSeconds;
+                r.Stats[1].SetText("{0:00}:{1:00}", played / 60, played % 60);   // time instead of par
                 r.Stats[2].text = _board.LitLamps + "/" + _board.TotalLamps;
                 bool expert = LevelScore.IsExpert(points);
                 bool word = expert && UI.Fx != null;
@@ -1186,6 +1217,7 @@ namespace CircuitCube.Game
             _tw.Tick(dt);
             HandlePointer(dt);
             TickLesson(dt);
+            TickPlayClock();
 
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) Back();
 

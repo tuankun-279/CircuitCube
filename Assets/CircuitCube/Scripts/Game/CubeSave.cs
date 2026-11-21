@@ -47,6 +47,7 @@ namespace CircuitCube.Game
         public string check = "";          // the level's check when it was saved; another check = the level was edited
         public string rotations = "";      // one digit per tile
         public int moves, hintsUsed, undosUsed;
+        public float seconds;              // play time so far
         public List<int> hintedTiles = new List<int>();
     }
     [Serializable] public class GroupProgress
