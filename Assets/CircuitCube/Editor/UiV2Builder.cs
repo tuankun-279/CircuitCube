@@ -335,16 +335,16 @@ namespace CircuitCube.EditorTools
                 // name and count, a tick in front once the colour is done
                 var nameRow = Fresh(rt, "Name", new Vector2(0, 0), new Vector2(1, 0), new Vector2(0.5f, 0), new Vector2(0, pad - 4), new Vector2(-12, 40));
                 var nr = nameRow.gameObject.AddComponent<HorizontalLayoutGroup>();
-                nr.spacing = 4 * k; nr.childAlignment = TextAnchor.MiddleCenter;
+                nr.spacing = 3 * k; nr.childAlignment = TextAnchor.MiddleCenter;   // mockup: 3 px gaps
                 nr.childControlWidth = true; nr.childControlHeight = true;
                 nr.childForceExpandWidth = false; nr.childForceExpandHeight = false;
                 g.Check = Pic(nameRow, "Tick", Half, Half, Half, Vector2.zero, new Vector2(13 * k, 13 * k), Icon("icon_check"), UiRole.None);
                 var tle = g.Check.gameObject.AddComponent<LayoutElement>();
                 tle.preferredWidth = tle.minWidth = 13 * k; tle.preferredHeight = tle.minHeight = 13 * k;
                 g.Check.gameObject.SetActive(false);
-                g.Symbol = Pic(nameRow, "Symbol", Half, Half, Half, Vector2.zero, new Vector2(14 * k, 14 * k), S("fx_sym_r"), UiRole.None);
+                g.Symbol = Pic(nameRow, "Symbol", Half, Half, Half, Vector2.zero, new Vector2(12 * k, 12 * k), S("fx_sym_r"), UiRole.None);
                 var sle = g.Symbol.gameObject.AddComponent<LayoutElement>();
-                sle.preferredWidth = sle.minWidth = 14 * k; sle.preferredHeight = sle.minHeight = 14 * k;
+                sle.preferredWidth = sle.minWidth = 12 * k; sle.preferredHeight = sle.minHeight = 12 * k;   // the 10 px glyph in its line box
                 g.Symbols = new Sprite[8];
                 string[] keys = { null, "r", "b", "p", "y", "o", "g", "w" };   // colour sets 1..7
                 for (int i = 1; i < 8; i++) g.Symbols[i] = S("fx_sym_" + keys[i]);

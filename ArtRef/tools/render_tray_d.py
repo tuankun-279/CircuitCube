@@ -32,8 +32,8 @@ def add(name, w, h, html, mode='clear', scale=S): ITEMS[name] = (w, h, html, mod
 # card fill and 1.5 px border, 13 px corners (9-slice, 14 px borders)
 add('fx_tray_card', 40, 40, '<i style="position:absolute;left:0;top:0;width:40px;height:40px;border-radius:13px;background:#fff"></i>')
 add('fx_tray_border', 40, 40, '<i style="position:absolute;left:0;top:0;width:40px;height:40px;box-sizing:border-box;border-radius:13px;border:1.5px solid #fff"></i>')
-# done: a second 1.5 px ring outside the border, 16 px glow out, 10 px glow in (9-slice, 24 + 14 px borders)
-DONE = '<i style="position:absolute;left:24px;top:24px;width:40px;height:40px;box-sizing:border-box;border-radius:13px;box-shadow:0 0 0 1.5px #fff,0 0 16px rgba(255,255,255,.8),inset 0 0 10px rgba(255,255,255,.35)"></i>'
+# done: the border again (no seam) and a second 1.5 px ring outside it, 16 px glow out, 10 px glow in (9-slice, 24 + 14 px borders)
+DONE = '<i style="position:absolute;left:24px;top:24px;width:40px;height:40px;box-sizing:border-box;border-radius:13px;border:1.5px solid #fff;box-shadow:0 0 0 1.5px #fff,0 0 16px rgba(255,255,255,.8),inset 0 0 10px rgba(255,255,255,.35)"></i>'
 add('fx_tray_done', 88, 88, DONE, 'glow')
 add('fx_tray_done_light', 88, 88, DONE, 'clear')
 # colour symbols, 10 px glyphs as the mockup draws them (Inter, then the system fallback)
