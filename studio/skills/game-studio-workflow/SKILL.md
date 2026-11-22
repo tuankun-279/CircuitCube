@@ -19,7 +19,8 @@ The user's standing rules for every game project, set 2026-11-22 on Circuit Cube
 Rules:
 1. A task that changes the game starts only when the PC is connected (folder access or Remote Control on the PC).
    If only the Mac or a phone is connected, do the parts that need no game change (plans, docs, mockups, console
-   setup in a browser, research) and say the rest waits for the PC.
+   setup in a browser, research) and say the rest waits for the PC. How remote devices reach the PC and how to get
+   computer-use approvals: **pc-remote-workflow**.
 2. Cloud work (the repo clone in the container) is fine for code and docs, but compiling, tests, screenshots and
    builds are confirmed on the PC before a task is called done.
 3. iOS: the Mac pulls the pushed branch, opens the Unity-exported Xcode project and archives it. No game edits on
@@ -37,6 +38,7 @@ Rules:
 | Skill | When |
 |---|---|
 | game-studio-workflow (this) | start of every game task |
+| pc-remote-workflow | every create/run/edit task, especially when driven from the Mac or the phone: the PC does the work, approvals for computer use |
 | unity-game-dev-rules | any Unity change: UI in prefabs, themes, TMP, perf, tests, git from the PC |
 | english-only-code | any code, comment, log or commit |
 | chatgpt-art-pipeline | any new or changed art |

@@ -12,6 +12,8 @@ Circuit Cube is the model project for the user's games. This folder holds what n
 Skills here:
 - `game-studio-workflow`: machines (all game changes only on the PC; Mac and phone for showing, testing and Xcode
   builds), art rule, which skills to load.
+- `pc-remote-workflow`: every game is created, run and edited on the PC; Mac and phone only control it remotely
+  (Remote Control session links, the two computer-use approvals and their 5-minute timeout).
 - `unity-game-dev-rules`: Unity UI, themes, performance, tests, git from the PC.
 - `chatgpt-art-pipeline`: generate art in ChatGPT on the PC, cut and import it.
 - `english-only-code`: all code and commits in English.
