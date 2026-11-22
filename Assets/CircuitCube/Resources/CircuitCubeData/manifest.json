@@ -12,6 +12,7 @@
     "minScore": 3,
     "parScore": 6,
     "overParScore": 5,
+    "wasteAllowed": 3,
     "expertSlackPercent": 15,
     "expertSlackMin": 0
   },

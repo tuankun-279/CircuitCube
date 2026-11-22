@@ -205,16 +205,16 @@ namespace CircuitCube.Game
             m.Say(mood, line);
         }
 
-        /// <summary>Every frame in a level: a calm tip when nothing has lit for a while or the moves run far past par.</summary>
+        /// <summary>Every frame in a level: a calm tip when nothing has lit for a while or many moves were wasted.</summary>
         void TickMascot()
         {
             var m = UI.Hud.Mascot;
             if (m == null || _state != State.Playing || CardOpen || _level == null || InFtue) return;
             float now = Clock.Now;
             if (now - _lastLine < LineGap) return;
-            int par = LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group));
             bool stuck = now - _lastProgress > StuckSeconds;
-            bool far = !_saidOverPar && _moves > par + Mathf.Max(6, par / 3);
+            // wasted so far: moves past the fewest taps to the board as it is now
+            bool far = !_saidOverPar && LevelScore.Waste(_moves, MinTaps()) > LevelScore.WasteAllowed(GameData.Rules, GameData.Group(_group)) + Mathf.Max(6, _level.Par / 3);
             if (!stuck && !far) return;
             if (far) _saidOverPar = true;
             _lastLine = _lastProgress = now;

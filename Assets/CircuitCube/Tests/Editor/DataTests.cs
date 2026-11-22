@@ -81,24 +81,26 @@ namespace CircuitCube.Tests
         public void ScoreRule()
         {
             var r = new GameRules();
-            // slack: 15% of par, rounded up
-            Assert.AreEqual(10 + 2, LevelScore.ExpertLimit(10, r));
-            Assert.AreEqual(70 + 11, LevelScore.ExpertLimit(70, r));
-            Assert.AreEqual(100 + 15, LevelScore.ExpertLimit(100, r));
-            Assert.AreEqual(7, LevelScore.Points(5, 5, 0, 0, r));      // Expert: par, no help
-            Assert.AreEqual(7, LevelScore.Points(6, 5, 0, 0, r));      // within the slack
-            Assert.AreEqual(5, LevelScore.Points(7, 5, 0, 0, r));
-            Assert.AreEqual(7, LevelScore.Points(81, 70, 0, 0, r));
-            Assert.AreEqual(5, LevelScore.Points(82, 70, 0, 0, r));
-            Assert.AreEqual(6, LevelScore.Points(4, 5, 1, 0, r));      // par with a hint: three stars
-            Assert.AreEqual(6, LevelScore.Points(4, 5, 0, 2, r));      // par with undos: three stars
-            Assert.AreEqual(4, LevelScore.Points(9, 5, 1, 0, r));      // over par with a hint
+            // wasted moves allowed: 3 by default, the same on every board size
+            Assert.AreEqual(3, LevelScore.WasteAllowed(r));
+            Assert.AreEqual(10 + 3, LevelScore.ExpertLimit(10, r));
+            Assert.AreEqual(100 + 3, LevelScore.ExpertLimit(100, r));
+            Assert.AreEqual(7, LevelScore.Points(5, 5, 0, 0, r));      // Expert: no wasted move, no help
+            Assert.AreEqual(7, LevelScore.Points(8, 5, 0, 0, r));      // three wasted moves still allowed
+            Assert.AreEqual(5, LevelScore.Points(9, 5, 0, 0, r));
+            Assert.AreEqual(7, LevelScore.Points(73, 70, 0, 0, r));
+            Assert.AreEqual(5, LevelScore.Points(74, 70, 0, 0, r));
+            Assert.AreEqual(6, LevelScore.Points(4, 5, 1, 0, r));      // with a hint: three stars
+            Assert.AreEqual(6, LevelScore.Points(4, 5, 0, 2, r));      // with undos: three stars
+            Assert.AreEqual(4, LevelScore.Points(9, 5, 1, 0, r));      // past the allowance with a hint
             Assert.AreEqual(3, LevelScore.Points(20, 5, 3, 0, r));
-            var sphere = new GroupData { expertSlackPercent = 20 };      // a group's own slack wins, its min falls back to the rule
-            Assert.AreEqual(100 + 20, LevelScore.ExpertLimit(100, r, sphere));
-            Assert.AreEqual(10 + 2, LevelScore.ExpertLimit(10, r, sphere));
-            Assert.AreEqual(100 + 15, LevelScore.ExpertLimit(100, r, new GroupData()));
-            r.expertSlackPercent = 0; r.expertSlackMin = 0;        // strict par still possible from the manifest
+            var sphere = new GroupData { wasteAllowed = 5 };              // a group's own number wins
+            Assert.AreEqual(100 + 5, LevelScore.ExpertLimit(100, r, sphere));
+            Assert.AreEqual(100 + 3, LevelScore.ExpertLimit(100, r, new GroupData()));   // -1 = the rule's
+            Assert.AreEqual(100, LevelScore.ExpertLimit(100, r, new GroupData { wasteAllowed = 0 }));
+            r.expertSlackPercent = 50; r.expertSlackMin = 9;       // the old par slack no longer counts
+            Assert.AreEqual(10 + 3, LevelScore.ExpertLimit(10, r));
+            r.wasteAllowed = 0;                                    // no wasted move allowed, set from the manifest
             Assert.AreEqual(5, LevelScore.Points(6, 5, 0, 0, r));
             Assert.AreEqual(3, LevelScore.WholeStars(7));
             Assert.AreEqual(6, LevelScore.HalfStars(7));          // Expert counts as three stars

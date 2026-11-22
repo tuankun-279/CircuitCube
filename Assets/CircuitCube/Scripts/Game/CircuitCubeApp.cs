@@ -58,10 +58,9 @@ namespace CircuitCube.Game
         string _levelCheck = "";   // the level's check from its data file (empty for generated levels)
         CubeBoardView _board;
         int _moves, _hintsLeft, _hintsUsed, _undosLeft, _undosUsed;
-        float _levelStartTime;
         /// <summary>Rotation of every tile when the level started, to count the fewest taps to the finished board.</summary>
         int[] _startRot = new int[0];
-        /// <summary>Time spent playing the level: stops while a card is open, the app is in the background or an ad shows.</summary>
+        /// <summary>Time spent playing the level: stops while a card or Lumi's note is open, the app is in the background or an ad shows.</summary>
         float _playSeconds;
         int _shownSecond = -1;
         string _statusFmt;
@@ -511,7 +510,6 @@ namespace CircuitCube.Game
             var data = GameData.LevelDataAt(group, number);
             _levelCheck = data != null ? data.check ?? "" : "";
             if (!cheat) RestoreInProgress();
-            _levelStartTime = Time.realtimeSinceStartup;
             CrashReports.SetLevel(GameData.Group(group).id, number);
             _zoomLogged = false;
             GameAnalytics.Log("level_start", ("shape", GameData.Group(group).id), ("level", number), ("resumed", _moves > 0));
@@ -838,7 +836,7 @@ namespace CircuitCube.Game
         /// <summary>The clock runs while the board can be played; a long frame (back from the background) adds at most half a second.</summary>
         void TickPlayClock()
         {
-            if (_state != State.Playing || _level == null || CardOpen) return;
+            if (_state != State.Playing || _level == null || CardOpen || LessonTalking) return;
             _playSeconds += Mathf.Min(Time.unscaledDeltaTime, 0.5f);
             if ((int)_playSeconds != _shownSecond) UpdateHud();
         }
@@ -1007,7 +1005,7 @@ namespace CircuitCube.Game
             if (solved) Win();
         }
 
-        /// <summary>Expert (7) at par with no help, 6 at par with hints or undos, less over par (rules from the manifest).</summary>
+        /// <summary>Expert (7) within the wasted moves allowed with no help, 6 with hints or undos, less past that (rules from the manifest).</summary>
         int PointsFor() => _forcePoints >= 0 ? _forcePoints : LevelScore.Points(_moves, MinTaps(), _hintsUsed, _undosUsed, GameData.Rules, InFtue ? FtueGroup : GameData.Group(_group));
 
         /// <summary>Fewest taps from the start to the board as it is now.</summary>
@@ -1039,7 +1037,7 @@ namespace CircuitCube.Game
             bool unlocksNext = newGroup >= 0;
             _unlockedGroup = newGroup;
             if (real) GameAnalytics.Log("level_complete", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("moves", _moves),
-                ("par", LevelScore.ExpertLimit(_level.Par, GameData.Rules, GameData.Group(_group))), ("waste", LevelScore.Waste(_moves, MinTaps())), ("stars", LevelScore.WholeStars(points)), ("expert", LevelScore.IsExpert(points)),
+                ("par", _level.Par), ("waste", LevelScore.Waste(_moves, MinTaps())), ("stars", LevelScore.WholeStars(points)), ("expert", LevelScore.IsExpert(points)),
                 ("hints", _hintsUsed), ("undos", _undosUsed), ("seconds", Mathf.RoundToInt(_playSeconds)));
             if (unlocksNext) GameAnalytics.Log("shape_unlocked", ("shape", GameData.Group(newGroup).id));
             _board.Celebrate();

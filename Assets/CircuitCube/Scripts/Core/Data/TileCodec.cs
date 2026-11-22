@@ -86,25 +86,22 @@ namespace CircuitCube.Core
     }
 
     /// <summary>
-    /// Score of a won level. "Par" is the fewest taps to the player's own finished board (<see cref="LevelScore.MinTaps"/>),
-    /// so any valid way of connecting the lamps can reach Expert: 6 within the slack, at most 5 past it, minus hints,
-    /// never below the minimum.
+    /// Score of a won level. Moves are compared with the fewest taps to the player's own finished board
+    /// (<see cref="LevelScore.MinTaps"/>), so any valid way of connecting the lamps can reach Expert: 6 with at most
+    /// <see cref="GameRules.wasteAllowed"/> wasted moves, at most 5 past that, minus hints, never below the minimum.
     /// </summary>
     public static class LevelScore
     {
         /// <summary>
-        /// Most moves that still score as par: the level's par plus a margin for a few slips, at least
-        /// <see cref="GameRules.expertSlackMin"/> taps and <see cref="GameRules.expertSlackPercent"/>% of par
-        /// (rounded up). This is the "par" the player sees.
+        /// Wasted moves a win may have and still score as par (3 stars, Expert without help): the group's own number
+        /// when it sets one (<see cref="GroupData.wasteAllowed"/>, -1 = the rule's), else <see cref="GameRules.wasteAllowed"/>.
+        /// Both are set in Level Lab (Groups &amp; rules).
         /// </summary>
-        /// A group may set its own slack (<see cref="GroupData.expertSlackPercent"/>, -1 = the rule's), so every
-        /// shape can be tuned to the same chance of Expert.
-        public static int ExpertLimit(int par, GameRules r, GroupData group = null)
-        {
-            int pct = group != null && group.expertSlackPercent >= 0 ? group.expertSlackPercent : r.expertSlackPercent;
-            int min = group != null && group.expertSlackMin >= 0 ? group.expertSlackMin : r.expertSlackMin;
-            return par + Math.Max(min, (int)Math.Ceiling(par * pct / 100.0));
-        }
+        public static int WasteAllowed(GameRules r, GroupData group = null) =>
+            Math.Max(0, group != null && group.wasteAllowed >= 0 ? group.wasteAllowed : r.wasteAllowed);
+
+        /// <summary>Most moves that still score as par: the fewest taps plus the wasted moves allowed.</summary>
+        public static int ExpertLimit(int minTaps, GameRules r, GroupData group = null) => minTaps + WasteAllowed(r, group);
 
         /// <summary>Score of a level won without a hint or an undo, within par: Expert, shown as the comet.</summary>
         public const int Expert = 7;
@@ -114,9 +111,9 @@ namespace CircuitCube.Core
         /// undo, otherwise three stars (<see cref="GameRules.parScore"/>). Over par: <see cref="GameRules.overParScore"/>
         /// less <see cref="GameRules.hintPenalty"/> per hint, never below <see cref="GameRules.minScore"/>.
         /// </summary>
-        public static int Points(int moves, int par, int hintsUsed, int undosUsed, GameRules r, GroupData group = null)
+        public static int Points(int moves, int minTaps, int hintsUsed, int undosUsed, GameRules r, GroupData group = null)
         {
-            if (moves <= ExpertLimit(par, r, group)) return hintsUsed + undosUsed == 0 ? Expert : r.parScore;
+            if (moves <= ExpertLimit(minTaps, r, group)) return hintsUsed + undosUsed == 0 ? Expert : r.parScore;
             return Math.Max(r.minScore, r.overParScore - hintsUsed * r.hintPenalty);
         }
 
