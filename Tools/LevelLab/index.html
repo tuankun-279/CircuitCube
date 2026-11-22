@@ -327,7 +327,7 @@ table.bt th{color:var(--muted);font-weight:600}
       <div class="stack" id="cGroupCards"></div>
       <div class="stack">
         <div class="panel"><h2>Game rules</h2><div class="c-form" id="cRulesForm"></div><div class="row" style="margin-top:10px"><button class="btn primary" type="button" id="cRulesSave" disabled>Save rules</button></div></div>
-        <div class="panel"><h2>Points under the current rules</h2><table class="c-score" id="cScore"></table><p class="note">6 points is Expert (within par + slack, no hints). Stars shown = points ÷ 2 until the half-star art exists.</p></div>
+        <div class="panel"><h2>Points under the current rules</h2><table class="c-score" id="cScore"></table><p class="note">The top row with 0 hints is Expert when no undo was used either. Wasted moves = moves past the fewest taps to the player's own finished board. Stars shown = points ÷ 2.</p></div>
         <div class="panel"><h2>Add group</h2><div class="grid2"><label class="f" for="cNgId">Id<input id="cNgId" type="text" placeholder="octa" autocomplete="off"></label><label class="f" for="cNgName">Name<input id="cNgName" type="text" placeholder="Octahedron" autocomplete="off"></label></div>
           <div class="row" style="margin-top:8px"><button class="btn" type="button" id="cAddGroup">Add group (hidden)</button></div></div>
       </div>
@@ -962,10 +962,12 @@ function refreshAll(){refreshShape();refreshBoard();draw()}
 // orders/<id>-<k> {group, chunk:k, version, levels:[serial…]}  ← 100 positions per chunk
 // levels/<id>-<serial> · shapes/<shapeId>        (* nextSerial is Level Lab only, dropped on export)
 const PAGE=100,CHUNK=100;let listPage=0,chunkUnsub=null,ORDER=null,CHUNKS=[],GROUPS={};
-const DEFAULT_RULES={windowBack:10,windowAhead:10,hintsPerLevel:3,hintPenalty:1,undosPerLevel:5,adsOn:1,adsTesters:"",updateBelow:0,minScore:3,parScore:6,overParScore:5,expertSlackPercent:15,expertSlackMin:0};
-// moves that still count as par (the game's LevelScore.ExpertLimit): par + max(min, ceil(par × percent / 100))
-const slackOf=(r,g,k,d)=>g&&g[k]!=null&&g[k]>=0?g[k]:(r[k]??d);
-const expertLimit=(par,r,g)=>par+Math.max(slackOf(r,g,"expertSlackMin",0),Math.ceil(par*slackOf(r,g,"expertSlackPercent",15)/100));
+const DEFAULT_RULES={windowBack:10,windowAhead:10,hintsPerLevel:3,hintPenalty:1,undosPerLevel:5,adsOn:1,adsTesters:"",updateBelow:0,minScore:3,parScore:6,overParScore:5,wasteAllowed:3,expertSlackPercent:15,expertSlackMin:0};
+// wasted moves a win may have and still count as par (the game's LevelScore.WasteAllowed): the group's own number, else the rule's.
+// expertSlackPercent / expertSlackMin are the old par slack: kept in the data for app versions before this rule, no longer edited.
+const wasteOf=(r,g)=>Math.max(0,g&&g.wasteAllowed!=null&&g.wasteAllowed>=0?g.wasteAllowed:(r.wasteAllowed??3));
+// moves that still count as par (the game's LevelScore.ExpertLimit): the fewest taps to the finished board + wasted moves allowed
+const expertLimit=(minTaps,r,g)=>minTaps+wasteOf(r,g);
 const DEFAULT_MANIFEST={schema:3,minApp:"0.1.0",shapesVersion:1,rules:DEFAULT_RULES,groups:[{id:"cube",unlock:null}]};
 const groupDetail=(id,name)=>({id,name:name||id,blurb:"",icon:id,endless:false,enable:false,levelCount:0,chunkSize:CHUNK,chunks:[],nextSerial:1});
 const idOf=(g,n)=>g+"-"+pad4(n);
@@ -1343,12 +1345,12 @@ const ICONS=["cube","tetra","octa","sphere","cross","dodeca","megamix"];
 const RULE_INFO={windowBack:["Keep behind","Levels already played kept on the device (X − n)."],windowAhead:["Download ahead","Levels ahead downloaded for offline play (X + n)."],
   hintsPerLevel:["Hints per level","Free hints in one level."],hintPenalty:["Points per hint","Points taken off for each hint."],
   undosPerLevel:["Undos per level","Undos one level allows; each plays a rewarded ad first."],adsOn:["Rewarded ads","1 = a hint or an undo plays an ad first; 0 = free for everyone (closed test); 2 = ads only on the devices listed under Ad testers."],updateBelow:["Force update below","Players on an app version code below this get the full-screen Google Play update when the game opens. 0 = never forced (a newer version is only offered, once a day)."],
-  minScore:["Minimum points","A win always gives at least this."],parScore:["Points at par","Moves ≤ par + slack (3 stars, Expert)."],overParScore:["Points over par","Moves above par + slack."],
-  expertSlackPercent:["Par slack %","Extra moves allowed as a share of par (rounded up). The player sees par + slack as PAR."],expertSlackMin:["Par slack, at least","Extra moves allowed on small boards (0 = percentage only)."]};
+  minScore:["Minimum points","A win always gives at least this."],parScore:["Points at par","Wasted moves within the allowance (3 stars; Expert with no hints or undos)."],overParScore:["Points over par","More wasted moves than allowed."],
+  wasteAllowed:["Wasted moves allowed","Moves past the fewest taps to the player's own finished board that still give 3 stars and Expert. Same on every board size; a group can set its own. 0 = none."]};
 let gDraft=null,rDraft=null;
 const jeq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 function gDirty(){return !!gDraft&&(!jeq(gDraft.manifest,MANIFEST)||!jeq(gDraft.groups,GROUPS))}
-function parLine(g){const r=Object.assign({},DEFAULT_RULES,MANIFEST.rules||{});return "PAR in game: "+[20,45,70,100].map(p=>`${p} → ${expertLimit(p,r,g)}`).join(" · ")}
+function parLine(g){const r=Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}),n=wasteOf(r,g);return `Expert with up to ${n} wasted move${n===1?"":"s"}${g&&g.wasteAllowed!=null&&g.wasteAllowed>=0?" (this group)":" (rule)"}`}
 function unlockText(u){return !u||!u.group?"Open from the start.":`Opens after ${u.cleared} levels of group ${u.group}.`}
 function cfgOnData(){if(!gDirty())gDraft=null;rDraft=null;if(!$("#viewGroups").hidden)cfgRender();
   if(!$("#viewFill").hidden&&!Object.keys(FILL).length){renderFillTable();clearTimeout(cfgOnData._t);cfgOnData._t=setTimeout(renderFillCounts,300)}}
@@ -1369,8 +1371,7 @@ function cfgRender(){
         <label class="f" for="cgi-${i}">Icon<select id="cgi-${i}" data-f="icon">${ICONS.map(x=>`<option${g.icon===x?" selected":""}>${x}</option>`).join("")}${ICONS.includes(g.icon)?"":`<option selected>${esc(g.icon||"")}</option>`}</select></label>
         <label class="f" for="cgu-${i}">Unlock<select id="cgu-${i}" data-u="group">${opts}</select></label>
         <label class="f" for="cgc-${i}">Levels to clear<input id="cgc-${i}" type="number" min="0" data-u="cleared" value="${u&&u.group?u.cleared:0}" ${u&&u.group?"":"disabled"}></label>
-        <label class="f" for="cgp-${i}">Par slack % (empty = rule, normally leave empty)<input id="cgp-${i}" type="number" min="0" max="100" data-f="expertSlackPercent" data-n="1" value="${g.expertSlackPercent!=null&&g.expertSlackPercent>=0?g.expertSlackPercent:""}" placeholder="${MANIFEST.rules?.expertSlackPercent??15}"></label>
-        <label class="f" for="cgm-${i}">Par slack, at least<input id="cgm-${i}" type="number" min="0" data-f="expertSlackMin" data-n="1" value="${g.expertSlackMin!=null&&g.expertSlackMin>=0?g.expertSlackMin:""}" placeholder="${MANIFEST.rules?.expertSlackMin??0}"></label>
+        <label class="f" for="cgw-${i}">Wasted moves allowed (empty = rule)<input id="cgw-${i}" type="number" min="0" data-f="wasteAllowed" data-n="1" value="${g.wasteAllowed!=null&&g.wasteAllowed>=0?g.wasteAllowed:""}" placeholder="${MANIFEST.rules?.wasteAllowed??3}"></label>
         <span class="note c-par" style="margin:0;align-self:end">${parLine(g)}</span>
         <label class="f wide" for="cgb-${i}">Description<input id="cgb-${i}" type="text" data-f="blurb" value="${esc(g.blurb||"")}"></label>
         <label class="f wide" for="cgs-${i}">Shapes (ids in order, *n = levels Auto fill makes with it; checked on save; "megamix" = random blocks)<input id="cgs-${i}" type="text" class="mono" data-f="shapes" value="${esc(g.shapes||DEFAULT_SHAPES[ref.id]||"")}" placeholder="octa-2 octa-3 octa-4"></label>
@@ -1390,7 +1391,7 @@ function cfgRender(){
 function rulesChanged(){
   const r=rDraft.rules;$("#cRulesSave").disabled=jeq(r,Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}))&&rDraft.minApp===(MANIFEST.minApp||"0.1.0");
   const hs=Array.from({length:Math.min(6,r.hintsPerLevel)+1},(_,i)=>i),pts=(mv,h)=>Math.max(r.minScore,(mv<=5?r.parScore:r.overParScore)-h*r.hintPenalty);
-  $("#cScore").innerHTML=`<thead><tr><th></th>${hs.map(h=>`<th>${h} hints</th>`).join("")}</tr></thead><tbody>`+[["≤ par + slack",5],["Above that",9]].map(([l,mv])=>`<tr><td>${l}</td>${hs.map(h=>{const p=pts(mv,h);return `<td><span class="c-pts${mv===5&&h===0?" top":""}">${p}</span> <span class="note">${p<=0?0:Math.max(1,Math.floor(p/2))}★</span></td>`}).join("")}</tr>`).join("")+"</tbody>"+`<tfoot><tr><td colspan="${hs.length+1}" class="note" style="text-align:left">PAR shown in the game: ${[20,45,70,100].map(p=>`par ${p} → ${expertLimit(p,r)}`).join(" · ")}</td></tr></tfoot>`;
+  $("#cScore").innerHTML=`<thead><tr><th></th>${hs.map(h=>`<th>${h} hints</th>`).join("")}</tr></thead><tbody>`+[["Within the allowance",5],["More wasted moves",9]].map(([l,mv])=>`<tr><td>${l}</td>${hs.map(h=>{const p=pts(mv,h);return `<td><span class="c-pts${mv===5&&h===0?" top":""}">${p}</span> <span class="note">${p<=0?0:Math.max(1,Math.floor(p/2))}★</span></td>`}).join("")}</tr>`).join("")+"</tbody>"+`<tfoot><tr><td colspan="${hs.length+1}" class="note" style="text-align:left">Fewest taps 20 → up to ${expertLimit(20,r)} moves still give Expert (${wasteOf(r)} wasted move${wasteOf(r)===1?"":"s"} allowed).</td></tr></tfoot>`;
 }
 $("#cGroupCards").addEventListener("input",e=>{
   const card=e.target.closest(".c-card");if(!card)return;const id=card.dataset.gid,ref=gDraft.manifest.groups.find(x=>x.id===id);

@@ -37,7 +37,9 @@ namespace CircuitCube.Core
         // installed version codes below this get the full-screen Play update at start (0 = never forced)
         public int updateBelow = 0;
         public int minScore = 3, parScore = 6, overParScore = 5;
-        // moves up to par + expertSlackPercent% of par (rounded up, at least expertSlackMin) still count as par (3 stars, Expert)
+        // wasted moves (past the fewest taps to the finished board) a win may have and still count as par (3 stars, Expert)
+        public int wasteAllowed = 3;
+        // the old par slack (par + percent, at least min): only app versions before the wasted-moves rule read it
         public int expertSlackPercent = 15, expertSlackMin = 0;
     }
 
@@ -65,7 +67,9 @@ namespace CircuitCube.Core
         public bool endless, enable;
         public int levelCount;
         public int chunkSize = 100;
-        // this group's own par slack (see GameRules); -1 = use the manifest rule
+        // this group's own wasted moves allowed (see GameRules); -1 = use the manifest rule
+        public int wasteAllowed = -1;
+        // this group's own old par slack, read only by app versions before the wasted-moves rule; -1 = the manifest rule
         public int expertSlackPercent = -1, expertSlackMin = -1;
         public List<ChunkInfo> chunks = new List<ChunkInfo>();
     }

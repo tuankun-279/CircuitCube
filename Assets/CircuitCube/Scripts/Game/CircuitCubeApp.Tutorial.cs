@@ -59,8 +59,19 @@ namespace CircuitCube.Game
         static bool NeedsFtue => CubeSave.TutorialStep < FtueDone && TotalWins() == 0;
 
         static GroupData _ftueGroup;
-        /// <summary>The tutorial counts par exactly (no slack).</summary>
-        static GroupData FtueGroup => _ftueGroup ?? (_ftueGroup = new GroupData { expertSlackPercent = 0, expertSlackMin = 0 });
+        /// <summary>The tutorial allows no wasted moves.</summary>
+        static GroupData FtueGroup => _ftueGroup ?? (_ftueGroup = new GroupData { wasteAllowed = 0 });
+
+        /// <summary>Lumi's note is on screen and waits for a tap: the play clock stops while the player reads.</summary>
+        bool LessonTalking
+        {
+            get
+            {
+                var s = CurrentStep;
+                return UI.Tutorial != null && UI.Tutorial.gameObject.activeSelf && _stepShown
+                       && s != null && s.Text != null && s.Wait == Wait.Tap && s.Phase == _phase;
+            }
+        }
 
         void WireTutorial()
         {

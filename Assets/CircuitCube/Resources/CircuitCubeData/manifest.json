@@ -58,6 +58,7 @@
     "parScore": 6,
     "undosPerLevel": 5,
     "updateBelow": 0,
+    "wasteAllowed": 3,
     "windowAhead": 10,
     "windowBack": 10
   },
