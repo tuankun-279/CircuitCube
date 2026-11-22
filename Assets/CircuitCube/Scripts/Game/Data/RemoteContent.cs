@@ -101,6 +101,29 @@ namespace CircuitCube.Game
                 GameData.Reload();
                 groupsReady?.Invoke();
 
+                // the five levels of the weekly challenge (and their block shapes); older weeks are removed
+                var week = m.challenge;
+                if (week != null && !week.IsNone)
+                {
+                    var files = new List<string>();
+                    for (int slot = 1; slot <= week.count; slot++)
+                    {
+                        string rel = ChallengeWeek.LevelPath(week.id, slot);
+                        if (LastChanged || !GameData.Has(rel)) files.Add(rel);
+                    }
+                    yield return FetchMany(baseUrl, files, root);
+                    var shapes = new List<string>();
+                    for (int slot = 1; slot <= week.count; slot++)
+                    {
+                        var lv = ReadCached<LevelData>(root, ChallengeWeek.LevelPath(week.id, slot));
+                        if (lv == null || lv.shape == null || !lv.shape.StartsWith("voxel-")) continue;
+                        string sr = "shapes/voxel/" + lv.shape + ".json";
+                        if (!GameData.Has(sr) && !shapes.Contains(sr)) shapes.Add(sr);
+                    }
+                    yield return FetchMany(baseUrl, shapes, root);
+                }
+                PruneWeeks(Path.Combine(root, "challenge"), week != null ? week.id : "");
+
                 var rules = GameData.Rules;
                 var order = new List<int>();
                 if (firstGroup >= 0 && firstGroup < GameData.GroupCount) order.Add(firstGroup);
@@ -168,6 +191,13 @@ namespace CircuitCube.Game
             if (!Directory.Exists(dir)) return;
             foreach (var f in Directory.GetFiles(dir, "*.json"))
                 if (!keep.Contains(Path.GetFileName(f))) { try { File.Delete(f); } catch (IOException) { } }
+        }
+
+        static void PruneWeeks(string dir, string keep)
+        {
+            if (!Directory.Exists(dir)) return;
+            foreach (var d in Directory.GetDirectories(dir))
+                if (Path.GetFileName(d) != keep) { try { Directory.Delete(d, true); } catch (IOException) { } }
         }
 
         static bool Replace(string from, string to)

@@ -177,6 +177,37 @@ namespace CircuitCube.Game
             return v;
         }
 
+        /// <summary>The weekly challenge in the manifest (empty id = none).</summary>
+        public static ChallengeWeek Challenge => Manifest != null && Manifest.challenge != null ? Manifest.challenge : new ChallengeWeek();
+
+        /// <summary>When the challenge opens and closes (UTC); false if it has no readable start.</summary>
+        public static bool ChallengeWindow(out System.DateTime opens, out System.DateTime closes)
+        {
+            var w = Challenge;
+            opens = closes = default;
+            if (w.IsNone || !System.DateTime.TryParse(w.start, System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal, out opens)) return false;
+            closes = opens.AddDays(Mathf.Max(1, w.days));
+            return true;
+        }
+
+        /// <summary>Level file of challenge slot 1..count, or null when it is not on the device yet.</summary>
+        public static LevelData ChallengeData(int slot)
+        {
+            var w = Challenge;
+            if (w.IsNone || slot < 1 || slot > w.count) return null;
+            string rel = ChallengeWeek.LevelPath(w.id, slot);
+            return Has(rel) ? ReadJson<LevelData>(rel) : null;
+        }
+
+        /// <summary>The board of challenge slot 1..count, numbered by its slot; null when missing.</summary>
+        public static CubeLevel ChallengeLevel(int slot)
+        {
+            var lv = RunCheck.Build(ChallengeData(slot), Voxel);
+            if (lv != null) lv.Number = slot;
+            return lv;
+        }
+
         public static LevelData LevelDataAt(int g, int position)
         {
             int serial = SerialAt(g, position);

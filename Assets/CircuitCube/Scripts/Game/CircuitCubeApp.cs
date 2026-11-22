@@ -67,6 +67,9 @@ namespace CircuitCube.Game
         bool _busy, _cheat;
         System.Action _tipClosed;
         readonly Stack<int> _undo = new Stack<int>();   // tiles the player turned, newest first
+        // every tile turned this game in order, sent with an Expert win so the server can play it again (Ranks)
+        readonly List<int> _taps = new List<int>();
+        bool _tapsWhole = true;   // false when a game saved by an older version resumed without its taps
         int _unlockedGroup = -1;                       // a shape the last win unlocked, offered after the result card
 
         // Input
@@ -160,6 +163,7 @@ namespace CircuitCube.Game
             RewardedAds.Init();
             Loc.Changed += OnLanguageChanged;
             CloudSave.Init();
+            Ranks.Init();
             CubeSave.Merged += OnCloudMerged;
             HideAll();
             UI.Splash.Show();
@@ -211,7 +215,7 @@ namespace CircuitCube.Game
             if (_state != State.Playing || _level == null || _cheat || InFtue) return;
             int serial = GameData.SerialAt(_group, _level.Number);
             if (serial <= 0) return;
-            var ip = new InProgress { serial = serial, position = _level.Number, check = _levelCheck, moves = _moves, hintsUsed = _hintsUsed, undosUsed = _undosUsed, seconds = _playSeconds };
+            var ip = new InProgress { serial = serial, position = _level.Number, check = _levelCheck, moves = _moves, hintsUsed = _hintsUsed, undosUsed = _undosUsed, seconds = _playSeconds, taps = _tapsWhole ? new List<int>(_taps) : new List<int>() };
             var sb = new System.Text.StringBuilder(_level.Tiles.Length);
             for (int i = 0; i < _level.Tiles.Length; i++)
             {
@@ -234,6 +238,9 @@ namespace CircuitCube.Game
             foreach (int i in ip.hintedTiles) if (i >= 0 && i < _level.Tiles.Length) _level.Tiles[i].Locked = true;
             _moves = ip.moves;
             _playSeconds = ip.seconds;
+            _taps.Clear();
+            if (ip.taps != null && ip.taps.Count == ip.moves) _taps.AddRange(ip.taps);
+            else _tapsWhole = false;
             _hintsUsed = ip.hintsUsed;
             _hintsLeft = Mathf.Max(0, HintsPerLevel - _hintsUsed);
             _undosUsed = ip.undosUsed;
@@ -831,6 +838,8 @@ namespace CircuitCube.Game
             if (_startRot.Length != tiles.Length) _startRot = new int[tiles.Length];
             for (int i = 0; i < tiles.Length; i++) _startRot[i] = tiles[i].Rot;
             _playSeconds = 0f;
+            _taps.Clear();
+            _tapsWhole = true;
         }
 
         /// <summary>The clock runs while the board can be played; a long frame (back from the background) adds at most half a second.</summary>
@@ -894,6 +903,7 @@ namespace CircuitCube.Game
             tile.Rot++;
             _moves++;
             _undo.Push(index);
+            _taps.Add(index);
             LessonTapped(index);
             if (_moves == 4 && !CubeSave.SeenHowTo && !InFtue) { CubeSave.SeenHowTo = true; if (!(_group == 0 && _level.Number <= 3)) UI.Hud.Tip.text = (UI.Hud.LampTray == null && CubeSave.MixWins < MixFormulaWins ? MixFormula(_level.Colors) : null) ?? ""; }
             _board.AnimateRotation(index, 1);
@@ -930,6 +940,8 @@ namespace CircuitCube.Game
                 var tile = _level.Tiles[index];
                 if (tile.Locked) continue;              // a hint fixed this tile since
                 tile.Rot += tile.Ports - 1;             // one step back, kept non-negative
+                int tapAt = _taps.LastIndexOf(index);
+                if (tapAt >= 0) _taps.RemoveAt(tapAt);
                 _moves = Mathf.Max(0, _moves - 1);
                 _undosLeft--;
                 _undosUsed++;
@@ -1006,6 +1018,14 @@ namespace CircuitCube.Game
         }
 
         /// <summary>Expert (7) within the wasted moves allowed with no help, 6 with hints or undos, less past that (rules from the manifest).</summary>
+        /// <summary>An Expert win (no hint, no undo) goes to the shape's leaderboard with its taps.</summary>
+        void SubmitExpertWin(int points)
+        {
+            if (!LevelScore.IsExpert(points) || _hintsUsed + _undosUsed > 0 || !_tapsWhole || _taps.Count != _moves) return;
+            int serial = GameData.SerialAt(_group, _level.Number);
+            if (serial > 0) Ranks.SubmitShape(GameData.Group(_group).id, serial, _taps, _playSeconds);
+        }
+
         int PointsFor() => _forcePoints >= 0 ? _forcePoints : LevelScore.Points(_moves, MinTaps(), _hintsUsed, _undosUsed, GameData.Rules, InFtue ? FtueGroup : GameData.Group(_group));
 
         /// <summary>Fewest taps from the start to the board as it is now.</summary>
@@ -1031,6 +1051,7 @@ namespace CircuitCube.Game
             for (int g = 0; g < wasOpen.Length; g++) wasOpen[g] = CubeSave.GroupOpen(g);
             bool real = !_cheat && !InFtue;
             if (real) { CubeSave.Complete(_group, _level.Number, points); CloudSave.MarkDirty(); }
+            if (real) SubmitExpertWin(points);
             if (real && MixFormula(_level.Colors) != null) CubeSave.MixWins++;
             int newGroup = -1;
             for (int g = 0; g < wasOpen.Length && newGroup < 0; g++) if (!wasOpen[g] && CubeSave.GroupOpen(g)) newGroup = g;
@@ -1210,6 +1231,7 @@ namespace CircuitCube.Game
             RewardedAds.Tick();
             AppUpdates.Tick();
             CloudSave.Tick();
+            Ranks.Tick();
             TickContent();
             TickMascot();
             _tw.Tick(dt);

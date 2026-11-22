@@ -11,7 +11,11 @@
         "Google.Play.Common",
         "Google.Play.Core",
         "Google.Play.Review",
-        "Google.Play.Games"
+        "Google.Play.Games",
+        "Unity.Services.Core",
+        "Unity.Services.Authentication",
+        "Unity.Services.CloudCode",
+        "Unity.Services.Leaderboards"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -35,6 +39,11 @@
             "name": "com.google.play.games",
             "expression": "",
             "define": "CC_PLAYGAMES"
+        },
+        {
+            "name": "com.unity.services.leaderboards",
+            "expression": "",
+            "define": "CC_UGS"
         }
     ],
     "noEngineReferences": false

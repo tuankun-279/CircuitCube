@@ -54,6 +54,25 @@ namespace CircuitCube.Core
         public int contentVersion;
         /// <summary>Where the files of this publish are served (an immutable tag on jsDelivr); empty = next to the manifest.</summary>
         public string cdn = "";
+        /// <summary>The weekly challenge now open (empty id = none). Older apps ignore it.</summary>
+        public ChallengeWeek challenge = new ChallengeWeek();
+    }
+
+    /// <summary>
+    /// One weekly challenge: five levels everyone plays, whatever their progress, ranked by fewest moves and then time.
+    /// Level files sit at challenge/&lt;id&gt;/&lt;slot&gt;.json (slot 1..5), next to the other files of the publish.
+    /// </summary>
+    [Serializable] public class ChallengeWeek
+    {
+        /// <summary>ISO week, e.g. "2026-W49"; also the version of the weekly boards it is ranked on.</summary>
+        public string id = "";
+        /// <summary>Opening time in UTC, ISO 8601 ("2026-12-03T00:00:00Z"); it stays open for <see cref="days"/>.</summary>
+        public string start = "";
+        public int days = 7;
+        /// <summary>Number of levels (files 1..count), easiest first.</summary>
+        public int count = 5;
+        public bool IsNone => string.IsNullOrEmpty(id);
+        public static string LevelPath(string id, int slot) => "challenge/" + id + "/" + slot + ".json";
     }
 
     [Serializable] public class ChunkInfo

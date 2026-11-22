@@ -49,6 +49,7 @@ namespace CircuitCube.Game
         public int moves, hintsUsed, undosUsed;
         public float seconds;              // play time so far
         public List<int> hintedTiles = new List<int>();
+        public List<int> taps = new List<int>();   // tiles turned in order (for the leaderboards); older saves have none
     }
     [Serializable] public class GroupProgress
     {
