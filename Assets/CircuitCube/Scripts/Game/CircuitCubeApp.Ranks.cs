@@ -375,8 +375,20 @@ namespace CircuitCube.Game
                 var info = GameData.Group(i);
                 bool open = allOpen || WeekOpenFor(i);
                 bool on = i == picked;
-                var icon = GroupIcon(i);
-                if (icon != null) it.Icon.sprite = icon;
+                // the white line icon tinted like the name; a shape without one shows its picture untinted
+                var line = dock.IconFor(string.IsNullOrEmpty(info.icon) ? info.id : info.icon);
+                if (line != null)
+                {
+                    it.Icon.sprite = line;
+                    Role(it.IconRole, on ? UiRole.OnPrimary : UiRole.TextMuted);
+                }
+                else
+                {
+                    var picture = GroupIcon(i);
+                    if (picture != null) it.Icon.sprite = picture;
+                    Role(it.IconRole, UiRole.None);
+                    it.Icon.color = Color.white;
+                }
                 it.Name.text = Loc.T(info.name);
                 Role(it.Back, on ? UiRole.Primary : UiRole.Transparent);
                 Role(it.NameRole, on ? UiRole.OnPrimary : UiRole.TextMuted);

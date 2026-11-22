@@ -92,7 +92,7 @@ namespace CircuitCube.EditorTools
             // icon and text centred together (IconLabel, added by FitLabels)
             Pic(pill, "Icon", C, C, Half, new Vector2(-70, 0), new Vector2(58, 58), Icon("icon_trophy"), UiRole.Star);
             var label = Label(pill, "Label", Vector2.zero, Vector2.one, Half, new Vector2(37, 0), new Vector2(-16, 0), "Ranks", 42, UiRole.Text);
-            label.fontStyle = FontStyles.Bold;
+            Heavy(label);
             h.RanksButton = pill.gameObject.AddComponent<Button>();
             pill.gameObject.AddComponent<UiClickSound>();
             Place(t, "StarChip", TopR, TopR, TopR, new Vector2(-476, -48), new Vector2(200, 96));
@@ -112,7 +112,7 @@ namespace CircuitCube.EditorTools
             row.spacing = 22; row.childAlignment = TextAnchor.MiddleLeft;
             row.childControlWidth = true; row.childControlHeight = false; row.childForceExpandWidth = false; row.childForceExpandHeight = false;
             var title = Label(head, "Title", Half, Half, Half, Vector2.zero, new Vector2(500, 60), "Weekly Challenge", 47, UiRole.Text, TextAnchor.MiddleLeft);
-            title.fontStyle = FontStyles.Bold;
+            Heavy(title);
             title.textWrappingMode = TextWrappingModes.NoWrap;
             h.WeeklyNew = Badge(head, "New", "NEW", 30, new Vector2(100, 46)).gameObject;
             h.WeeklyLine = Label(card, "Line", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(x, -132), new Vector2(-x - 110, 46),
@@ -144,11 +144,12 @@ namespace CircuitCube.EditorTools
             shade.preserveAspect = false;
             shade.raycastTarget = true;   // the board behind does not take taps
             const float pad = 55f;
-            screen.BackButton = RoundButton(s, "Back", new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(pad, -pad), new Vector2(122, 122), "icon_back");
+            screen.BackButton = RoundButton(s, "Back", new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(pad, -pad), new Vector2(122, 122), "icon_chevron_left");
             s.Find("Back").gameObject.AddComponent<UiClickSound>();
+            ((RectTransform)s.Find("Back/Icon")).sizeDelta = new Vector2(-30, -30);   // the chevron sprite has room around it
             float tx = pad + 122 + 33;
             var title = Label(s, "Title", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(tx, -48), new Vector2(-tx - pad, 80), "Weekly Challenge", 66, UiRole.Text, TextAnchor.MiddleLeft);
-            title.fontStyle = FontStyles.Bold;
+            Heavy(title);
             screen.Subtitle = Label(s, "Subtitle", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(tx, -132), new Vector2(-tx - pad, 92),
                 "Week of Dec 3 · new set every Thursday 07:00", 36, UiRole.TextMuted, TextAnchor.UpperLeft);
 
@@ -165,7 +166,7 @@ namespace CircuitCube.EditorTools
             // rules
             var rules = Fresh(s, "Rules", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -496), new Vector2(-2 * pad, 202));
             Round(rules, S("ui_card"), UiRole.Row, 39, 202).raycastTarget = false;
-            Pic(rules, "Icon", new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(39, 0), new Vector2(58, 58), Icon("icon_help"), UiRole.Primary);
+            Pic(rules, "Icon", new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(36, 0), new Vector2(66, 66), Icon("icon_info"), UiRole.Primary);
             Label(rules, "Text", Vector2.zero, Vector2.one, new Vector2(0, 0.5f), new Vector2(124, 0), new Vector2(-124 - 39, -40),
                 "No hints, no undo. Fewest moves wins, then fastest time. Replay as often as you like; your best run counts.", 36, UiRole.Text, TextAnchor.MiddleLeft)
                 .GetComponent<ThemeRole>().Alpha = 0.85f;
@@ -198,7 +199,7 @@ namespace CircuitCube.EditorTools
             Round(tile, S("ui_card"), UiRole.Card, 44, 175).raycastTarget = false;
             Label(tile, "Label", new Vector2(0, 1), new Vector2(1, 1), TopC, new Vector2(0, -30), new Vector2(-20, 44), label, 33, UiRole.TextMuted);
             var v = Label(tile, "Value", new Vector2(0, 1), new Vector2(1, 1), TopC, new Vector2(0, -78), new Vector2(-20, 64), value, 50, UiRole.Text);
-            v.fontStyle = FontStyles.Bold;
+            Heavy(v);
             return v;
         }
 
@@ -219,7 +220,7 @@ namespace CircuitCube.EditorTools
             Round(badge, S("ui_card"), UiRole.Highlight, 33, 111).raycastTarget = false;
             v.Badge = badge.GetComponent<ThemeRole>();
             v.Number = Label(badge, "Number", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, (i + 1).ToString(), 47, UiRole.Primary);
-            v.Number.fontStyle = FontStyles.Bold;
+            Heavy(v.Number);
             v.NumberRole = v.Number.GetComponent<ThemeRole>();
             const float x = 43 + 111 + 33;
             var head = Fresh(r, "Head", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(x, -40), new Vector2(-x - 280, 53));
@@ -236,12 +237,12 @@ namespace CircuitCube.EditorTools
             var rank = Fresh(r, "Rank", new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(-43, 0), new Vector2(260, 0));
             v.RankRoot = rank.gameObject;
             v.Rank = Label(rank, "Rank", new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(0, -45), new Vector2(0, 53), "#8", 44, UiRole.Star, TextAnchor.MiddleRight);
-            v.Rank.fontStyle = FontStyles.Bold;
+            Heavy(v.Rank);
             v.Of = Label(rank, "Of", new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 1), new Vector2(0, -104), new Vector2(0, 36), "of 1,412", 30, UiRole.TextMuted, TextAnchor.MiddleRight);
             var play = Fresh(r, "Play", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-43, 0), new Vector2(222, 111));
             Round(play, S("ui_card"), UiRole.Primary, 39, 111);
             var pl = Label(play, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, "Play", 42, UiRole.OnPrimary);
-            pl.fontStyle = FontStyles.Bold;
+            Heavy(pl);
             v.Play = play.gameObject.AddComponent<Button>();
             play.gameObject.AddComponent<UiClickSound>();
             play.gameObject.SetActive(false);
@@ -263,10 +264,13 @@ namespace CircuitCube.EditorTools
             }
             else Img(Fresh(d, "Back", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero), null, UiRole.Background).raycastTarget = true;
             Pic(d, "Line", new Vector2(0, 1), Vector2.one, TopC, Vector2.zero, new Vector2(0, 3), null, UiRole.Track);
-            var grid = Fresh(d, "Items", Vector2.zero, Vector2.one, Half, new Vector2(0, 5), new Vector2(-44, -66));
+            var grid = Fresh(d, "Items", Vector2.zero, Vector2.one, Half, new Vector2(0, 5), new Vector2(-30, -66));
             var hl = grid.gameObject.AddComponent<HorizontalLayoutGroup>();
-            hl.spacing = 11; hl.childControlWidth = hl.childControlHeight = true; hl.childForceExpandWidth = hl.childForceExpandHeight = true;
+            hl.spacing = 6; hl.childControlWidth = hl.childControlHeight = true; hl.childForceExpandWidth = hl.childForceExpandHeight = true;
             dock.Items = new ShapeDockItem[6];
+            dock.IconIds = new[] { "cube", "tetra", "octa", "sphere", "dodeca", "megamix" };
+            dock.Icons = new Sprite[dock.IconIds.Length];
+            for (int i = 0; i < dock.IconIds.Length; i++) dock.Icons[i] = Icon("icon_dock_" + dock.IconIds[i]);
             string[] ids = { "cube", "tetra", "octa", "sphere", "dodeca", "megamix" };
             string[] names = { "Moonbase", "Pyramid", "Star Gem", "Planet", "Galaxy", "Nebula" };
             for (int i = 0; i < 6; i++)
@@ -277,12 +281,13 @@ namespace CircuitCube.EditorTools
                 item.Group = it.gameObject.AddComponent<CanvasGroup>();
                 var back = Round(it, S("ui_card"), i == 0 ? UiRole.Primary : UiRole.Transparent, 39, 160);
                 item.Back = back.GetComponent<ThemeRole>();
-                item.Icon = Pic(it, "Icon", TopC, TopC, Half, new Vector2(0, -66), new Vector2(84, 84), S("Dark/shape_" + ids[i]), UiRole.None);
-                item.Name = Label(it, "Name", new Vector2(0, 1), new Vector2(1, 1), TopC, new Vector2(0, -132), new Vector2(-6, 36), names[i], 29, i == 0 ? UiRole.OnPrimary : UiRole.TextMuted);
-                item.Name.fontStyle = FontStyles.Bold;
+                item.Icon = Pic(it, "Icon", TopC, TopC, Half, new Vector2(0, -66), new Vector2(80, 80), Icon("icon_dock_" + ids[i]), i == 0 ? UiRole.OnPrimary : UiRole.TextMuted);
+                item.IconRole = item.Icon.GetComponent<ThemeRole>();
+                item.Name = Label(it, "Name", new Vector2(0, 1), new Vector2(1, 1), TopC, new Vector2(0, -122), new Vector2(-6, 36), names[i], 29, i == 0 ? UiRole.OnPrimary : UiRole.TextMuted);
+                Heavy(item.Name);
                 item.Name.textWrappingMode = TextWrappingModes.NoWrap;
-                item.Name.enableAutoSizing = false;   // FitLabels leaves it: 22 fits "Moonbase" in the column
-                item.Name.fontSize = 22;
+                item.Name.enableAutoSizing = false;   // FitLabels leaves it: 25 ExtraBold fits "Moonbase" in the column
+                item.Name.fontSize = 25;
                 item.Name.overflowMode = TextOverflowModes.Overflow;
                 item.NameRole = item.Name.GetComponent<ThemeRole>();
                 var lk = Pic(it, "Lock", TopR, TopR, TopR, new Vector2(-14, -11), new Vector2(46, 46), S("ui_circle"), UiRole.Track);
@@ -316,7 +321,7 @@ namespace CircuitCube.EditorTools
             // title row
             Pic(p, "Trophy", new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 0.5f), new Vector2(pad, -111), new Vector2(66, 66), Icon("icon_trophy"), UiRole.Star);
             var title = Label(p, "Title", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 0.5f), new Vector2(pad + 66 + 28, -111), new Vector2(-(pad + 66 + 28) - 330, 80), "Leaderboards", 61, UiRole.Text, TextAnchor.MiddleLeft);
-            title.fontStyle = FontStyles.Bold;
+            Heavy(title);
             card.Close = RoundButton(p, "Close", TopR, TopR, new Vector2(1, 0.5f), new Vector2(-pad, -111), new Vector2(122, 122), "icon_close");
             p.Find("Close").GetComponent<ThemeRole>().Role = UiRole.Row;
             card.Edit = RoundButton(p, "Edit", TopR, TopR, new Vector2(1, 0.5f), new Vector2(-pad - 122 - 22, -111), new Vector2(122, 122), "icon_edit");
@@ -357,7 +362,7 @@ namespace CircuitCube.EditorTools
                 Round(back, S("ui_card"), on ? UiRole.Highlight : UiRole.Card, 25, 86).raycastTarget = false;
                 card.LevelTabBacks[i] = back.GetComponent<ThemeRole>();
                 var lb = Label(tb, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, names[i], 36, on ? UiRole.Text : UiRole.TextMuted);
-                lb.fontStyle = FontStyles.Bold;
+                Heavy(lb);
                 card.LevelTabLabels[i] = lb.GetComponent<ThemeRole>();
                 card.LevelTabs[i] = tb.gameObject.AddComponent<Button>();
                 card.LevelTabs[i].targetGraphic = edge;
@@ -383,9 +388,9 @@ namespace CircuitCube.EditorTools
             card.SummaryTitle.characterSpacing = 4;
             card.SummaryLine = Label(sum, "Line", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(39, -72), new Vector2(-39 - 230, 120),
                 "96 Expert <size=72%>of 100 · 2,332 moves · 45:38</size>", 50, UiRole.Text, TextAnchor.UpperLeft);
-            card.SummaryLine.fontStyle = FontStyles.Bold;
+            Heavy(card.SummaryLine);
             card.SummaryRank = Label(sum, "Rank", TopR, TopR, TopR, new Vector2(-39, -40), new Vector2(200, 66), "#5", 55, UiRole.Primary, TextAnchor.MiddleRight);
-            card.SummaryRank.fontStyle = FontStyles.Bold;
+            Heavy(card.SummaryRank);
             card.SummaryOf = Label(sum, "Of", TopR, TopR, TopR, new Vector2(-39, -106), new Vector2(200, 40), "of 3,207", 30, UiRole.TextMuted, TextAnchor.MiddleRight);
             Columns(all, -626, true, pad);
             var asr = RowList(all, "List", -673, listBottomAll, pad);
@@ -398,8 +403,8 @@ namespace CircuitCube.EditorTools
             card.Message.gameObject.SetActive(false);
             card.RowPrefab = AssetDatabase.LoadAssetAtPath<BoardRowView>(BoardRowPrefab);
             card.Dock = Dock(p, "Dock", 3f, true);
-            ((RectTransform)card.Dock.transform).offsetMin = new Vector2(3, 3);
-            ((RectTransform)card.Dock.transform).offsetMax = new Vector2(-3, 3 + dockH);
+            ((RectTransform)card.Dock.transform).offsetMin = new Vector2(6, 6);
+            ((RectTransform)card.Dock.transform).offsetMax = new Vector2(-6, 6 + dockH);   // inside the card's 3 px border
             c.gameObject.SetActive(false);
             return card;
         }
@@ -410,7 +415,7 @@ namespace CircuitCube.EditorTools
             var img = Round(b, S("ui_card"), on ? UiRole.Segment : UiRole.Transparent, 33, 111);
             back = img.GetComponent<ThemeRole>();
             var l = Label(b, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, text, 42, on ? UiRole.Text : UiRole.TextMuted);
-            l.fontStyle = FontStyles.Bold;
+            Heavy(l);
             label = l.GetComponent<ThemeRole>();
             var button = b.gameObject.AddComponent<Button>();
             b.gameObject.AddComponent<UiClickSound>();
@@ -501,7 +506,7 @@ namespace CircuitCube.EditorTools
             v.Medal = Pic(rt, "Medal", new Vector2(0, 0.5f), new Vector2(0, 0.5f), Half, new Vector2(64, 0), new Vector2(72, 72), S("ui_circle"), UiRole.Star).GetComponent<ThemeRole>();
             v.Medal.gameObject.SetActive(!pinned);
             v.Rank = Label(rt, "Rank", new Vector2(0, 0.5f), new Vector2(0, 0.5f), Half, new Vector2(64, 0), new Vector2(110, 60), pinned ? "#19" : "1", pinned ? 39 : 36, pinned ? UiRole.Primary : UiRole.OnStar);
-            v.Rank.fontStyle = FontStyles.Bold;
+            Heavy(v.Rank);
             v.Rank.textWrappingMode = TextWrappingModes.NoWrap;
             v.RankRole = v.Rank.GetComponent<ThemeRole>();
 
@@ -536,7 +541,7 @@ namespace CircuitCube.EditorTools
         static TMP_Text RowValue(Transform parent, string name, float right, float width, int size, bool bold, float alpha)
         {
             var t = Label(parent, name, new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 0.5f), new Vector2(right, 0), new Vector2(width, 0), "21", size, UiRole.Text, TextAnchor.MiddleRight);
-            if (bold) t.fontStyle = FontStyles.Bold;
+            if (bold) Heavy(t);
             t.textWrappingMode = TextWrappingModes.NoWrap;
             t.GetComponent<ThemeRole>().Alpha = alpha;
             return t;
@@ -556,7 +561,7 @@ namespace CircuitCube.EditorTools
             card.Caption.fontStyle = FontStyles.Bold;
             card.Caption.characterSpacing = 4;
             card.Title = Label(p, "Title", TopC, TopC, TopC, new Vector2(0, -164), new Vector2(inner, 108), "Solved!", 89, UiRole.Text);
-            card.Title.fontStyle = FontStyles.Bold;
+            Heavy(card.Title);
             var best = Badge(p, "NewBest", "NEW BEST", 36, new Vector2(300, 72));
             Set(best, TopC, TopC, TopC, new Vector2(0, -311), new Vector2(300, 72));
             card.NewBest = best.gameObject;
@@ -571,7 +576,7 @@ namespace CircuitCube.EditorTools
             Pic(box, "Icon", new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(44, 0), new Vector2(78, 78), Icon("icon_trophy"), UiRole.Star);
             card.RankLine = Label(box, "Rank", new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(0, 0), new Vector2(160, -2), new Vector2(-160 - 100, 66),
                 "#19 <size=70%>of 902 players</size>", 55, UiRole.Text, TextAnchor.MiddleLeft);
-            card.RankLine.fontStyle = FontStyles.Bold;
+            Heavy(card.RankLine);
             card.RankUp = Label(box, "Up", new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(0, 1), new Vector2(160, -6), new Vector2(-160 - 100, 44), "Up 14 places", 36, UiRole.Primary, TextAnchor.MiddleLeft);
             card.RankUp.fontStyle = FontStyles.Bold;
             Chevron(box, -44);
@@ -612,7 +617,7 @@ namespace CircuitCube.EditorTools
             Round(tile, S("ui_card"), UiRole.Row, 44, 244).raycastTarget = false;
             Label(tile, "Label", new Vector2(0, 1), new Vector2(1, 1), TopC, new Vector2(0, -33), new Vector2(-20, 44), label, 36, UiRole.TextMuted);
             var v = Label(tile, "Value", new Vector2(0, 1), new Vector2(1, 1), TopC, new Vector2(0, -80), new Vector2(-20, 90), value, 72, UiRole.Text);
-            v.fontStyle = FontStyles.Bold;
+            Heavy(v);
             wasText = Label(tile, "Was", new Vector2(0, 1), new Vector2(1, 1), TopC, new Vector2(0, -172), new Vector2(-20, 38), was, 30, UiRole.Primary);
             wasText.fontStyle = FontStyles.Bold;
             return v;
@@ -632,7 +637,7 @@ namespace CircuitCube.EditorTools
             var t = Fresh(p, "Content", new Vector2(0, 1), Vector2.one, TopC, Vector2.zero, new Vector2(0, h));
             Pic(t, "Handle", TopC, TopC, TopC, new Vector2(0, -28), new Vector2(122, 14), S("ui_pill"), UiRole.Track, true).pixelsPerUnitMultiplier = PillScale(14);
             var title = Label(t, "Title", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(pad, -97), new Vector2(-2 * pad, 80), "Your name on the boards", 66, UiRole.Text, TextAnchor.MiddleLeft);
-            title.fontStyle = FontStyles.Bold;
+            Heavy(title);
             Label(t, "Body", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(pad, -222), new Vector2(-2 * pad, 170),
                 "Shown next to your scores. Letters, numbers and _ only, up to 20. A #tag is added so names stay unique.", 39, UiRole.TextMuted, TextAnchor.UpperLeft);
             var nl = Label(t, "NameLabel", new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, 1), new Vector2(pad, -435), new Vector2(-2 * pad, 44), "Name", 36, UiRole.Text, TextAnchor.MiddleLeft);
@@ -702,11 +707,59 @@ namespace CircuitCube.EditorTools
             return img;
         }
 
-        /// <summary>A "&gt;" on the right of a card that opens something (the back chevron turned around).</summary>
+        /// <summary>A "&gt;" on the right of a card that opens something.</summary>
         static void Chevron(Transform parent, float right)
         {
-            var c = Pic(parent, "Chevron", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(0, 0.5f), new Vector2(right, 0), new Vector2(50, 50), Icon("icon_back"), UiRole.TextMuted);
-            c.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
+            Pic(parent, "Chevron", new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(right, 0), new Vector2(70, 70), Icon("icon_chevron_right"), UiRole.TextMuted);
+        }
+
+        const string ExtraBoldTtf = ArtPaths.Fonts + "/Inter-ExtraBold.ttf";
+        const string ExtraBoldAsset = ArtPaths.Fonts + "/Inter-ExtraBold SDF.asset";
+
+        /// <summary>Text the mockup sets in weight 800: Inter ExtraBold, no faux bold.</summary>
+        static void Heavy(TMP_Text t)
+        {
+            var f = ExtraBold();
+            if (f != null) { t.font = f; t.fontStyle = FontStyles.Normal; }
+            else t.fontStyle = FontStyles.Bold;
+        }
+
+        static TMP_FontAsset _extraBold;
+
+        /// <summary>
+        /// The Inter ExtraBold SDF font asset, made once from Art/Fonts/Inter-ExtraBold.ttf with the settings of
+        /// Inter-SemiBold SDF (dynamic, same atlas size, padding and render mode, same fallbacks for Vietnamese).
+        /// </summary>
+        static TMP_FontAsset ExtraBold()
+        {
+            if (_extraBold != null) return _extraBold;
+            _extraBold = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(ExtraBoldAsset);
+            if (_extraBold != null) return _extraBold;
+            var font = AssetDatabase.LoadAssetAtPath<Font>(ExtraBoldTtf);
+            var like = UiText.SemiBold;
+            if (font == null || like == null) return null;
+            var fi = like.faceInfo;
+            var fa = TMP_FontAsset.CreateFontAsset(font, fi.pointSize > 0 ? Mathf.RoundToInt(fi.pointSize) : 90, like.atlasPadding, like.atlasRenderMode,
+                like.atlasWidth, like.atlasHeight, AtlasPopulationMode.Dynamic, like.isMultiAtlasTexturesEnabled);
+            fa.name = "Inter-ExtraBold SDF";
+            AssetDatabase.CreateAsset(fa, ExtraBoldAsset);
+            fa.material.name = fa.name + " Material";
+            AssetDatabase.AddObjectToAsset(fa.material, fa);
+            foreach (var tex in fa.atlasTextures)
+            {
+                tex.name = fa.name + " Atlas";
+                AssetDatabase.AddObjectToAsset(tex, fa);
+            }
+            fa.fallbackFontAssetTable = new System.Collections.Generic.List<TMP_FontAsset>(like.fallbackFontAssetTable ?? new System.Collections.Generic.List<TMP_FontAsset>());
+            fa.TryAddCharacters(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~·–…");
+            // like the SemiBold asset: glyphs added while playing are dropped from the build, the source font fills them in again
+            var so = new SerializedObject(fa);
+            var clear = so.FindProperty("m_ClearDynamicDataOnBuild");
+            if (clear != null) { clear.boolValue = new SerializedObject(like).FindProperty("m_ClearDynamicDataOnBuild").boolValue; so.ApplyModifiedPropertiesWithoutUndo(); }
+            EditorUtility.SetDirty(fa);
+            AssetDatabase.SaveAssets();
+            _extraBold = fa;
+            return fa;
         }
 
         /// <summary>A gold pill with dark bold text (NEW, NEW BEST).</summary>
@@ -717,7 +770,7 @@ namespace CircuitCube.EditorTools
             var le = b.gameObject.AddComponent<LayoutElement>();
             le.preferredWidth = le.minWidth = box.x; le.preferredHeight = box.y;
             var l = Label(b, "Label", Vector2.zero, Vector2.one, Half, Vector2.zero, Vector2.zero, text, size, UiRole.OnStar);
-            l.fontStyle = FontStyles.Bold;
+            Heavy(l);
             l.characterSpacing = 4;
             return b;
         }

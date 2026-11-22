@@ -11,6 +11,8 @@ namespace CircuitCube.UI
         [Tooltip("Teal fill behind the picked shape (Primary), clear otherwise.")]
         public ThemeRole Back;
         public Image Icon;
+        [Tooltip("Line icon colour: OnPrimary when picked, TextMuted otherwise.")]
+        public ThemeRole IconRole;
         public TMP_Text Name;
         public ThemeRole NameRole;
         public GameObject Lock;
