@@ -101,21 +101,20 @@ namespace CircuitCube.Game
                 GameData.Reload();
                 groupsReady?.Invoke();
 
-                // the five levels of the weekly challenge (and their block shapes); older weeks are removed
+                // the weekly challenge sets, one per shape (and their block shapes); older weeks are removed
                 var week = m.challenge;
-                if (week != null && !week.IsNone)
+                if (week != null && !week.IsNone && week.groups != null)
                 {
+                    var all = new List<string>();
+                    foreach (var cg in week.groups)
+                        for (int slot = 1; slot <= week.count; slot++) all.Add(ChallengeWeek.LevelPath(week.id, cg, slot));
                     var files = new List<string>();
-                    for (int slot = 1; slot <= week.count; slot++)
-                    {
-                        string rel = ChallengeWeek.LevelPath(week.id, slot);
-                        if (LastChanged || !GameData.Has(rel)) files.Add(rel);
-                    }
+                    foreach (var rel in all) if (LastChanged || !GameData.Has(rel)) files.Add(rel);
                     yield return FetchMany(baseUrl, files, root);
                     var shapes = new List<string>();
-                    for (int slot = 1; slot <= week.count; slot++)
+                    foreach (var rel in all)
                     {
-                        var lv = ReadCached<LevelData>(root, ChallengeWeek.LevelPath(week.id, slot));
+                        var lv = ReadCached<LevelData>(root, rel);
                         if (lv == null || lv.shape == null || !lv.shape.StartsWith("voxel-")) continue;
                         string sr = "shapes/voxel/" + lv.shape + ".json";
                         if (!GameData.Has(sr) && !shapes.Contains(sr)) shapes.Add(sr);

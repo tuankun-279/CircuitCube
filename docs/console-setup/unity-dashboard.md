@@ -30,8 +30,10 @@ ugs config set environment-name production
 ugs deploy Tools/CloudCode/Deploy
 ```
 
-- 6 weekly boards (`weekly_1..5`, `weekly_total`) reset Thursdays 00:00 UTC; the first `Start` in the files is
-  2026-12-03. 6 shape boards `shape_<group>`.
+- 24 weekly boards, per shape `weekly_<group>_1..3` and the set total `weekly_<group>`, reset Thursdays 00:00 UTC;
+  the first `Start` in the files is 2026-12-03. 6 shape boards `shape_<group>`.
+- After the first deploy, delete the 6 old hand-made boards `weekly_1..5` and `weekly_total` (unused since the
+  weekly challenge moved to one set per shape).
 - Module `CircuitCubeRanks` (needs the .NET 6 SDK on the machine that deploys).
 - `ranks.ac`: players cannot post scores; only the module does, with the service token.
 - Cloud Save needs no setup; the module writes protected player data `weekly` and `shape_<group>`.

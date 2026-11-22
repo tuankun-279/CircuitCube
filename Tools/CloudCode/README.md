@@ -8,21 +8,23 @@ compiled into the module) and posts the score with the service token.
 
 | Board | Sort | Score | Reset |
 |---|---|---|---|
-| `weekly_1` … `weekly_5` | ascending | moves × 100000 + tenths of a second | every Thursday 00:00 UTC, archived |
-| `weekly_total` | ascending | sum of the 5 best moves × 100000 + sum of their times | same |
-| `shape_<group>` | descending | Expert levels × 10000000 − total of their best times (tenths) | never |
+| `weekly_<group>_1` … `_3` | ascending | moves × 100000 + tenths of a second | every Thursday 00:00 UTC, archived |
+| `weekly_<group>` | ascending | sum of the 3 best moves × 100000 + sum of their times | same |
+| `shape_<group>` | descending | Expert levels × 10^12 − total best moves × 10^6 − total seconds | never |
 
-`RankScore` in `Core/Data/Ranking.cs` builds and reads these numbers. A new shape needs a new
-`shape_<group id>.lb` file.
+`RankScore` in `Core/Data/Ranking.cs` builds and reads these numbers. A new shape needs new
+`shape_<group id>.lb`, `weekly_<group id>.lb` and `weekly_<group id>_1..3.lb` files (24 weekly boards for 6 shapes).
+The old `weekly_1..5` and `weekly_total` boards (made by hand on 2026-11-22) are no longer used: delete them in the dashboard.
 
 ## Endpoints
 
-- `SubmitWeekly(key = week id, index = slot, taps, tenths)`: only while that week is open (manifest
-  `challenge.start` + `days`). Keeps the best score per slot in protected player data `weekly`.
-- `SubmitShape(key = group id, index = level serial, taps, tenths)`: only Expert wins. Keeps the best time per
-  level in protected player data `shape_<group>` (a few KB per shape at most).
+- `SubmitWeekly(key = "<week id>/<group id>", index = slot, taps, tenths)`: only while that week is open (manifest
+  `challenge.start` + `days`) and the shape has a set (`challenge.groups`). Keeps the best score per shape and slot
+  in protected player data `weekly`.
+- `SubmitShape(key = group id, index = level serial, taps, tenths)`: only Expert wins. Keeps the best run (moves, then
+  time) per level in protected player data `shape_<group>` (a few KB per shape at most).
 
-Both answer `RankReply` (ok, error, board, score, rank, players, experts, tenths).
+Both answer `RankReply` (ok, error, board, score, rank, players, experts, moves, tenths).
 Refusals: `content`, `week`, `closed`, `args`, `shape`, `level`, `taps`, `tap`, `unsolved`, `fast`, `not_expert`.
 
 ## Deploy

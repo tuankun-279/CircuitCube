@@ -191,19 +191,19 @@ namespace CircuitCube.Game
             return true;
         }
 
-        /// <summary>Level file of challenge slot 1..count, or null when it is not on the device yet.</summary>
-        public static LevelData ChallengeData(int slot)
+        /// <summary>Level file of a shape's challenge slot 1..count, or null when it is not on the device yet.</summary>
+        public static LevelData ChallengeData(string group, int slot)
         {
             var w = Challenge;
-            if (w.IsNone || slot < 1 || slot > w.count) return null;
-            string rel = ChallengeWeek.LevelPath(w.id, slot);
+            if (!w.Has(group) || slot < 1 || slot > w.count) return null;
+            string rel = ChallengeWeek.LevelPath(w.id, group, slot);
             return Has(rel) ? ReadJson<LevelData>(rel) : null;
         }
 
-        /// <summary>The board of challenge slot 1..count, numbered by its slot; null when missing.</summary>
-        public static CubeLevel ChallengeLevel(int slot)
+        /// <summary>The board of a shape's challenge slot 1..count, numbered by its slot; null when missing.</summary>
+        public static CubeLevel ChallengeLevel(string group, int slot)
         {
-            var lv = RunCheck.Build(ChallengeData(slot), Voxel);
+            var lv = RunCheck.Build(ChallengeData(group, slot), Voxel);
             if (lv != null) lv.Number = slot;
             return lv;
         }

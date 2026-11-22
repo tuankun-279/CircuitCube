@@ -42,8 +42,8 @@ namespace CircuitCubeRanks
     public class WeekRecord
     {
         public string week { get; set; } = "";
-        /// <summary>Best weekly score per slot, index 0 = slot 1; 0 = not won yet.</summary>
-        public List<double> best { get; set; } = new List<double>();
+        /// <summary>Per shape: best weekly score per slot, index 0 = slot 1; 0 = not won yet.</summary>
+        public Dictionary<string, List<double>> sets { get; set; } = new Dictionary<string, List<double>>();
     }
 
     /// <summary>The best Expert run of one level: fewest moves, then the shorter time.</summary>
@@ -138,42 +138,49 @@ namespace CircuitCubeRanks
 
         public Ranks(IGameApiClient api, Content content) { _api = api; _content = content; }
 
-        /// <summary>A weekly challenge level won without hints or undos. key = week id, index = slot 1..count.</summary>
+        /// <summary>A weekly challenge level won without hints or undos. key = "&lt;week id&gt;/&lt;group id&gt;", index = slot 1..count.</summary>
         [CloudCodeFunction("SubmitWeekly")]
         public async Task<RankReply> SubmitWeekly(IExecutionContext ctx, string key, int index, List<int> taps, int tenths)
         {
             var m = await _content.Manifest();
             if (m == null) return Fail("content");
             var w = m.challenge;
-            if (w == null || w.IsNone || w.id != key) return Fail("week");
+            int cut = key == null ? -1 : key.IndexOf('/');
+            if (w == null || w.IsNone || cut <= 0 || key.Substring(0, cut) != w.id) return Fail("week");
+            string group = key.Substring(cut + 1);
+            if (!w.Has(group)) return Fail("shape");
             if (!DateTime.TryParse(w.start, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var opens)) return Fail("week");
             var now = DateTime.UtcNow;
             if (now < opens || now >= opens.AddDays(Math.Max(1, w.days))) return Fail("closed");
             if (index < 1 || index > w.count || taps == null || taps.Count > MaxTaps) return Fail("args");
 
-            var level = await _content.Level(m, ChallengeWeek.LevelPath(w.id, index));
+            var level = await _content.Level(m, ChallengeWeek.LevelPath(w.id, group, index));
             var run = RunCheck.Replay(level, taps, tenths, m.rules);
             if (!run.Valid) return Fail(run.Error);
 
             double score = RankScore.Weekly(run.Moves, tenths);
             string recKey = "weekly";
             var rec = Content.Parse<WeekRecord>(await ReadProtected(ctx, recKey));
-            if (rec.week != w.id) rec = new WeekRecord { week = w.id };
-            while (rec.best.Count < w.count) rec.best.Add(0);
-            bool better = rec.best[index - 1] <= 0 || score < rec.best[index - 1];
-            if (better) rec.best[index - 1] = score;
-            await WriteProtected(ctx, recKey, Content.Serialize(rec));
-
-            string board = RankScore.WeeklyBoard(index);
-            if (better) await Post(ctx, board, score);
-            // the total board: all levels won; sum of their best moves, then of their best times
-            if (better && rec.best.All(s => s > 0))
+            if (rec.week != w.id || rec.sets == null) rec = new WeekRecord { week = w.id };
+            if (!rec.sets.TryGetValue(group, out var best) || best == null) rec.sets[group] = best = new List<double>();
+            while (best.Count < w.count) best.Add(0);
+            bool better = best[index - 1] <= 0 || score < best[index - 1];
+            if (better)
             {
-                int moves = rec.best.Sum(s => RankScore.WeeklyMoves(s));
-                int time = rec.best.Sum(s => RankScore.WeeklyTenths(s));
-                await Post(ctx, RankScore.WeeklyTotalBoard, RankScore.Weekly(moves, Math.Min(time, RankScore.MaxTenths)));
+                best[index - 1] = score;
+                await WriteProtected(ctx, recKey, Content.Serialize(rec));
             }
-            return await Reply(ctx, board, rec.best[index - 1]);
+
+            string board = RankScore.WeeklyBoard(group, index);
+            if (better) await Post(ctx, board, score);
+            // the set total: all levels won; sum of their best moves, then of their best times
+            if (better && best.Take(w.count).All(s => s > 0))
+            {
+                int moves = best.Take(w.count).Sum(s => RankScore.WeeklyMoves(s));
+                int time = best.Take(w.count).Sum(s => RankScore.WeeklyTenths(s));
+                await Post(ctx, RankScore.WeeklyTotalBoard(group), RankScore.Weekly(moves, Math.Min(time, RankScore.MaxTenths)));
+            }
+            return await Reply(ctx, board, best[index - 1]);
         }
 
         /// <summary>A shape level won as Expert. key = group id, index = level serial.</summary>

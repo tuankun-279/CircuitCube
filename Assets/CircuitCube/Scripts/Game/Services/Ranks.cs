@@ -50,7 +50,8 @@ namespace CircuitCube.Game
     }
 
     /// <summary>
-    /// Leaderboards on Unity Gaming Services: the weekly challenge (5 boards for its levels and one for their total)
+    /// Leaderboards on Unity Gaming Services: the weekly challenge (per shape, a board for each level of its set and one
+    /// for the set total)
     /// and one board per shape (Expert levels, then the total moves and total time of their best runs). The game never writes a score
     /// itself: it sends the taps of a win to the Cloud Code module CircuitCubeRanks (Tools/CloudCode), which plays
     /// them again and posts the score. Wins made offline wait in save/ranks_pending.json and are sent later.
@@ -66,7 +67,7 @@ namespace CircuitCube.Game
         [Serializable] class PendingRun
         {
             public string kind;     // "weekly" or "shape"
-            public string key;      // week id or group id
+            public string key;      // "<week id>/<group id>" or group id
             public int index;       // weekly slot or level serial
             public List<int> taps = new List<int>();
             public int tenths;
@@ -115,9 +116,9 @@ namespace CircuitCube.Game
 #endif
         }
 
-        /// <summary>A weekly challenge level won without hints or undos.</summary>
-        public static void SubmitWeekly(string week, int slot, List<int> taps, float seconds) =>
-            Queue(new PendingRun { kind = "weekly", key = week, index = slot, taps = new List<int>(taps), tenths = RankScore.Tenths(seconds) });
+        /// <summary>A level of a shape's weekly challenge set won without hints or undos.</summary>
+        public static void SubmitWeekly(string week, string group, int slot, List<int> taps, float seconds) =>
+            Queue(new PendingRun { kind = "weekly", key = RankScore.WeeklyKey(week, group), index = slot, taps = new List<int>(taps), tenths = RankScore.Tenths(seconds) });
 
         /// <summary>A level of a shape won as Expert (no hint, no undo).</summary>
         public static void SubmitShape(string group, int serial, List<int> taps, float seconds) =>

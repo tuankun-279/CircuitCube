@@ -52,9 +52,12 @@ namespace CircuitCube.Core
             return (s / 60).ToString() + ":" + (s % 60).ToString("D2") + "." + (t % 10).ToString();
         }
 
-        /// <summary>Leaderboard id of weekly challenge level <paramref name="slot"/> (1..5).</summary>
-        public static string WeeklyBoard(int slot) => "weekly_" + slot;
-        public const string WeeklyTotalBoard = "weekly_total";
+        /// <summary>Leaderboard id of level <paramref name="slot"/> (1..count) of a shape's weekly set.</summary>
+        public static string WeeklyBoard(string group, int slot) => "weekly_" + group + "_" + slot;
+        /// <summary>Leaderboard id of a shape's weekly set total (all levels solved).</summary>
+        public static string WeeklyTotalBoard(string group) => "weekly_" + group;
+        /// <summary>Key the game sends for a weekly win: "&lt;week id&gt;/&lt;group id&gt;".</summary>
+        public static string WeeklyKey(string week, string group) => week + "/" + group;
         /// <summary>Leaderboard id of a shape (group id, e.g. "cube").</summary>
         public static string ShapeBoard(string group) => "shape_" + group;
     }

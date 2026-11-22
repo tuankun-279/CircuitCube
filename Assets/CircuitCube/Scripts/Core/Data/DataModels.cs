@@ -59,8 +59,9 @@ namespace CircuitCube.Core
     }
 
     /// <summary>
-    /// One weekly challenge: five levels everyone plays, whatever their progress, ranked by fewest moves and then time.
-    /// Level files sit at challenge/&lt;id&gt;/&lt;slot&gt;.json (slot 1..5), next to the other files of the publish.
+    /// One weekly challenge: a set of <see cref="count"/> levels per shape, easiest first, ranked by fewest moves and then
+    /// time. A player joins the sets of the shapes they have unlocked. Level files sit at
+    /// challenge/&lt;id&gt;/&lt;group&gt;/&lt;slot&gt;.json (slot 1..count), next to the other files of the publish.
     /// </summary>
     [Serializable] public class ChallengeWeek
     {
@@ -69,10 +70,13 @@ namespace CircuitCube.Core
         /// <summary>Opening time in UTC, ISO 8601 ("2026-12-03T00:00:00Z"); it stays open for <see cref="days"/>.</summary>
         public string start = "";
         public int days = 7;
-        /// <summary>Number of levels (files 1..count), easiest first.</summary>
-        public int count = 5;
+        /// <summary>Group ids (shapes) that have a set this week.</summary>
+        public List<string> groups = new List<string>();
+        /// <summary>Levels per shape (files 1..count), easiest first.</summary>
+        public int count = 3;
         public bool IsNone => string.IsNullOrEmpty(id);
-        public static string LevelPath(string id, int slot) => "challenge/" + id + "/" + slot + ".json";
+        public bool Has(string group) => !IsNone && groups != null && groups.Contains(group);
+        public static string LevelPath(string id, string group, int slot) => "challenge/" + id + "/" + group + "/" + slot + ".json";
     }
 
     [Serializable] public class ChunkInfo

@@ -18,9 +18,9 @@ https://claude.ai/artifact/BudjQEtz8hkYqohpBmw1Do (screens 1-6). This page is th
 
 There are **no per-level boards for normal levels** (Tuan, 2026-11-22: keep player data small).
 
-## Weekly challenge: split by shape (proposed)
+## Weekly challenge: split by shape (decided 2026-11-22, 3 levels per shape)
 
-Each Thursday the content publish adds a **challenge set per shape**: `N` levels for each of the 6 shapes
+Each Thursday the content publish adds a **challenge set per shape**: `N` = **3** levels (Tuan, 2026-11-22) for each of the 6 shapes
 (cube Moonbase, tetra Pyramid, octa Star Gem, sphere Planet, dodeca Galaxy, megamix Nebula), ordered easy to hard.
 
 - A player sees the sets of the shapes they have unlocked; a locked shape shows "Unlock Pyramid to join".
@@ -85,12 +85,12 @@ used for special events. That supports splitting the weekly challenge by shape.
 - Replays use the published level file, never level data from the client.
 - Time is still self-reported; the minimum-time check stops the obvious fakes.
 
-## Changes needed in PR #3 if the per-shape weekly is approved
+## Implementation (done in PR #3, 2026-11-22)
 
-- Manifest `challenge`: `{ id, start, days, sets: { <group>: count } }`; level files at
+- Manifest `challenge`: `{ id, start, days, groups: [<group>...], count: 3 }`; level files at
   `challenge/<week>/<group>/<slot>.json`.
 - `SubmitWeekly(key = "<week>/<group>", index = slot, ...)`; boards `weekly_<group>_<slot>` and `weekly_<group>`.
-- Replace the 6 weekly boards in the Unity dashboard (`weekly_1..5`, `weekly_total`) with the new ids
+- Still to do: replace the 6 weekly boards in the Unity dashboard (`weekly_1..5`, `weekly_total`) with the new ids
   (`Tools/CloudCode/Deploy/*.lb`, then `ugs deploy`).
-- The monthly level batch generates `N` extra challenge levels per shape per week (see the monthly levels task).
-- UI: the Weekly screen gets a shape picker (same chips as the shape board) above the level list.
+- Still to do: the monthly level batch generates `N` extra challenge levels per shape per week (see the monthly levels task).
+- UI (design updated): the Weekly screen gets a shape picker (same chips as the shape board) above the level list.
