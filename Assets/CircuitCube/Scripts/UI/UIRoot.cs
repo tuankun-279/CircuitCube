@@ -22,5 +22,10 @@ namespace CircuitCube.UI
         public TutorialOverlay Tutorial;
         [Tooltip("Win effects over the result card (Expert word, comets, constellations, praise).")]
         public ResultFx Fx;
+        [Header("Leaderboards (Tools/Circuit Cube/Art V2/Build 1.5.0 Ranks UI)")]
+        public WeeklyScreen Weekly;
+        public LeaderboardCard Boards;
+        public WeeklyResultCard WeeklyResult;
+        public NameSheet NameSheet;
     }
 }

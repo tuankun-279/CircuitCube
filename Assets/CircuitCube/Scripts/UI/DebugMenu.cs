@@ -12,7 +12,7 @@ namespace CircuitCube.UI
     /// builds; release builds switch it off. Pick a shape group, type a level, Play; or unlock shapes.
     /// The Win row ends the level in play (or starts one) with a set result: 1.5, 2.5 or 3 stars, a three-star streak,
     /// Expert or an Expert streak, to check each result screen.
-    /// Keys: F2 dark / light, F3 skip ads, F5 reset every lesson, F6 (editor) play the Level Lab import zips.
+    /// Keys: F2 dark / light, F3 skip ads, F4 sample leaderboards, F5 reset every lesson, F6 (editor) play the Level Lab import zips.
     /// Levels started here show their lessons again.
     /// </summary>
     public sealed class DebugMenu : MonoBehaviour
@@ -64,6 +64,12 @@ namespace CircuitCube.UI
                 RewardedAds.SkipAds = !RewardedAds.SkipAds;
                 Debug.Log("[CircuitCube] ads " + (RewardedAds.SkipAds ? "skipped" : "on"));
                 if (Status != null) Status.text = RewardedAds.SkipAds ? "Ads skipped (F3)" : "Ads on (F3)";
+            }
+            // F4 fills the leaderboard screens with sample boards and a sample week
+            if (kb != null && kb.f4Key.wasPressedThisFrame && App != null)
+            {
+                App.DebugRanks(!RanksDebug.On);
+                if (Status != null) Status.text = RanksDebug.On ? "Sample leaderboards on (F4)" : "Sample leaderboards off (F4)";
             }
             // F5 forgets every lesson (tutorial on Moonbase 1-3, colours, mixes, the HUD mix formulas)
             if (kb != null && kb.f5Key.wasPressedThisFrame)

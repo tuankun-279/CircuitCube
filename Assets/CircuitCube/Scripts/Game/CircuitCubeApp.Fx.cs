@@ -224,7 +224,7 @@ namespace CircuitCube.Game
         // ---------------------------------------------------------------- screen changes (slide with parallax)
 
         UIScreen _menuShown;
-        static int Depth(UIScreen s, UIRoot ui) => s == ui.Home ? 0 : s == ui.Shapes ? 1 : s == ui.Levels ? 2 : -1;
+        static int Depth(UIScreen s, UIRoot ui) => s == ui.Home ? 0 : s == ui.Shapes || s == ui.Weekly ? 1 : s == ui.Levels ? 2 : -1;
 
         /// <summary>Slide from the menu screen shown before to <paramref name="to"/>: deeper screens come in from the right.</summary>
         void SlideIn(UIScreen to)

@@ -144,5 +144,38 @@ namespace CircuitCube.Tests
             Assert.AreEqual("Colonel", NameFilter.Clean("Colonel"));   // "lon" inside a word is fine
             Assert.AreEqual(20, NameFilter.Clean(new string('a', 40)).Length);
         }
+
+        [Test]
+        public void RankTextFormatsCountdownTimesCountsAndTags()
+        {
+            Assert.AreEqual("2d 14h", RankText.Countdown(new System.TimeSpan(2, 14, 30, 0)));
+            Assert.AreEqual("5h 12m", RankText.Countdown(new System.TimeSpan(0, 5, 12, 40)));
+            Assert.AreEqual("12m", RankText.Countdown(new System.TimeSpan(0, 0, 12, 5)));
+            Assert.AreEqual("0m", RankText.Countdown(System.TimeSpan.FromMinutes(-3)));
+            Assert.AreEqual("44:40", RankText.ShapeTime(2680));
+            Assert.AreEqual("1h05", RankText.ShapeTime(3900));
+            Assert.AreEqual("1,412", RankText.Count(1412));
+            RankText.SplitTag("Tuan_Pro#4821", out var name, out var tag);
+            Assert.AreEqual("Tuan_Pro", name);
+            Assert.AreEqual("#4821", tag);
+            RankText.SplitTag("NoTag", out name, out tag);
+            Assert.AreEqual("NoTag", name);
+            Assert.AreEqual("", tag);
+        }
+
+        [Test]
+        public void SampleBoardsReadBackAsTheMockupShows()
+        {
+            var shape = RanksDebug.Page(RankScore.ShapeBoard("cube"), 0, 100);
+            Assert.AreEqual(8, shape.Top.Count);
+            Assert.AreEqual(100, RankScore.ShapeExperts(shape.Top[0].Score));
+            Assert.AreEqual(2400, RankScore.ShapeMoves(shape.Top[0].Score));
+            Assert.AreEqual("44:40", RankText.ShapeTime(RankScore.ShapeSeconds(shape.Top[0].Score)));
+            Assert.IsTrue(shape.Mine.Me);
+            var week = RanksDebug.Page(RankScore.WeeklyBoard("cube", 2), 0, 100);
+            Assert.AreEqual(21, RankScore.WeeklyMoves(week.Top[0].Score));
+            Assert.AreEqual("0:31.2", RankScore.TimeText(RankScore.WeeklyTenths(week.Top[0].Score)));
+            Assert.AreEqual(19, week.Mine.Rank);
+        }
     }
 }

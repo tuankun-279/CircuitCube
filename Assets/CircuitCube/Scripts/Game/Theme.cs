@@ -10,7 +10,10 @@ namespace CircuitCube.Game
         None, Background, Card, Primary, OnPrimary, Secondary, OnSecondary, Round, OnRound,
         Text, TextMuted, Dim, Overlay, Track, Accent, Star, Chip, NodeOpen, NodeCurrent, NodeLocked, OnNode, Transparent,
         // added later: keep new roles at the end, the assets store them by number
-        NodeFrame
+        NodeFrame,
+        // 1.5.0 leaderboards: list rows, the player's row, silver and bronze medals, the offline note, the picked segment
+        // of a switch, and dark text on gold
+        Row, Highlight, Silver, Bronze, Warning, OnWarning, Segment, OnStar
     }
 
     [Serializable]

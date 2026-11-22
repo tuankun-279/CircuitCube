@@ -14,7 +14,7 @@ namespace CircuitCube.Game
     /// </summary>
     public sealed partial class CircuitCubeApp : MonoBehaviour
     {
-        enum State { Home, Shapes, Levels, Playing, Won }
+        enum State { Home, Shapes, Levels, Playing, Won, Weekly }
 
         public static int HintsPerLevel => GameData.Rules.hintsPerLevel;
         public static int UndosPerLevel => GameData.Rules.undosPerLevel;
@@ -118,6 +118,7 @@ namespace CircuitCube.Game
             {
                 if (_state != State.Playing || _busy || CardOpen) return;
                 if (InFtue) { StartFtueLevel(_ftue, false); return; }
+                if (_weeklySlot > 0) { StartWeekly(_group, _weeklySlot); return; }
                 GameAnalytics.Log("level_restart", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("moves", _moves));
                 StartLevel(_group, _level.Number);
             });
@@ -148,12 +149,13 @@ namespace CircuitCube.Game
             var st = UI.Settings;
             st.Close.onClick.AddListener(CloseSettings);
             st.Resume.onClick.AddListener(CloseSettings);
-            st.Restart.onClick.AddListener(() => { CloseSettings(); AppReview.Quit(); if (InFtue) StartFtueLevel(_ftue, false); else StartLevel(_group, _level.Number); });
+            st.Restart.onClick.AddListener(() => { CloseSettings(); AppReview.Quit(); if (InFtue) StartFtueLevel(_ftue, false); else if (_weeklySlot > 0) StartWeekly(_group, _weeklySlot); else StartLevel(_group, _level.Number); });
             st.Home.onClick.AddListener(() => { CloseSettings(); AppReview.Quit(); SaveInProgress(); ShowHome(); });
             st.ThemePicked += SetTheme;
             st.ZoomButtonsChanged += UpdateZoomPanel;
             if (st.Privacy != null) st.Privacy.onClick.AddListener(() => RewardedAds.ShowPrivacyOptions());
             WireTutorial();
+            WireRanks();
         }
 
         void Start()
@@ -212,7 +214,7 @@ namespace CircuitCube.Game
         /// <summary>Remember the board of the level being played, so it continues where it stopped.</summary>
         void SaveInProgress()
         {
-            if (_state != State.Playing || _level == null || _cheat || InFtue) return;
+            if (_state != State.Playing || _level == null || _cheat || InFtue || _weeklySlot > 0) return;
             int serial = GameData.SerialAt(_group, _level.Number);
             if (serial <= 0) return;
             var ip = new InProgress { serial = serial, position = _level.Number, check = _levelCheck, moves = _moves, hintsUsed = _hintsUsed, undosUsed = _undosUsed, seconds = _playSeconds, taps = _tapsWhole ? new List<int>(_taps) : new List<int>() };
@@ -252,6 +254,7 @@ namespace CircuitCube.Game
         void HideAll()
         {
             UI.Splash.Hide(); UI.Home.Hide(); UI.Shapes.Hide(); UI.Levels.Hide(); UI.Hud.Hide();
+            if (UI.Weekly != null) UI.Weekly.Hide();
             CloseCards();
         }
 
@@ -261,6 +264,9 @@ namespace CircuitCube.Game
             UI.Tip.gameObject.SetActive(false);
             UI.Unlock.gameObject.SetActive(false);
             UI.Settings.gameObject.SetActive(false);
+            if (UI.Boards != null) UI.Boards.gameObject.SetActive(false);
+            if (UI.WeeklyResult != null) UI.WeeklyResult.gameObject.SetActive(false);
+            if (UI.NameSheet != null) UI.NameSheet.gameObject.SetActive(false);
             UI.Dim.SetActive(false);
             ResetCardRise();
             if (UI.Fx != null) UI.Fx.HideAll();
@@ -269,7 +275,9 @@ namespace CircuitCube.Game
         }
 
         bool CardOpen => UI.Result.gameObject.activeSelf || UI.Tip.gameObject.activeSelf
-                         || UI.Unlock.gameObject.activeSelf || UI.Settings.gameObject.activeSelf;
+                         || UI.Unlock.gameObject.activeSelf || UI.Settings.gameObject.activeSelf
+                         || (UI.Boards != null && UI.Boards.gameObject.activeSelf) || (UI.WeeklyResult != null && UI.WeeklyResult.gameObject.activeSelf)
+                         || (UI.NameSheet != null && UI.NameSheet.gameObject.activeSelf);
 
         void OpenSettings(bool paused)
         {
@@ -329,6 +337,7 @@ namespace CircuitCube.Game
             bool anyNew = false;
             for (int i = 0; i < GameData.GroupCount; i++) anyNew |= CubeSave.HasNewLevels(i);
             if (h.ShapesBadge != null) h.ShapesBadge.SetActive(anyNew);
+            FillHomeRanks();
         }
 
         void ShowShapes()
@@ -437,10 +446,14 @@ namespace CircuitCube.Game
         {
             if (UI.Settings.gameObject.activeSelf) { CloseSettings(); return; }
             if (UI.Tip.gameObject.activeSelf) { CloseTip(); return; }
+            if (UI.NameSheet != null && UI.NameSheet.gameObject.activeSelf) { CloseNameSheet(); return; }
+            if (UI.Boards != null && UI.Boards.gameObject.activeSelf) { CloseBoards(); return; }
+            if (UI.WeeklyResult != null && UI.WeeklyResult.gameObject.activeSelf) { ShowWeekly(_weekGroup); return; }
             switch (_state)
             {
+                case State.Weekly: ShowHome(); break;
                 case State.Playing: if (!_busy) OpenSettings(true); break;
-                case State.Won: ShowLevels(_group); break;
+                case State.Won: if (_weeklySlot > 0) ShowWeekly(_weekGroup); else ShowLevels(_group); break;
                 case State.Levels: ShowShapes(); break;
                 case State.Shapes: ShowHome(); break;
                 default: Application.Quit(); break;
@@ -493,6 +506,8 @@ namespace CircuitCube.Game
             CubeSave.CurrentGroup = group;
             _tw.Clear();
             _ftue = 0;
+            _weeklySlot = 0;
+            SetHelpButtons(true);
             var level = GameData.Build(group, number);
             if (level == null)
             {
@@ -589,7 +604,7 @@ namespace CircuitCube.Game
         {
             _shownMoves = _shownLit = _shownTotal = _shownHints = _shownUndos = _shownSecond = -1;
             if (_level != null && (_state == State.Playing || _state == State.Won))
-                UI.Hud.Title.text = Loc.Upper(Loc.T(GameData.Group(_group).name)) + "  " + _level.Number;
+                UI.Hud.Title.text = HudTitle();
             if (InMenus) DebugRefresh();
         }
 
@@ -627,7 +642,7 @@ namespace CircuitCube.Game
             }, CubeSave.CurrentGroup, () => _contentReady = true));
         }
 
-        bool InMenus => !UI.Splash.gameObject.activeSelf && (_state == State.Home || _state == State.Shapes || _state == State.Levels);
+        bool InMenus => !UI.Splash.gameObject.activeSelf && (_state == State.Home || _state == State.Shapes || _state == State.Levels || _state == State.Weekly);
 
         /// <summary>Called every frame: leave the splash, look for a publish, tell the player about one.</summary>
         void TickContent()
@@ -1034,6 +1049,7 @@ namespace CircuitCube.Game
         void Win()
         {
             if (InFtue && _ftue != FtueResultLevel) { FtueWon(); return; }   // tutorial levels end with notes, not the card
+            if (_weeklySlot > 0) { WeeklyWin(); return; }
             _busy = true;
             _state = State.Won;
             _spin = Vector2.zero;
@@ -1457,6 +1473,7 @@ namespace CircuitCube.Game
             if (_state == State.Home) ShowHome();
             else if (_state == State.Shapes) ShowShapes();
             else if (_state == State.Levels) ShowLevels(_group);
+            else if (_state == State.Weekly) ShowWeekly(_weekGroup);
         }
         public void DebugShowShapes() => ShowShapes();
         public void DebugShowLevels(int group) => ShowLevels(group);
