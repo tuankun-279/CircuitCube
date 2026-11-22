@@ -5,13 +5,23 @@
     {
       "count": 100,
       "index": 0,
-      "version": 2
+      "version": 3
+    },
+    {
+      "count": 100,
+      "index": 1,
+      "version": 1
+    },
+    {
+      "count": 100,
+      "index": 2,
+      "version": 1
     }
   ],
   "enable": true,
   "endless": false,
   "icon": "cube",
   "id": "cube",
-  "levelCount": 100,
+  "levelCount": 300,
   "name": "Moonbase"
 }
