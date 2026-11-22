@@ -1,17 +1,11 @@
 {
   "blurb": "A world of pentagons and hexagons. Six ways out of most tiles.",
   "chunkSize": 100,
-  "chunks": [
-    {
-      "count": 100,
-      "index": 0,
-      "version": 3
-    }
-  ],
+  "chunks": [],
   "enable": true,
   "endless": false,
   "icon": "sphere",
   "id": "sphere",
-  "levelCount": 100,
+  "levelCount": 0,
   "name": "Planet"
 }
