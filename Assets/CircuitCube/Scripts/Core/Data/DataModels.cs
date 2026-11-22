@@ -110,7 +110,7 @@ namespace CircuitCube.Core
         public List<int> hintOrder = new List<int>();
     }
 
-    /// <summary>A free-form shape from Level Lab: unit block positions, flattened x0,y0,z0,x1,y1,z1…</summary>
+    /// <summary>A free-form shape from the level data: unit block positions, flattened x0,y0,z0,x1,y1,z1…</summary>
     [Serializable] public class VoxelShapeFile
     {
         public string id;

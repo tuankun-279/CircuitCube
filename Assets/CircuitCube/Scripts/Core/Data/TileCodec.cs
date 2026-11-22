@@ -7,7 +7,7 @@ namespace CircuitCube.Core
     /// <summary>
     /// The board of a level as one string, 3 characters per tile, in the shape's tile order:
     /// [wire mask in base64: 0-9 a-z A-Z - _][kind + colour][start rotation]. Kind + colour: '.' plain wire, 'r'/'b'/'y' a red/blue/yellow
-    /// source, '1'..'7' a lamp that needs that colour set. Same format as Level Lab and the data config tool.
+    /// source, '1'..'7' a lamp that needs that colour set. Same format the monthly level task writes and Level Lab reads.
     /// </summary>
     public static class TileCodec
     {
