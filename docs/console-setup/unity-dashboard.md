@@ -42,7 +42,10 @@ ugs deploy Tools/CloudCode/Deploy
   (weekly: ascending, best score, weekly reset Thursday 00:00 UTC from 2026-12-03, archive on; shape: descending,
   latest score, no reset). A later `ugs deploy` updates them in place.
 - Access Control project policy: statement `deny-write-leaderboards` (Deny, Write, Leaderboards, everything).
-- Not yet: Google Play Games identity provider, Cloud Code module.
+- Play Console: Game server credential "Circuit Cube" saved (Draft) with the Web application OAuth client
+  `6185798786-ggj1m5g0cl6vr8kosijnl3k46mmsbgal.apps.googleusercontent.com`. Not yet published.
+- Not yet: Google Play Games identity provider (the owner pastes the client secret), Cloud Code module,
+  Play Games configuration publish.
 
 ## 4. Check after deploying
 
