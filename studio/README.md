@@ -6,14 +6,15 @@ Circuit Cube is the model project for the user's games. This folder holds what n
 |---|---|
 | `skills/` | The user's Claude skills, one folder each with its `SKILL.md`. The account copy is the source; these copies are refreshed when a skill changes. |
 | `templates/new-game-checklist.md` | First-day and release checklist for a new game. |
+| `templates/claude-settings.local.json` | Local Claude permissions for a game folder on the PC (pre-allows the computer-use request). |
 | `../docs/console-setup/` | Play Console, Unity Dashboard (UGS) and Firebase setup with templates. |
 | `../docs/leaderboards/` | Leaderboard rules (weekly challenge, shape boards), reusable for other puzzle games. |
 
 Skills here:
 - `game-studio-workflow`: machines (all game changes only on the PC; Mac and phone for showing, testing and Xcode
   builds), art rule, which skills to load.
-- `pc-remote-workflow`: every game is created, run and edited on the PC; Mac and phone only control it remotely
-  (Remote Control session links, the two computer-use approvals and their 5-minute timeout).
+- `pc-first-workflow`: every game is created, run and changed on the Windows PC; how to reach it from the Mac,
+  phone or claude.ai (Remote Control, computer use) and the permission traps.
 - `unity-game-dev-rules`: Unity UI, themes, performance, tests, git from the PC.
 - `chatgpt-art-pipeline`: generate art in ChatGPT on the PC, cut and import it.
 - `english-only-code`: all code and commits in English.
