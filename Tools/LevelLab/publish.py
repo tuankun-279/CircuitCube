@@ -4,10 +4,11 @@ usage: python3 publish.py <dump dir> <repo root> [--version N]
        python3 publish.py --pin <commit sha> <repo root>
 
 <dump dir> holds one JSON file per database document, as the ArtifactData tool saves them with out_dir:
-  meta/manifest.json, groups/<id>.json, orders/<group>-<k>.json, levels/<group>-<serial>.json, shapes/<id>.json
+  meta/manifest.json, groups/<id>.json, orders/<group>-<k>.json, levels/<group>-<serial>.json, shapes/<id>.json,
+  challenge/<week>-<group>-<slot>.json (the weekly challenge levels)
 <repo root>/content/ is replaced with the same layout as Level Lab's "Export zip":
   manifest.json, groups/<id>.json, orders/<group>/<k>.json, levels/<group>/<serial4>.json, shapes.json,
-  shapes/voxel/<id>.json
+  shapes/voxel/<id>.json, and challenge/<week>/<group>/<slot>.json for the week meta/manifest.challenge opens
 The manifest gets contentVersion = the previous one + 1 (or --version). Publishing is two commits: the first holds
 the new content/; then --pin writes that commit's jsDelivr address (immutable, cached for good) into
 content/manifest.json as "cdn", and a second commit carries only that. The game reads the manifest from main on
@@ -179,6 +180,20 @@ def tile_count(sid, shapes):
 
 # ---------------------------------------------------------------- publish
 
+def check_level(lid, L, shapes, problems):
+    """Adds to problems what is wrong with one level document (shape, tile string, a source and a lamp)."""
+    n = tile_count(L.get("shape", ""), shapes)
+    tiles = L.get("tiles", "")
+    if n is None:
+        problems.append("%s: unknown shape %s" % (lid, L.get("shape")))
+    elif len(tiles) != 3 * n:
+        problems.append("%s: %d tiles in the string, shape %s has %d" % (lid, len(tiles) // 3, L["shape"], n))
+    elif any(B64.find(tiles[i]) < 0 for i in range(0, len(tiles), 3)):
+        problems.append("%s: bad wire character" % lid)
+    elif not any(tiles[i] in "rby" for i in range(1, len(tiles), 3)) or not any(tiles[i] in "1234567" for i in range(1, len(tiles), 3)):
+        problems.append("%s: needs at least one source and one lamp" % lid)
+
+
 def pin(sha, repo):
     path = os.path.join(repo, "content", "manifest.json")
     with open(path) as fh:
@@ -203,6 +218,7 @@ def main():
     orders = load_dir(os.path.join(dump, "orders"))
     levels = load_dir(os.path.join(dump, "levels"))
     shapes = load_dir(os.path.join(dump, "shapes"))
+    challenges = load_dir(os.path.join(dump, "challenge"))
 
     content = os.path.join(repo, "content")
     old = 0
@@ -244,16 +260,7 @@ def main():
                 L = dict(L)
                 L.pop("updatedAt", None)
                 revs.append(L.get("rev", 1))
-                n = tile_count(L.get("shape", ""), shapes)
-                tiles = L.get("tiles", "")
-                if n is None:
-                    problems.append("%s: unknown shape %s" % (lid, L.get("shape")))
-                elif len(tiles) != 3 * n:
-                    problems.append("%s: %d tiles in the string, shape %s has %d" % (lid, len(tiles) // 3, L["shape"], n))
-                elif any(B64.find(tiles[i]) < 0 for i in range(0, len(tiles), 3)):
-                    problems.append("%s: bad wire character" % lid)
-                elif not any(tiles[i] in "rby" for i in range(1, len(tiles), 3)) or not any(tiles[i] in "1234567" for i in range(1, len(tiles), 3)):
-                    problems.append("%s: needs at least one source and one lamp" % lid)
+                check_level(lid, L, shapes, problems)
                 used_shapes.add(L.get("shape", ""))
                 files["levels/%s/%04d.json" % (gid, serial)] = L
                 count += 1
@@ -273,6 +280,25 @@ def main():
             problems.append("%s: levelCount %s but the order lists %d levels" % (gid, g.get("levelCount"), count))
         files["groups/%s.json" % gid] = g
         total += count
+
+    # The weekly challenge set that meta/manifest.challenge opens: challenge/<week>/<group>/<slot>.json, one per
+    # shape and slot 1..count, from the challenge collection (documents <week>-<group>-<slot>). Other weeks are left out.
+    week = meta.get("challenge")
+    if week and week.get("id"):
+        manifest["challenge"] = {"id": week["id"], "start": week.get("start", ""), "days": week.get("days", 7),
+                                 "groups": list(week.get("groups") or []), "count": week.get("count", 3)}
+        for gid in manifest["challenge"]["groups"]:
+            for slot in range(1, manifest["challenge"]["count"] + 1):
+                cid = "%s-%s-%d" % (week["id"], gid, slot)
+                L = challenges.get(cid)
+                if L is None:
+                    problems.append("challenge %s: level %s, which does not exist" % (week["id"], cid))
+                    continue
+                L = dict(L)
+                L.pop("updatedAt", None)
+                check_level(cid, L, shapes, problems)
+                used_shapes.add(L.get("shape", ""))
+                files["challenge/%s/%s/%d.json" % (week["id"], gid, slot)] = L
 
     catalog = {"version": manifest["shapesVersion"]}
     for sid in sorted(used_shapes):
