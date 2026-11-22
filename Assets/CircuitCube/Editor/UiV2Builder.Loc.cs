@@ -15,6 +15,7 @@ namespace CircuitCube.EditorTools
             "Assets/CircuitCube/Prefabs/UI/LevelNode.prefab",
             "Assets/CircuitCube/Prefabs/UI/ShapeCard.prefab",
             "Assets/CircuitCube/Prefabs/UI/LegendChip.prefab",
+            "Assets/CircuitCube/Prefabs/UI/BoardRow.prefab",
         };
 
         /// <summary>
