@@ -1,17 +1,11 @@
 {
   "blurb": "Twelve pentagon faces, cut finer and finer, up to 132 tiles.",
   "chunkSize": 100,
-  "chunks": [
-    {
-      "count": 100,
-      "index": 0,
-      "version": 2
-    }
-  ],
+  "chunks": [],
   "enable": true,
   "endless": false,
   "icon": "dodeca",
   "id": "dodeca",
-  "levelCount": 100,
+  "levelCount": 0,
   "name": "Galaxy"
 }

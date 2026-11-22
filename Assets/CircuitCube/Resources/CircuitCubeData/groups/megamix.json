@@ -1,17 +1,11 @@
 {
   "blurb": "Stations, towers and shapes nobody has seen. A new one every level, never ends.",
   "chunkSize": 100,
-  "chunks": [
-    {
-      "count": 100,
-      "index": 0,
-      "version": 2
-    }
-  ],
+  "chunks": [],
   "enable": true,
   "endless": true,
   "icon": "megamix",
   "id": "megamix",
-  "levelCount": 100,
+  "levelCount": 0,
   "name": "Nebula"
 }

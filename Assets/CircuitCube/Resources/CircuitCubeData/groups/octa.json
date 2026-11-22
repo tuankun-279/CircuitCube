@@ -1,17 +1,11 @@
 {
   "blurb": "Eight triangle faces, four meeting at every point.",
   "chunkSize": 100,
-  "chunks": [
-    {
-      "count": 100,
-      "index": 0,
-      "version": 2
-    }
-  ],
+  "chunks": [],
   "enable": true,
   "endless": false,
   "icon": "octa",
   "id": "octa",
-  "levelCount": 100,
+  "levelCount": 0,
   "name": "Star Gem"
 }
