@@ -7,17 +7,23 @@ namespace CircuitCube.Core
     /// Leaderboard scores as single numbers, shared by the game and the Cloud Code module on the server.
     /// <para>Weekly challenge boards sort ascending: fewest moves first, then the shorter time.
     /// Score = moves × <see cref="WeeklyStep"/> + time in tenths of a second.</para>
-    /// <para>Shape boards sort descending: most Expert levels in the shape first, then the shorter total of their best
-    /// times. Score = Expert count × <see cref="ShapeStep"/> − total time in tenths.</para>
+    /// <para>Shape boards sort descending: most Expert levels in the shape first, then the fewest total moves of their
+    /// best runs, then the shorter total time. Score = Expert count × <see cref="ShapeStep"/> − total moves ×
+    /// <see cref="ShapeMoveStep"/> − total whole seconds. All parts fit in a double exactly (below 2^53).</para>
     /// </summary>
     public static class RankScore
     {
         /// <summary>Longest time a weekly level can record, in tenths of a second (about 2.7 hours).</summary>
         public const int MaxTenths = 99999;
         public const double WeeklyStep = 100000d;
-        /// <summary>Longest total a shape board can record, in tenths of a second (about 11.5 days of play).</summary>
-        public const long MaxShapeTenths = 9999999L;
-        public const double ShapeStep = 10000000d;
+        /// <summary>Most Expert levels one shape board can count.</summary>
+        public const int MaxShapeExperts = 9000;
+        /// <summary>Largest total of best moves a shape board can record.</summary>
+        public const long MaxShapeMoves = 999999L;
+        /// <summary>Longest total a shape board can record, in whole seconds (about 11.5 days of play).</summary>
+        public const long MaxShapeSeconds = 999999L;
+        public const double ShapeStep = 1000000000000d;
+        public const double ShapeMoveStep = 1000000d;
 
         public static int Tenths(float seconds) => (int)Math.Max(0, Math.Min(MaxTenths, Math.Round(seconds * 10.0)));
 
@@ -25,9 +31,19 @@ namespace CircuitCube.Core
         public static int WeeklyMoves(double score) => (int)Math.Floor(score / WeeklyStep);
         public static int WeeklyTenths(double score) => (int)Math.Round(score - WeeklyMoves(score) * WeeklyStep);
 
-        public static double Shape(int experts, long totalTenths) => experts * ShapeStep - Math.Max(0L, Math.Min(MaxShapeTenths, totalTenths));
+        public static double Shape(int experts, long totalMoves, long totalTenths)
+        {
+            long e = Math.Max(0, Math.Min(MaxShapeExperts, experts));
+            long m = Math.Max(0L, Math.Min(MaxShapeMoves, totalMoves));
+            long sec = Math.Max(0L, Math.Min(MaxShapeSeconds, totalTenths / 10));
+            return e * ShapeStep - m * ShapeMoveStep - sec;
+        }
+
         public static int ShapeExperts(double score) => score <= 0 ? 0 : (int)Math.Ceiling(score / ShapeStep);
-        public static long ShapeTenths(double score) => score <= 0 ? 0 : (long)Math.Round(ShapeExperts(score) * ShapeStep - score);
+        static long ShapeRest(double score) => score <= 0 ? 0 : (long)Math.Round(ShapeExperts(score) * ShapeStep - score);
+        public static long ShapeMoves(double score) => ShapeRest(score) / (long)ShapeMoveStep;
+        /// <summary>Total time of a shape score, in whole seconds.</summary>
+        public static long ShapeSeconds(double score) => ShapeRest(score) % (long)ShapeMoveStep;
 
         /// <summary>"1:23.4" from tenths of a second.</summary>
         public static string TimeText(long tenths)

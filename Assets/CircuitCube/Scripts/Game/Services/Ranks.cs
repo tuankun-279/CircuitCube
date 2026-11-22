@@ -45,12 +45,13 @@ namespace CircuitCube.Game
         public int rank;        // 1 = first, 0 = unknown
         public int players;
         public int experts;     // shape boards: Expert levels counted now
+        public long moves;      // shape boards: total moves of their best runs
         public long tenths;     // shape boards: total of their best times
     }
 
     /// <summary>
     /// Leaderboards on Unity Gaming Services: the weekly challenge (5 boards for its levels and one for their total)
-    /// and one board per shape (Expert levels and the total of their best times). The game never writes a score
+    /// and one board per shape (Expert levels, then the total moves and total time of their best runs). The game never writes a score
     /// itself: it sends the taps of a win to the Cloud Code module CircuitCubeRanks (Tools/CloudCode), which plays
     /// them again and posts the score. Wins made offline wait in save/ranks_pending.json and are sent later.
     /// Signs in with the Play Games account once <see cref="CloudSave"/> has, otherwise anonymously.

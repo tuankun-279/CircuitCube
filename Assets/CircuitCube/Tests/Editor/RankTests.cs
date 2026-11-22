@@ -29,17 +29,24 @@ namespace CircuitCube.Tests
         }
 
         [Test]
-        public void ShapeScoreRanksMoreExpertsFirstThenShorterTotal()
+        public void ShapeScoreRanksExpertsThenMovesThenTime()
         {
-            Assert.Greater(RankScore.Shape(11, RankScore.MaxShapeTenths), RankScore.Shape(10, 0));
-            Assert.Greater(RankScore.Shape(10, 500), RankScore.Shape(10, 501));
-            foreach (var (e, t) in new[] { (1, 0L), (1, 9L), (42, 123456L), (600, RankScore.MaxShapeTenths) })
+            // more Expert levels beat anything else
+            Assert.Greater(RankScore.Shape(11, RankScore.MaxShapeMoves, 99999999L), RankScore.Shape(10, 0, 0));
+            // same experts: fewer total moves first, whatever the time
+            Assert.Greater(RankScore.Shape(10, 300, 99999999L), RankScore.Shape(10, 301, 0));
+            // same experts and moves: shorter total time
+            Assert.Greater(RankScore.Shape(10, 300, 500), RankScore.Shape(10, 300, 510));
+            foreach (var (e, m, t) in new[] { (1, 0L, 0L), (1, 7L, 90L), (42, 1234L, 1234560L), (RankScore.MaxShapeExperts, RankScore.MaxShapeMoves, RankScore.MaxShapeSeconds * 10) })
             {
-                double s = RankScore.Shape(e, t);
-                Assert.AreEqual(e, RankScore.ShapeExperts(s), "experts of " + e + "/" + t);
-                Assert.AreEqual(t, RankScore.ShapeTenths(s), "tenths of " + e + "/" + t);
+                double s = RankScore.Shape(e, m, t);
+                string what = e + "/" + m + "/" + t;
+                Assert.AreEqual(e, RankScore.ShapeExperts(s), "experts of " + what);
+                Assert.AreEqual(m, RankScore.ShapeMoves(s), "moves of " + what);
+                Assert.AreEqual(t / 10, RankScore.ShapeSeconds(s), "seconds of " + what);
             }
             Assert.AreEqual(0, RankScore.ShapeExperts(0));
+            Assert.Less(RankScore.Shape(RankScore.MaxShapeExperts, 0, 0), 9007199254740992d, "fits a double exactly");
         }
 
         [Test]

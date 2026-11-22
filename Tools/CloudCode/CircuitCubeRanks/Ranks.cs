@@ -34,6 +34,7 @@ namespace CircuitCubeRanks
         public int rank { get; set; }
         public int players { get; set; }
         public int experts { get; set; }
+        public long moves { get; set; }
         public long tenths { get; set; }
     }
 
@@ -45,10 +46,17 @@ namespace CircuitCubeRanks
         public List<double> best { get; set; } = new List<double>();
     }
 
+    /// <summary>The best Expert run of one level: fewest moves, then the shorter time.</summary>
+    public class LevelBest
+    {
+        public int m { get; set; }
+        public long t { get; set; }
+    }
+
     public class ShapeRecord
     {
-        /// <summary>Best time in tenths of each level won as Expert, by serial.</summary>
-        public Dictionary<string, long> levels { get; set; } = new Dictionary<string, long>();
+        /// <summary>Best run of each level won as Expert, by serial.</summary>
+        public Dictionary<string, LevelBest> levels { get; set; } = new Dictionary<string, LevelBest>();
     }
 
     /// <summary>
@@ -185,12 +193,13 @@ namespace CircuitCubeRanks
             string recKey = "shape_" + key;
             var rec = Content.Parse<ShapeRecord>(await ReadProtected(ctx, recKey));
             string serial = index.ToString(CultureInfo.InvariantCulture);
-            bool better = !rec.levels.TryGetValue(serial, out long had) || tenths < had;
-            if (better) rec.levels[serial] = tenths;
+            bool better = !rec.levels.TryGetValue(serial, out var had) || run.Moves < had.m || (run.Moves == had.m && tenths < had.t);
+            if (better) rec.levels[serial] = new LevelBest { m = run.Moves, t = tenths };
             int experts = rec.levels.Count;
-            long total = rec.levels.Values.Sum();
+            long moves = rec.levels.Values.Sum(l => (long)l.m);
+            long total = rec.levels.Values.Sum(l => l.t);
             string board = RankScore.ShapeBoard(key);
-            double score = RankScore.Shape(experts, total);
+            double score = RankScore.Shape(experts, moves, total);
             if (better)
             {
                 await WriteProtected(ctx, recKey, Content.Serialize(rec));
@@ -198,6 +207,7 @@ namespace CircuitCubeRanks
             }
             var reply = await Reply(ctx, board, score);
             reply.experts = experts;
+            reply.moves = moves;
             reply.tenths = total;
             return reply;
         }

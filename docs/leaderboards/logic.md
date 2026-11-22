@@ -14,7 +14,7 @@ https://claude.ai/artifact/BudjQEtz8hkYqohpBmw1Do (screens 1-6). This page is th
 | Board | What ranks | Sort | Resets | Who can enter |
 |---|---|---|---|---|
 | Weekly challenge | Moves, then time, on the week's challenge levels | ascending | every Thursday 00:00 UTC (07:00 Vietnam) | anyone who has the shape unlocked |
-| Shape (lifetime) | Number of Expert levels in the shape, then total of their best times | descending | never | anyone |
+| Shape (lifetime) | Number of Expert levels in the shape, then total moves of their best runs, then total time | descending | never | anyone |
 
 There are **no per-level boards for normal levels** (Tuan, 2026-11-22: keep player data small).
 
@@ -57,15 +57,17 @@ used for special events. That supports splitting the weekly challenge by shape.
 ## Shape boards (lifetime)
 
 - A level counts once it is won as **Expert**: no hint, no undo, at most `minTaps + wasteAllowed` moves (default 3).
-- Score = experts x 10,000,000 - total tenths of the best times of those levels (cap 9,999,999 tenths).
-  More Expert levels always rank higher; on a tie the shorter total wins.
-- Replaying an Expert level faster lowers the total and improves the score.
+- Order (Tuan, 2026-11-22): **most Expert levels, then fewest total moves, then shortest total time**. Totals are
+  over the player's best run of each Expert level (best = fewest moves, then shorter time).
+- Score = experts x 10^12 - total moves x 10^6 - total whole seconds. Caps: 9,000 Expert levels, 999,999 moves,
+  999,999 seconds (about 11.5 days); the largest score stays below 2^53, so the double is exact.
+- Replaying an Expert level in fewer moves, or as many moves but faster, improves the score.
 - Expert wins from before the update do not count (the server never saw their taps). Open question for Tuan.
 
 ## Data kept per player (protected Cloud Save, written only by the server)
 
 - `weekly`: `{ week, sets: { <group>: [best score per slot] } }`. Replaced when the week changes.
-- `shape_<group>`: `{ levels: { <serial>: best tenths } }`, only Expert levels. Around 10 bytes per Expert level.
+- `shape_<group>`: `{ levels: { <serial>: { m: moves, t: tenths } } }`, only Expert levels. About 20 bytes per Expert level.
 
 ## Flow of one win
 
