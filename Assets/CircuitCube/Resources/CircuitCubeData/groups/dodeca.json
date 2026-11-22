@@ -6,22 +6,12 @@
       "count": 100,
       "index": 0,
       "version": 2
-    },
-    {
-      "count": 100,
-      "index": 1,
-      "version": 1
-    },
-    {
-      "count": 100,
-      "index": 2,
-      "version": 1
     }
   ],
   "enable": true,
   "endless": false,
   "icon": "dodeca",
   "id": "dodeca",
-  "levelCount": 300,
+  "levelCount": 100,
   "name": "Galaxy"
 }
