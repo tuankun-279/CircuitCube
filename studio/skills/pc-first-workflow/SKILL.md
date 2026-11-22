@@ -68,6 +68,14 @@ desktop app on the PC and check the Remote Control switches above. Do the parts 
 - The cloud thread's own computer-use tools act on whichever device `connect_device` linked (often the Mac). Do not
   drive PC apps through them unless `get_device_info` shows the PC.
 
+## Several threads on one PC
+
+- Two threads can drive the same game folder at once. Before switching branches in `D:\Projects\Own_Project\<Game>`,
+  check `git reflog` and `git status`: if another thread has the folder on its branch, do not switch it back.
+- Work in a git worktree of your branch instead (for example `D:\Projects\Own_Project\<Game>_<branch-suffix>`) and
+  open a second Unity editor on it. The first import takes 10-20 minutes; close that editor when done and keep the
+  worktree for later work on the branch. Ask the user before starting it (RAM, time).
+
 ## Before calling a task done
 
 - Compiled and edit-mode tests passed in Unity on the PC.
