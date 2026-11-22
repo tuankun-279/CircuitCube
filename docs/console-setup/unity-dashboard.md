@@ -42,10 +42,12 @@ ugs deploy Tools/CloudCode/Deploy
   (weekly: ascending, best score, weekly reset Thursday 00:00 UTC from 2026-12-03, archive on; shape: descending,
   latest score, no reset). A later `ugs deploy` updates them in place.
 - Access Control project policy: statement `deny-write-leaderboards` (Deny, Write, Leaderboards, everything).
-- Play Console: Game server credential "Circuit Cube" saved (Draft) with the Web application OAuth client
-  `6185798786-ggj1m5g0cl6vr8kosijnl3k46mmsbgal.apps.googleusercontent.com`. Not yet published.
-- Not yet: Google Play Games identity provider (the owner pastes the client secret), Cloud Code module,
-  Play Games configuration publish.
+- Play Console: Game server credential "Circuit Cube" with the Web application OAuth client
+  `6185798786-ggj1m5g0cl6vr8kosijnl3k46mmsbgal.apps.googleusercontent.com`. Play Games project published
+  2026-11-22 (first publish: it also needed description, category Puzzle, icon and feature graphic from
+  `StoreListing/`). Before that only testers could sign in with Play Games.
+- Player Authentication: Google Play Games identity provider enabled with that client id (secret typed by the owner).
+- Not yet: Cloud Code module `CircuitCubeRanks` (needs `ugs deploy` from a machine with .NET 6).
 
 ## 4. Check after deploying
 

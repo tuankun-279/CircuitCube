@@ -19,7 +19,9 @@ App: **Circuit Cube** (`com.zyerkun.circuitcube`). Owner signs in; nothing here 
      (writes `mWebClientId` in `PlayGamesSettings.asset`; commit it, it is not secret).
    - Unity Cloud Dashboard > Player Authentication > Identity providers > Google Play Games: client id.
 4. The **client secret** goes only into the Unity Cloud Dashboard field, typed by the owner. Never in git or chat.
-5. **Publish** the Play Games configuration changes (Review and publish), or sign-in fails for testers.
+5. **Publish** the Play Games configuration changes (Play Games Services > Publishing > Publish), or only
+   testers can sign in. The first publish needs Properties filled: description, category, icon 512x512 and
+   feature graphic 1024x500 (both in `StoreListing/`; uploads are done by the owner).
 
 ## Data safety form (whenever data use changes)
 
