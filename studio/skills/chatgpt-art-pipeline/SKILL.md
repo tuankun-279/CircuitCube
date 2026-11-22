@@ -1,11 +1,11 @@
 ---
 name: "chatgpt-art-pipeline"
-description: "Use when game art must be generated with the ChatGPT desktop app on the user's PC and cut into Unity sprites: demo first, prompt, download, cut, import."
+description: "Use when game art must be generated with ChatGPT (Codex CLI, or the ChatGPT desktop app) on the user's PC and cut into Unity sprites: demo first, prompt, generate, cut, import."
 ---
 
 # ChatGPT art pipeline
 
-All game art comes from ChatGPT image generation, driven through computer use on the user's Windows PC. Code only crops, cleans, places and splits the art; it does not paint new art, except clean geometry fixes the user asked for (for example redrawing wires from a measured profile).
+All game art comes from ChatGPT image generation on the user's Windows PC: Codex CLI by default, the ChatGPT app through computer use as a fallback. Code only crops, cleans, places and splits the art; it does not paint new art, except clean geometry fixes the user asked for (for example redrawing wires from a measured profile).
 
 ## 1. Agree on the look first
 
@@ -13,7 +13,31 @@ All game art comes from ChatGPT image generation, driven through computer use on
   - To composite game UI over a new background, capture the game twice, with the camera on black and on white. alpha = 1 - mean(white - black), then out = black + (1 - alpha) * bg.
 - Show 2-4 options side by side and ask which one to generate (AskUserQuestion). Do not generate before the user picks.
 
-## 2. Generate in ChatGPT (computer use)
+## 2. Generate with Codex CLI (default)
+
+Codex CLI on the PC is signed in with the user's ChatGPT account (no API key) and has image generation on. It needs
+no computer use, so it works from a Remote Control session with no Allow prompts.
+
+1. Check once: `codex --version`, `codex login status` ("Logged in using ChatGPT"), `codex features list`
+   (image_generation true).
+2. From the game folder in PowerShell, put the prompt **before** `-i` (`-i` takes several files and swallows a prompt
+   after it: "No prompt provided via stdin"):
+
+   ```
+   codex exec --skip-git-repo-check "Use the imagegen skill with the built-in image_gen tool to generate one image. <prompt>. Do not edit any files; just generate the image and print its saved path." -i "ArtRef\ref_icons_style.png"
+   ```
+3. Prompt in English, as in 2b step 4: how to use each reference, size, no text, palette, empty areas. For icon
+   sets ask for pure white shapes on flat black in a grid with wide gaps, so cutting is a luminance-to-alpha split.
+4. Codex prints the saved path (`%USERPROFILE%\.codex\generated_images\<thread>\exec-<id>.png`); copy it to
+   `ArtRef\raw<N>_<name>.png`. About 1-2 minutes per image.
+5. The cutting scripts need Python with pillow, numpy and scipy on the PC (`pip install --user pillow numpy scipy`).
+
+Worked example: Circuit Cube leaderboard icons (commit 3f36fc0, `ArtRef/tools/cut_leaderboard_icons.py`).
+
+## 2b. Fallback: ChatGPT desktop app (computer use)
+
+Use only when Codex cannot do the job (for example a feature only the app has). From a Remote Control session the user
+must open that session and press Allow twice within 5 minutes (see the pc-first-workflow skill).
 
 1. Load the computer-use skill. Resolve and request access for "ChatGPT" (the bundle id looks like `OpenAI.Codex_...!App`), with clipboardWrite.
 2. Open the app and start a New chat (top left).

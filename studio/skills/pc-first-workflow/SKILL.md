@@ -29,7 +29,8 @@ Decide before the first step. Check what is connected (`list_devices`, `get_devi
 |---|---|---|
 | Edit code, scenes, prefabs, assets; git commit and push from the device | **Remote Control session on the PC** (`start_remote_control`, folder = the game folder) | Preferred for anything that runs: Unity, tests, builds, scripts, git |
 | Read or copy a few files | Folder access on the PC | Only when the thread is linked to the PC, not the Mac |
-| Drive a PC app (ChatGPT for art, Unity window screenshots) | Computer use **from the Remote Control session on the PC** | See "Permission traps" |
+| Generate art (ChatGPT images) | **Codex CLI** from the Remote Control session on the PC (`codex exec ... -i ref.png`) | No computer use, no Allow prompts; see chatgpt-art-pipeline |
+| Drive a PC app (ChatGPT app as a fallback, Unity window screenshots) | Computer use **from the Remote Control session on the PC** | See "Permission traps" |
 | Plans, docs, mockups, research, code drafts | Cloud clone of the repo | Never called done until compiled and tested on the PC |
 | Web consoles (Play Console, Unity Dashboard, Firebase) | Any browser that is connected | Not a game change |
 | Xcode archive for the App Store | Mac, from the pushed branch | No game edits on the Mac; fixes go back to the PC |
