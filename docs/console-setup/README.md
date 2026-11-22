@@ -19,7 +19,7 @@ by the owner in the console or kept on the PC.
 | Play Games app id | `6185798786` | `Assets/GooglePlayGames/Resources/PlayGamesSettings.asset` (`mAppId`) |
 | Play Games web client id | _empty until the Game server credential exists_ | same asset, `mWebClientId` (Window > Google Play Games > Setup) |
 | Firebase project | `circuit-cube` | `Assets/google-services.json` |
-| UGS project id | _fill in after linking_ | Project Settings > Services |
+| UGS project | `Puzzle_Robot`, id `1040eab6-9bcb-4d53-af4c-fc3205412b87`, org `18967060165293`, env `production` | `ProjectSettings/ProjectSettings.asset` (`cloudProjectId`) |
 | Content manifest | `https://raw.githubusercontent.com/tuankun-279/CircuitCube/main/content/manifest.json` | scene field `ContentBaseUrl`, `Tools/CloudCode/CircuitCubeRanks/Ranks.cs` |
 
 Update this table whenever a value changes.

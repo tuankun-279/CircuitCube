@@ -36,6 +36,14 @@ ugs deploy Tools/CloudCode/Deploy
 - `ranks.ac`: players cannot post scores; only the module does, with the service token.
 - Cloud Save needs no setup; the module writes protected player data `weekly` and `shape_<group>`.
 
+## State (2026-11-22)
+
+- Leaderboards on; the 12 boards were created by hand in the dashboard with the same settings as the `.lb` files
+  (weekly: ascending, best score, weekly reset Thursday 00:00 UTC from 2026-12-03, archive on; shape: descending,
+  latest score, no reset). A later `ugs deploy` updates them in place.
+- Access Control project policy: statement `deny-write-leaderboards` (Deny, Write, Leaderboards, everything).
+- Not yet: Google Play Games identity provider, Cloud Code module.
+
 ## 4. Check after deploying
 
 - Leaderboards page lists the 12 boards with the right sort and reset.
