@@ -3,9 +3,9 @@
   "chunkSize": 100,
   "chunks": [
     {
-      "count": 100,
       "index": 0,
-      "version": 2
+      "version": 2,
+      "count": 100
     }
   ],
   "enable": true,

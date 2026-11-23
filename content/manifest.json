@@ -1,12 +1,29 @@
 {
-  "cdn": "https://cdn.jsdelivr.net/gh/tuankun-279/CircuitCube@e16f25b5f7c7c65264eed57f109d5692e52dd474/content/",
-  "contentVersion": 11,
+  "schema": 3,
+  "minApp": "0.1.0",
+  "shapesVersion": 4,
+  "rules": {
+    "windowBack": 10,
+    "windowAhead": 10,
+    "hintsPerLevel": 3,
+    "hintPenalty": 1,
+    "undosPerLevel": 5,
+    "adsOn": 0,
+    "adsTesters": "",
+    "updateBelow": 0,
+    "minScore": 3,
+    "parScore": 6,
+    "overParScore": 5,
+    "wasteAllowed": 3,
+    "expertSlackPercent": 15,
+    "expertSlackMin": 0
+  },
   "groups": [
     {
       "id": "cube",
       "unlock": {
-        "cleared": 0,
-        "group": ""
+        "group": "",
+        "cleared": 0
       }
     },
     {
@@ -45,22 +62,6 @@
       }
     }
   ],
-  "minApp": "0.1.0",
-  "rules": {
-    "adsOn": 0,
-    "adsTesters": "",
-    "expertSlackMin": 0,
-    "expertSlackPercent": 15,
-    "hintPenalty": 1,
-    "hintsPerLevel": 3,
-    "minScore": 3,
-    "overParScore": 5,
-    "parScore": 6,
-    "undosPerLevel": 5,
-    "updateBelow": 0,
-    "windowAhead": 10,
-    "windowBack": 10
-  },
-  "schema": 3,
-  "shapesVersion": 4
+  "contentVersion": 12,
+  "cdn": ""
 }
