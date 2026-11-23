@@ -1,7 +1,7 @@
 {
   "schema": 3,
   "minApp": "0.1.0",
-  "shapesVersion": 4,
+  "shapesVersion": 5,
   "rules": {
     "windowBack": 10,
     "windowAhead": 10,
@@ -62,6 +62,20 @@
       }
     }
   ],
-  "contentVersion": 12,
-  "cdn": "https://cdn.jsdelivr.net/gh/tuankun-279/CircuitCube@86ee2619f9377ba738ea2f18aa9d915b26c8dbcf/content/"
+  "contentVersion": 13,
+  "cdn": "https://cdn.jsdelivr.net/gh/tuankun-279/CircuitCube@f84d6c5a0b2307885f64d1415d71794ec097d0b1/content/",
+  "challenge": {
+    "id": "2026-W47",
+    "start": "2026-11-19T00:00:00Z",
+    "days": 7,
+    "groups": [
+      "cube",
+      "tetra",
+      "octa",
+      "sphere",
+      "dodeca",
+      "megamix"
+    ],
+    "count": 3
+  }
 }
