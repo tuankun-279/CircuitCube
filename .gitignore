@@ -55,3 +55,7 @@ Thumbs.db
 /Assets/Plugins/Android/FirebaseApp.androidlib.meta
 /Assets/StreamingAssets/google-services-desktop.json
 /Assets/StreamingAssets/google-services-desktop.json.meta
+
+# Cloud Code module build output
+Tools/CloudCode/CircuitCubeRanks/bin/
+Tools/CloudCode/CircuitCubeRanks/obj/

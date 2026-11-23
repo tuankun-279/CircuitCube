@@ -54,6 +54,29 @@ namespace CircuitCube.Core
         public int contentVersion;
         /// <summary>Where the files of this publish are served (an immutable tag on jsDelivr); empty = next to the manifest.</summary>
         public string cdn = "";
+        /// <summary>The weekly challenge now open (empty id = none). Older apps ignore it.</summary>
+        public ChallengeWeek challenge = new ChallengeWeek();
+    }
+
+    /// <summary>
+    /// One weekly challenge: a set of <see cref="count"/> levels per shape, easiest first, ranked by fewest moves and then
+    /// time. A player joins the sets of the shapes they have unlocked. Level files sit at
+    /// challenge/&lt;id&gt;/&lt;group&gt;/&lt;slot&gt;.json (slot 1..count), next to the other files of the publish.
+    /// </summary>
+    [Serializable] public class ChallengeWeek
+    {
+        /// <summary>ISO week, e.g. "2026-W49"; also the version of the weekly boards it is ranked on.</summary>
+        public string id = "";
+        /// <summary>Opening time in UTC, ISO 8601 ("2026-12-03T00:00:00Z"); it stays open for <see cref="days"/>.</summary>
+        public string start = "";
+        public int days = 7;
+        /// <summary>Group ids (shapes) that have a set this week.</summary>
+        public List<string> groups = new List<string>();
+        /// <summary>Levels per shape (files 1..count), easiest first.</summary>
+        public int count = 3;
+        public bool IsNone => string.IsNullOrEmpty(id);
+        public bool Has(string group) => !IsNone && groups != null && groups.Contains(group);
+        public static string LevelPath(string id, string group, int slot) => "challenge/" + id + "/" + group + "/" + slot + ".json";
     }
 
     [Serializable] public class ChunkInfo

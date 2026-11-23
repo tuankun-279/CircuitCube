@@ -54,6 +54,7 @@ namespace CircuitCube.EditorTools
             Ui120Fx();
             Ui130Ftue();
             Ui140Score();
+            BuildRanks();
             FitLabels();
             Debug.Log("[CircuitCube] UI V2 built.");
         }

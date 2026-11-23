@@ -109,6 +109,8 @@ namespace CircuitCube.Game
         {
             QuitAttempt();
             _ftue = n;
+            _weeklySlot = 0;
+            SetHelpButtons(true);
             if (CubeSave.TutorialStep < n) CubeSave.TutorialStep = n;
             _cheat = false;
             _tw.Clear();

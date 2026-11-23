@@ -24,6 +24,8 @@ namespace CircuitCube.Game
         const float MinSecondsBetweenWrites = 60f;
 
         public static bool SignedIn { get; private set; }
+        /// <summary>The Play Games sign-in has answered (or cannot happen in this build); <see cref="Ranks"/> waits for it.</summary>
+        public static bool AuthDone { get; private set; }
         static bool _started, _dirty, _busy, _pulled;
         static float _lastWrite = -1000f;
 
@@ -34,16 +36,19 @@ namespace CircuitCube.Game
 #if CC_PLAYGAMES && UNITY_ANDROID && !UNITY_EDITOR
             try
             {
-                if (!GameInfo.ApplicationIdInitialized()) { Debug.LogWarning("[CloudSave] off: no Play Games app id (Window > Google Play Games > Setup)"); return; }
+                if (!GameInfo.ApplicationIdInitialized()) { AuthDone = true; Debug.LogWarning("[CloudSave] off: no Play Games app id (Window > Google Play Games > Setup)"); return; }
                 PlayGamesPlatform.Activate();
                 PlayGamesPlatform.Instance.Authenticate(status =>
                 {
                     SignedIn = status == SignInStatus.Success;
+                    AuthDone = true;
                     GameAnalytics.Log("cloud_signin", ("ok", SignedIn));
                     if (SignedIn) Pull();
                 });
             }
-            catch (Exception e) { Debug.LogWarning("[CloudSave] off: " + e.Message); }
+            catch (Exception e) { AuthDone = true; Debug.LogWarning("[CloudSave] off: " + e.Message); }
+#else
+            AuthDone = true;
 #endif
         }
 

@@ -1,6 +1,6 @@
 # Circuit Cube – Privacy Policy
 
-*Last updated: 16 November 2026*
+*Last updated: 22 November 2026*
 
 **English** · [Tiếng Việt](#tiếng-việt)
 
@@ -13,6 +13,10 @@ Your progress (levels beaten, stars, the level you are playing), your settings (
 ## Cloud save (Google Play Games)
 
 If you sign in to **Google Play Games**, the game also saves your progress (levels beaten, stars and points) to your own Play Games account, so you can continue on another phone. The save is stored by Google in your account; the developer cannot see it. Signing in is optional: without it, progress stays on the device only. You can delete the cloud save at any time in the Google Play Games app (Profile → Settings → Delete Play Games account and data, or the game's saved data).
+
+## Leaderboards (Unity Gaming Services)
+
+The game has leaderboards: a weekly challenge and one board per shape. To run them, the game signs in to **Unity Gaming Services** (by Unity Technologies) with your Play Games account, or with an anonymous ID if you are not signed in to Play Games. Unity then stores a player ID, the player name shown on the boards (a generated name, or one you choose), and your results: for each leaderboard level, the tiles you turned in order, the number of moves and the time. Your player name, rank, moves and time are shown to other players on the boards. No email, contact or advertising ID is sent. To have your leaderboard data deleted, write to the contact address below with your player name.
 
 ## Advertising (Google AdMob)
 
@@ -69,7 +73,7 @@ Questions or requests: open an issue at <https://github.com/tuankun-279/CircuitC
 
 ## Tiếng Việt
 
-*Cập nhật lần cuối: 16/11/2026*
+*Cập nhật lần cuối: 22/11/2026*
 
 Circuit Cube ("trò chơi") là trò chơi giải đố trên Android do một nhà phát triển độc lập (lokikun) làm. Trang này giải thích trò chơi dùng những dữ liệu gì và vì sao.
 
@@ -80,6 +84,10 @@ Tiến trình chơi (level đã qua, số sao, level đang chơi dở), cài đ�
 ### Lưu trên đám mây (Google Play Games)
 
 Nếu bạn đăng nhập **Google Play Games**, trò chơi lưu thêm tiến trình (level đã qua, số sao, điểm) vào tài khoản Play Games của chính bạn để chơi tiếp trên máy khác. Bản lưu do Google giữ trong tài khoản của bạn; nhà phát triển không xem được. Đăng nhập là tùy chọn: không đăng nhập thì tiến trình chỉ nằm trên máy. Bạn có thể xóa bản lưu bất cứ lúc nào trong ứng dụng Google Play Games.
+
+### Bảng xếp hạng (Unity Gaming Services)
+
+Trò chơi có bảng xếp hạng: thử thách hằng tuần và một bảng cho mỗi hình khối. Để làm việc này, trò chơi đăng nhập **Unity Gaming Services** (của Unity Technologies) bằng tài khoản Play Games của bạn, hoặc bằng một mã ẩn danh nếu bạn không đăng nhập Play Games. Unity lưu mã người chơi, tên hiện trên bảng (tên tự tạo, hoặc tên bạn chọn) và kết quả của bạn: với mỗi level có xếp hạng là thứ tự các ô đã xoay, số nước và thời gian. Tên, hạng, số nước và thời gian của bạn được hiện cho người chơi khác trên bảng. Trò chơi không gửi email, danh bạ hay mã quảng cáo. Muốn xóa dữ liệu bảng xếp hạng, hãy viết cho địa chỉ liên hệ bên dưới kèm tên người chơi của bạn.
 
 ### Quảng cáo (Google AdMob)
 

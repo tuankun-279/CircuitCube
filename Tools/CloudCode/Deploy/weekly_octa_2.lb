@@ -1,0 +1,11 @@
+{
+  "$schema": "https://ugs-config-schemas.unity3d.com/v1/leaderboards.schema.json",
+  "SortOrder": "asc",
+  "UpdateType": "keepBest",
+  "Name": "Weekly Star Gem 2",
+  "ResetConfig": {
+    "Start": "2026-12-03T00:00:00Z",
+    "Schedule": "0 0 * * 4",
+    "Archive": true
+  }
+}

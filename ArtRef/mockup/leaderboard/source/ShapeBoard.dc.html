@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>All-time shape leaderboard popup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#46B8C6}a:hover{color:#7AD3DE}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; overflow: hidden; background: #05060D; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; padding: 44px 12px 12px; display: flex; flex-direction: column; font-variant-numeric: tabular-nums">
+  <div role="dialog" aria-label="Leaderboards" style="flex-grow: 1; min-height: 0; border-radius: 28px; background: #12152A; border: 1px solid #232842; display: flex; flex-direction: column; overflow: hidden">
+    <div style="padding: 18px 16px 0; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFC83A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"></path></svg>
+        <h1 style="margin: 0; flex-grow: 1; font-size: 22px; font-weight: 800">Leaderboards</h1>
+        <a href="Main.dc.html" aria-label="Close" style="width: 44px; height: 44px; border-radius: 22px; background: #1E2236; color: #FFFFFF; display: flex; align-items: center; justify-content: center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+        </a>
+      </div>
+      <nav aria-label="Board type" style="display: flex; gap: 4px; padding: 4px; border-radius: 16px; background: #0C0E1C">
+        <a href="WeeklyBoard.dc.html" style="flex-grow: 1; height: 40px; border-radius: 12px; color: #A3A7C2; text-decoration: none; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center">This week</a>
+        <span aria-current="page" style="flex-grow: 1; height: 40px; border-radius: 12px; background: #2A2E48; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center">All-time</span>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: #1A1E36">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 11px; color: #A3A7C2; font-weight: 700; letter-spacing: .4px">YOUR {{shapeName}}</span>
+          <span style="font-size: 18px; font-weight: 800">{{mine.experts}} Expert <span style="font-size: 13px; color: #A3A7C2; font-weight: 600">of {{mine.levels}} · {{mine.moves}} moves · {{mine.time}}</span></span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end">
+          <span style="font-size: 20px; font-weight: 800; color: #46B8C6">{{mine.rank}}</span>
+          <span style="font-size: 11px; color: #A3A7C2; font-weight: 600">of {{mine.players}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; min-height: 0; padding: 12px 16px 0; display: flex; flex-direction: column; gap: 6px">
+      <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 11px; font-weight: 700; color: #8E92AE; letter-spacing: .4px">
+        <span style="width: 32px">#</span><span style="flex-grow: 1">PLAYER</span><span style="width: 50px; text-align: right">EXPERT</span><span style="width: 50px; text-align: right">MOVES</span><span style="width: 50px; text-align: right">TIME</span>
+      </div>
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+        <div style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 10px; border-radius: 12px; background: {{r.bg}}; border: 1.5px solid {{r.border}}">
+          <div style="width: 32px"><span style="min-width: 26px; height: 26px; border-radius: 13px; background: {{r.medal}}; color: {{r.rankFg}}; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px">{{r.rank}}</span></div>
+          <span style="flex-grow: 1; min-width: 0; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.name}}<span style="color: #6F7392; font-weight: 600">{{r.tag}}</span></span>
+          <span style="width: 50px; text-align: right; font-size: 16px; font-weight: 800">{{r.experts}}</span>
+          <span style="width: 50px; text-align: right; font-size: 13px; font-weight: 700">{{r.moves}}</span>
+          <span style="width: 50px; text-align: right; font-size: 12px; font-weight: 600; color: #C3C6DA">{{r.time}}</span>
+        </div>
+      </sc-for>
+      <div style="flex-grow: 1"></div>
+      <span style="text-align: center; font-size: 11px; color: #8E92AE; font-weight: 600; line-height: 1.4">Most Expert levels, then fewest moves, then time. Never resets.</span>
+    </div>
+
+    <div role="tablist" aria-label="Shape" style="margin-top: 12px; padding: 10px 8px 12px; background: #0C0E1C; border-top: 1px solid #232842; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px">
+      <sc-for list="{{dock}}" as="d" hint-placeholder-count="6">
+        <button role="tab" aria-selected="{{d.on}}" aria-label="{{d.aria}}" onClick="{{d.pick}}" style="height: 62px; border: 0; padding: 0; border-radius: 14px; background: {{d.bg}}; color: {{d.fg}}; font-family: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; position: relative; opacity: {{d.opacity}}">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.icon}}"></path></svg>
+          <span style="font-size: 10.5px; font-weight: 800; white-space: nowrap">{{d.name}}</span>
+          <sc-if value="{{d.locked}}" hint-placeholder-val="{{false}}">
+            <span style="position: absolute; top: 4px; right: 6px; width: 16px; height: 16px; border-radius: 8px; background: #2A2E48; display: flex; align-items: center; justify-content: center">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#C3C6DA" stroke-width="3" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+            </span>
+          </sc-if>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(props) { super(props); this.state = { shape: 'cube' }; }
+renderVals() {
+const shape = this.state.shape;
+const ICONS = {
+cube: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5',
+tetra: 'M12 3L3 19h18zM12 3l-1.5 16M3 19l7.5-4.5L21 19',
+octa: 'M12 2l7 10-7 10-7-10zM5 12h14M12 2l-2 10 2 10',
+sphere: 'M12 5a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM2 12.5c0-2 4.5-3.5 10-3.5s10 1.5 10 3.5-4.5 3.5-10 3.5S2 14.5 2 12.5',
+dodeca: 'M12 3l8.5 6.2-3.2 10H6.7L3.5 9.2zM12 7.5l4.3 3.1-1.6 5H9.3l-1.6-5z',
+megamix: 'M12 3l2 7 7 2-7 2-2 7-2-7-7-2 7-2z'
+};
+// All-time boards are open to everyone: a locked shape still shows its board, you just have no score there yet.
+const shapes = [['cube', 'Moonbase', 100], ['tetra', 'Pyramid', 80], ['octa', 'Star Gem', 80], ['sphere', 'Planet', 60], ['dodeca', 'Galaxy', 60], ['megamix', 'Nebula', 40]];
+const dock = shapes.map(([id, name]) => ({ name, icon: ICONS[id], locked: false, aria: name, on: id === shape ? 'true' : 'false', bg: id === shape ? '#46B8C6' : 'transparent', fg: id === shape ? '#0A0C18' : '#C3C6DA', opacity: '1', pick: () => this.setState({ shape: id }) }));
+const cur = shapes.find((x) => x[0] === shape);
+const total = cur[2];
+const fmt = (t) => { const s = Math.floor(t / 10); const h = Math.floor(s / 3600); const mm = Math.floor(s / 60) % 60; return h ? h + 'h' + String(mm).padStart(2, '0') : mm + ':' + String(s % 60).padStart(2, '0'); };
+const names = [['LinhNeon', '#0193'], ['Khoa.dev', '#7720'], ['mai_cube', '#3304'], ['Volt', '#5561'], ['Tuan_Pro', '#4821'], ['Sparky', '#9047'], ['an_an', '#2210'], ['Circuitry', '#6402']];
+const rows = names.map((n, i) => {
+const me = n[0] === 'Tuan_Pro';
+const experts = total - [0, 0, 1, 3, 4, 4, 6, 9][i];
+return { rank: i + 1, name: me ? 'You · ' + n[0] : n[0], tag: n[1], experts, moves: (experts * 24 + i * 7).toLocaleString('en-US'), time: fmt(experts * 268 + i * 413), medal: ['#FFC83A', '#C9CEDD', '#D98E5A'][i] || 'transparent', rankFg: i < 3 ? '#0A0C18' : '#C3C6DA', bg: me ? '#1F3A47' : (i < 3 ? '#191D35' : 'transparent'), border: me ? '#46B8C6' : 'transparent' };
+});
+const my = total - 4;
+return { dock, rows, shapeName: cur[1].toUpperCase(), mine: { experts: my, levels: total, moves: (my * 24 + 28).toLocaleString('en-US'), time: fmt(my * 268 + 4 * 413), rank: '#5', players: '3,207' } };
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+Release notes for Play Console (paste each block into its language; max 500 characters each).
+1.4.0 (version code 7), everything since 1.2.0 (5), the last build on Play.
+
+<en-US>
+NEW: Weekly Challenge – three new levels for every shape each week. No hints, no undo: fewest moves wins, then the fastest time.
+NEW: Leaderboards for every shape and for each week, with your own name.
+• A short tutorial with Lumi for new players.
+• Expert now means solving with almost no wasted moves; a play clock times every level.
+• The lamp tray shows each colour's progress and its mix.
+• Zoom in on the shape, labels fit every language, smaller download.
+</en-US>
+
+<vi-VN>
+MỚI: Thử thách tuần – mỗi tuần 3 màn mới cho mỗi khối. Không gợi ý, không hoàn tác: ít nước nhất thắng, rồi đến nhanh nhất.
+MỚI: Bảng xếp hạng cho từng khối và từng tuần, với tên của bạn.
+• Hướng dẫn ngắn cùng Lumi cho người mới.
+• Chuyên gia nay là giải gần như không thừa nước; đồng hồ tính giờ mỗi màn.
+• Thanh đèn hiện tiến độ từng màu và cách pha màu.
+• Phóng to khối, chữ vừa mọi ngôn ngữ, dung lượng tải nhỏ hơn.
+</vi-VN>

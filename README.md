@@ -3,7 +3,7 @@
 A 3D circuit puzzle for mobile: rotate the tiles on a cube (and other shapes) so every lamp is lit by a source of the right colour.
 
 - **Engine:** Unity 6000.0.76f1 (URP), Android first.
-- **Version:** 1.3.0 (version code 6)
+- **Version:** 1.4.0 (version code 7)
 
 ## Layout
 
