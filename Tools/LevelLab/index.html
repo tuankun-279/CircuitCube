@@ -106,7 +106,7 @@ table.bt th{color:var(--muted);font-weight:600}
 
 <section id="viewGroups">
   <div class="c-wrap">
-    <p class="note" style="margin:0">Everything here reaches players over the network on their next start, with no new app build: saving changes Level Lab, then <b>Publish to game</b> (or the next Thursday release) sends it.</p>
+    <p class="note" style="margin:0">Everything here reaches players over the network on their next start, with no new app build: saving rules or groups publishes to the game by itself (a failed publish is retried once). <b>Publish to game</b> sends everything again by hand.</p>
     <div id="cGroupsDirty" class="c-banner" hidden><span class="grow">Unsaved group changes.</span><button class="btn" type="button" id="cGroupsRevert">Discard changes</button><button class="btn primary" type="button" id="cGroupsSave">Save groups</button></div>
     <div class="c-cols">
       <div class="stack" id="cGroupCards"></div>
@@ -130,6 +130,7 @@ table.bt th{color:var(--muted);font-weight:600}
       <div class="stack">
         <div class="panel"><h2>Difficulty and amount</h2><div class="c-form" id="aForm"></div></div>
         <div class="panel"><h2>Queue and releases</h2><div id="aQueue"></div></div>
+        <div class="panel"><h2>Monthly report</h2><div id="aReport"><div class="empty">No report yet: the first one comes with the next monthly batch.</div></div></div>
       </div>
     </div>
   </div>
@@ -473,30 +474,38 @@ $("#cGroupsSave").onclick=async()=>{
   if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");
   const btn=$("#cGroupsSave");btn.disabled=true;
   try{for(const id in gDraft.groups)if(!jeq(gDraft.groups[id],GROUPS[id]))await DB.doc("groups/"+id).set(gDraft.groups[id]);
-    if(!jeq(gDraft.manifest,MANIFEST))await DB.doc("meta/manifest").set(gDraft.manifest);gDraft=null;toast("Groups saved.")}
+    if(!jeq(gDraft.manifest,MANIFEST))await DB.doc("meta/manifest").set(gDraft.manifest);gDraft=null;autoPublish("Groups saved")}
   catch(e){toast("Save failed: "+(e.message||e.code))}finally{btn.disabled=false}
 };
 $("#cRulesSave").onclick=async()=>{if(!DB||!canWrite)return toast("Not saved: no write permission.");const m=JSON.parse(JSON.stringify(MANIFEST));m.rules=rDraft.rules;m.minApp=rDraft.minApp||"0.1.0";
-  try{await DB.doc("meta/manifest").set(m);rDraft=null;toast("Rules saved.")}catch(e){toast("Save failed: "+(e.message||e.code))}};
+  // the group draft holds a copy of the manifest: carry the new rules into it, so it does not look edited (or put the old rules back)
+  const clean=!gDirty();
+  try{await DB.doc("meta/manifest").set(m);rDraft=null;if(clean)gDraft=null;else{gDraft.manifest.rules=m.rules;gDraft.manifest.minApp=m.minApp}autoPublish("Rules saved")}catch(e){toast("Save failed: "+(e.message||e.code))}};
 $("#cAddGroup").onclick=async()=>{
   if(!DB||!canWrite)return toast("Not saved: no write permission.");const id=$("#cNgId").value.trim().toLowerCase(),name=$("#cNgName").value.trim()||id;
   if(!/^[a-z][a-z0-9_]{1,23}$/.test(id))return toast("A group id uses lowercase letters, digits or _, 2–24 characters, starting with a letter.");if(groups().some(g=>g.id===id))return toast("Group already exists: "+id+".");
   const m=JSON.parse(JSON.stringify(MANIFEST||DEFAULT_MANIFEST)),last=m.groups.slice(-1)[0];m.groups.push({id,unlock:last?{group:last.id,cleared:10}:null});
-  try{await DB.doc("groups/"+id).set(groupDetail(id,name));await DB.doc("meta/manifest").set(m);$("#cNgId").value="";$("#cNgName").value="";gDraft=null;toast(`Added group ${id} (hidden).`)}catch(e){toast("Could not add: "+(e.message||e.code))}
+  try{await DB.doc("groups/"+id).set(groupDetail(id,name));await DB.doc("meta/manifest").set(m);$("#cNgId").value="";$("#cNgName").value="";gDraft=null;autoPublish(`Added group ${id} (hidden)`)}catch(e){toast("Could not add: "+(e.message||e.code))}
 };
 
 /* ================= auto levels: what the monthly task generates ================= */
 // Stored in autofill/config (never sent to the game). The monthly task's fill.js reads it:
-//   {perMonth, dStart, dStep, dCap, hardEvery, groups:{<id>:{on, perMonth, shapes}}}
+//   {perMonth, dStart, dStep, dCap, hardEvery, adapt, tLo, tHi, topShare, topCount, groups:{<id>:{on, perMonth, shapes}}}
+// adapt/tLo/tHi: with player data (Firebase in BigQuery) each group's difficulty follows its players' clear rate on
+// its newest levels. topShare/topCount: the weekly run adds levels when that share of players is at the last ones.
 // shapes is a list of shape ids from small to big ("cube-3 cube-4 cube-5"): the month's levels use the biggest,
 // the weekly challenge's easy / medium / hard levels use the last three (megamix: random blocks and the last two).
 const MAX_TILES=200;
-const AUTO_DEFAULT={perMonth:30,dStart:3,dStep:0.3,dCap:8,hardEvery:5,groups:{}};
+const AUTO_DEFAULT={perMonth:30,dStart:3,dStep:0.3,dCap:8,hardEvery:5,adapt:true,tLo:70,tHi:85,topShare:25,topCount:10,groups:{}};
 const AUTO_INFO={perMonth:["Levels per month","New levels each enabled group gets every month (a group can set its own). They are spread over the month's Thursdays.",1,100,1],
   dStart:["Start difficulty","Difficulty (1-10) of a group's first monthly batch.",1,10,0.1],
   dStep:["Rise per month","How much harder each new month's batch gets.",0,2,0.1],
   dCap:["Highest difficulty","The batch difficulty stops rising here (milestone levels go up to 1.5 above it).",1,10,0.1],
-  hardEvery:["Hard level every","Every n-th level is a hard one; the level after it is a short breather.",2,20,1]};
+  hardEvery:["Hard level every","Every n-th level is a hard one; the level after it is a short breather.",2,20,1],
+  tLo:["Target clear rate, lowest (%)","With player data: when fewer players than this finish a group's newest levels, its next batch gets easier.",30,99,1],
+  tHi:["Target clear rate, highest (%)","When more than this finish them, the next batch gets harder.",30,100,1],
+  topShare:["Top up at (%)","When this share of a group's active players is at its last released levels, Thursday releases twice as many and adds levels if the queue runs low.",1,100,1],
+  topCount:["Top-up size","Extra levels a top-up makes (at most twice a month).",1,50,1]};
 let AUTO=null,QUEUE=null,aDraft=null;
 const AUTO_TYPES=Object.keys(PRESETS).concat(["megamix"]);
 function autoNow(){const c=JSON.parse(JSON.stringify(Object.assign({},AUTO_DEFAULT,AUTO||{})));c.groups=c.groups||{};
@@ -510,11 +519,13 @@ function tilesOf(id){if(id==="megamix")return null;if(id in tilesCache)return ti
 const MONTH=()=>new Date().toISOString().slice(0,7);
 // the difficulty the next monthly batch of group g starts at, as fill.js works it out
 function nextRun(g,c){const Q=QUEUE&&QUEUE.groups&&QUEUE.groups[g]||{},run=(Q.runs||0)+1;
-  const d0=Math.min(c.dCap,c.dStart+c.dStep*(run-1));return {run,d0:Math.round(d0*10)/10,d1:Math.round(Math.min(c.dCap+1,d0+1)*10)/10,done:Q.lastMonth===MONTH()}}
+  const d0=Math.max(1,Math.min(c.dCap,c.dStart+c.dStep*(run-1)+(Q.adj||0)));return {run,adj:Q.adj||0,d0:Math.round(d0*10)/10,d1:Math.round(Math.min(c.dCap+1,d0+1)*10)/10,done:Q.lastMonth===MONTH()}}
 function autoRender(){
   if(!MANIFEST){$("#aGroupCards").innerHTML='<div class="empty">No data yet.</div>';return}
   if(!aDraft)aDraft=autoNow();const c=aDraft;
-  $("#aForm").innerHTML=Object.keys(AUTO_INFO).map(k=>{const [l,h,mn,mx,st]=AUTO_INFO[k];return `<label for="ac-${k}">${l}</label><input id="ac-${k}" type="number" min="${mn}" max="${mx}" step="${st}" data-k="${k}" value="${c[k]}"><span class="c-help">${h}</span>`}).join("");
+  $("#aForm").innerHTML=Object.keys(AUTO_INFO).map(k=>{const [l,h,mn,mx,st]=AUTO_INFO[k];return `<label for="ac-${k}">${l}</label><input id="ac-${k}" type="number" min="${mn}" max="${mx}" step="${st}" data-k="${k}" value="${c[k]}"><span class="c-help">${h}</span>`}).join("")+
+    `<label for="ac-adapt">Follow the players</label><input id="ac-adapt" type="checkbox" ${c.adapt!==false?"checked":""}><span class="c-help">Adjust each group's difficulty to its players' clear rate (needs player data; without it the curve above is used as is).</span>`;
+  $("#ac-adapt").onchange=e=>{c.adapt=e.target.checked;aChanged()};
   document.querySelectorAll("#aForm input[data-k]").forEach(el=>el.oninput=()=>{const [,,mn,mx]=AUTO_INFO[el.dataset.k];const v=parseFloat(el.value);if(isFinite(v))c[el.dataset.k]=Math.min(mx,Math.max(mn,v));aChanged()});
   $("#aGroupCards").innerHTML=groups().map(g=>{const o=c.groups[g.id],rows=rowsOf(o.shapes),nr=nextRun(g.id,c),big=rows.length?planItemId(rows[rows.length-1]):"";
     const tl=tilesOf(big),dp=tl?diffParams(nr.d0,topoFor(shapeFromToken(big))):null,per=o.perMonth!=null?o.perMonth:c.perMonth;
@@ -524,7 +535,7 @@ function autoRender(){
         <span class="c-pill ${live?"ok":""}">${live?"auto on":!g.enable?"group hidden":"auto off"}</span><span class="c-pill">${g.levelCount||0} levels released</span></div>
       <label class="chk wide"><input type="checkbox" data-a="on" ${o.on?"checked":""}> Make new levels and weekly challenges for this group every month</label>
       <label class="f" for="ap-${esc(g.id)}">Levels per month (empty = ${c.perMonth})<input id="ap-${esc(g.id)}" type="number" min="1" max="100" data-a="perMonth" value="${o.perMonth!=null?o.perMonth:""}" placeholder="${c.perMonth}"></label>
-      <span class="note" style="margin:0;align-self:end">${nr.done?"This month's batch is made. ":""}Next batch: difficulty ${nr.d0}–${nr.d1}${dp?` · ${dp.colors} colour${dp.colors>1?"s":""} · par ≥ ${dp.minPar}`:""} · ${per} levels</span>
+      <span class="note" style="margin:0;align-self:end">${nr.done?"This month's batch is made. ":""}Next batch: difficulty ${nr.d0}–${nr.d1}${nr.adj?` (players: ${nr.adj>0?"+":""}${nr.adj})`:""}${dp?` · ${dp.colors} colour${dp.colors>1?"s":""} · par ≥ ${dp.minPar}`:""} · ${per} levels</span>
       <div class="wide"><div class="f">Shapes, small to big (the biggest makes the month's levels; the last 3 make the weekly challenge, easy to hard)</div>
         <div class="stack" style="gap:6px;margin-top:4px">${rows.map((r,i)=>{const pr=PRESETS[r.v],id=planItemId(r),t=tilesOf(id);
           return `<div class="bsrow" data-i="${i}"><select data-r="v" aria-label="Shape ${i+1}">${AUTO_TYPES.map(x=>`<option value="${x}"${x===r.v?" selected":""}>${esc(SHAPE_LABEL[x]||(x==="megamix"?"Megamix (random blocks)":x))}</option>`).join("")}</select>
@@ -533,7 +544,7 @@ function autoRender(){
             <button type="button" data-rm="${i}" aria-label="Remove shape">×</button></div>`}).join("")||'<div class="empty">No shapes: this group gets no new levels.</div>'}</div>
         <div class="row" style="margin-top:6px"><button class="btn sm" type="button" data-add="1">+ Add shape</button></div></div>
       </div></div>`}).join("");
-  renderQueue();aChanged();
+  renderQueue();renderReport();aChanged();
 }
 function aChanged(){$("#aDirty").hidden=!aDirty()}
 function setRows(id,rows){aDraft.groups[id].shapes=rows.map(planItemId).join(" ")}
@@ -554,11 +565,19 @@ $("#aSave").onclick=async()=>{
   for(const id in aDraft.groups){const o=aDraft.groups[id];if(!o.on)continue;const ids=rowsOf(o.shapes).map(planItemId);
     if(!ids.length)return toast(`Group ${id}: add at least one shape, or turn auto off.`);
     const big=ids.find(x=>tilesOf(x)>MAX_TILES);if(big)return toast(`Group ${id}: ${big} has ${tilesOf(big)} tiles; the game allows at most ${MAX_TILES}.`)}
+  if(aDraft.tHi<aDraft.tLo)return toast("Target clear rate: the highest must not be below the lowest.");
   const btn=$("#aSave");btn.disabled=true;
   try{await DB.doc("autofill/config").set(Object.assign({},aDraft,{updatedAt:new Date().toISOString()}));aDraft=null;toast("Auto-level settings saved. The next monthly batch uses them.")}
   catch(e){toast("Save failed: "+(e.message||e.code))}finally{btn.disabled=false}};
 function thursdaysLeft(){const now=new Date(Date.now()+7*3600e3),y=now.getUTCFullYear(),m=now.getUTCMonth(),last=new Date(Date.UTC(y,m+1,0)).getUTCDate();let n=0;
   for(let k=now.getUTCDate();k<=last;k++)if(new Date(Date.UTC(y,m,k)).getUTCDay()===4)n++;return Math.max(1,n)}
+// the monthly task's report (autofill/report): its Vietnamese summary plus what needs attention per group
+let REPORT=null;
+function renderReport(){const R=REPORT,el=$("#aReport");if(!R||!el)return;
+  const att=(R.data&&R.data.groups||[]).filter(g=>g.attention&&g.attention.length);
+  el.innerHTML=`<p class="note" style="margin-top:0">${esc(R.month||"")} · ${esc(ago(R.createdAt))}${R.data&&R.data.playerData?"":" · no player data yet"}</p>
+    <div style="white-space:pre-wrap;font-size:13.5px">${esc(R.vi||"")}</div>
+    ${att.length?`<p class="note"><b>Needs attention:</b> ${att.map(g=>`${esc(g.group)}: ${g.attention.map(esc).join("; ")}`).join(" · ")}</p>`:""}`}
 function renderQueue(){
   const Qg=QUEUE&&QUEUE.groups||{},th=thursdaysLeft(),ch=MANIFEST&&MANIFEST.challenge;
   const rows=groups().map(g=>{const Q=Qg[g.id]||{},p=(Q.pending||[]).length;return `<tr><td class="mono">${esc(g.id)}</td><td>${p}</td><td>${p?Math.ceil(p/th):0}</td><td>${esc(Q.lastMonth||"—")}</td><td>${Q.lastDifficulty?Q.lastDifficulty.map(x=>Math.round(x*10)/10).join("–"):"—"}</td></tr>`}).join("");
@@ -581,13 +600,14 @@ function renderPublish(){
   if(!p)h="Not published from Level Lab yet.";
   else if(p.state==="requested")h=`Publish requested ${ago(p.requestedAt)}: waiting for the task to start (about a minute).`;
   else if(p.state==="running")h=`Publishing… started ${ago(p.startedAt)}.`;
-  else if(p.state==="done")h=`Published <b>v${esc(p.version)}</b> ${ago(p.finishedAt)} · ${esc(p.levels)} levels · <a href="${REPO_URL}/commit/${esc(p.commit)}" target="_blank" rel="noopener">commit ${esc(String(p.commit||"").slice(0,7))}</a>. Players get it on their next start.`;
+  else if(p.state==="done")h=`Published <b>v${esc(p.version)}</b> ${ago(p.finishedAt)} · ${esc(p.levels)} levels · <a href="${REPO_URL}/commit/${esc(p.commit)}" target="_blank" rel="noopener">commit ${esc(String(p.commit||"").slice(0,7))}</a>. ${p.liveAfter!=null?`Live for players ${esc(p.liveAfter)} s after the push.`:"Players get it on their next start."}`;
   else if(p.state==="no-change")h=`Up to date${p.version?` with <b>v${esc(p.version)}</b>`:""}: nothing new to publish (checked ${ago(p.finishedAt)}).`;
   else if(p.state==="failed")h=`<span style="color:var(--bad)">Publish failed ${ago(p.finishedAt)}${p.step?` at <b>${esc(stepName(p.step))}</b>`:""}:</span> ${(p.problems||[]).slice(0,4).map(esc).join(" · ")}${(p.problems||[]).length>4?` · and ${p.problems.length-4} more <button class="btn sm" type="button" id="pubMore">Details</button>`:""}`;
   const st=stalled(p);if(st)h=`<span style="color:var(--warn)">${esc(st)}</span>`;
+  if(retryable(p))h=`<span style="color:var(--warn)">The last publish ${p.state==="failed"?"failed":"stalled"}; trying again once…</span>`;
   el.innerHTML=h;const more=document.getElementById("pubMore");if(more)more.onclick=()=>showPubAlert(p,true);
   $("#btnPublish").disabled=pubBusy||(p&&(p.state==="requested"||p.state==="running")&&!st);
-  checkPubAlert();
+  checkPubAlert();pubFollowUp();
 }
 /* ---- alert when a publish finishes (success or failure, with the failing step) ---- */
 const STEP_NAMES={start:"starting the task",status:"1 · status",repo:"2 · GitHub repo (clone / pull)",dump:"3 · reading the Level Lab data",
@@ -602,7 +622,7 @@ let pubWatching=false,pubStallShown="";
 const SEEN_KEY="levellab.pubSeen";
 function seen(){try{return localStorage.getItem(SEEN_KEY)||""}catch(_){return ""}}
 function markSeen(v){try{localStorage.setItem(SEEN_KEY,v)}catch(_){}}
-function checkPubAlert(){const p=PUB;if(!p)return;
+function checkPubAlert(){const p=PUB;if(!p||retryable(p))return;
   if(p.state==="requested"||p.state==="running"){pubWatching=true;const st=stalled(p);
     if(st&&pubStallShown!==(p.requestedAt||p.startedAt)){pubStallShown=p.requestedAt||p.startedAt;showPubAlert({state:"failed",step:p.state==="requested"?"start":"",problems:[st],finishedAt:new Date().toISOString()},true)}return}
   if(!FINAL.includes(p.state))return;const id=p.state+"|"+(p.finishedAt||"");
@@ -623,16 +643,30 @@ function showPubAlert(p,keep){const t=$("#pubAlertTitle"),b=$("#pubAlertBody");l
 $("#pubAlertOk").onclick=()=>{$("#pubAlert").hidden=true};
 $("#pubAlert").onclick=e=>{if(e.target.id==="pubAlert")$("#pubAlert").hidden=true};
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#pubAlert").hidden)$("#pubAlert").hidden=true});
-$("#btnPublish").onclick=async()=>{
+// Saving rules or groups publishes by itself: autoPublish starts the task, or, while one is still running, starts
+// another as soon as it ends, so the game always gets the last save. Starting the task is retried once.
+let pubAgain=false;
+const TRANSIENT=["server_unavailable","upstream_error","timeout","network_error"];
+async function fireTask(mcp){
+  try{return await mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:PUBLISH_TASK,text:"Requested from Level Lab."})}
+  catch(e){if(!TRANSIENT.includes(e&&e.code))throw e;await new Promise(r=>setTimeout(r,5000));
+    return await mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:PUBLISH_TASK,text:"Requested from Level Lab (retry)."})}
+}
+function pubBusyNow(){const p=PUB;return pubBusy||!!(p&&(p.state==="requested"||p.state==="running")&&!stalled(p))}
+function autoPublish(what){
+  if(pubBusyNow()){pubAgain=true;toast(what+". It goes to the game right after the publish that is running.");return}
+  toast(what+". Publishing to the game…");startPublish(true);
+}
+async function startPublish(auto,retry){
   if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");
   if(gDirty&&gDirty())return toast("Save or discard the group changes first.");
   const mcp=await claude.use("mcp").catch(()=>null);
   if(!mcp)return toast("Publishing runs through your Claude Code connector: open Level Lab on claude.ai, signed in as its owner.");
   pubBusy=true;pubWatching=true;renderPublish();
   try{
-    await DB.doc("meta/publish").set({state:"requested",requestedAt:new Date().toISOString()});
-    await mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:PUBLISH_TASK,text:"Requested from Level Lab."});
-    toast("Publishing started. The status line updates when it is done (usually 2-4 minutes).");
+    await DB.doc("meta/publish").set({state:"requested",requestedAt:new Date().toISOString(),auto:!!auto,retry:!!retry});
+    await fireTask(mcp);
+    if(!auto)toast("Publishing started. The status line updates when it is done (usually 2-4 minutes).");
   }catch(e){
     const c=e&&e.code;
     const msg=c==="server_not_connected"?"The Claude Code connector is not connected to your account.":
@@ -641,9 +675,20 @@ $("#btnPublish").onclick=async()=>{
       c==="blocked_by_policy"?"Your organization does not allow this page to use the Claude Code connector.":
       c==="tool_error"?"The publish task could not start: "+((e.message||"").slice(0,160)):
       "The publish request may or may not have started ("+(c||"error")+"). Watch the status line before pressing again.";
-    toast(msg);if(c!=="server_unavailable"&&c!=="upstream_error")try{await DB.doc("meta/publish").set(Object.assign({},PUB||{},{state:"failed",step:"start",finishedAt:new Date().toISOString(),problems:[msg]}))}catch(_){}
+    toast(msg);if(!TRANSIENT.includes(c))try{await DB.doc("meta/publish").set(Object.assign({},PUB||{},{state:"failed",step:"start",finishedAt:new Date().toISOString(),problems:[msg]}))}catch(_){}
   }finally{pubBusy=false;renderPublish()}
-};
+}
+// A run that stalled, or failed anywhere but the level check (which fails the same way again), is retried once by
+// itself before Tuan is told; a save that came in while a run was going is published right after it.
+// (the publish task keeps the retry mark in meta/publish; pubLastRetry also stops a second retry within 30 minutes)
+let pubLastRetry=0;
+function retryable(p){return !!p&&!p.retry&&canWrite&&Date.now()-pubLastRetry>30*60e3&&(stalled(p)||(p.state==="failed"&&p.step!=="build"&&p.step!=="start"))}
+function pubFollowUp(){const p=PUB;if(!p||pubBusy)return;
+  if(retryable(p)&&!pubRetrying){pubRetrying=true;pubLastRetry=Date.now();startPublish(true,true).finally(()=>pubRetrying=false);return}
+  if(FINAL.includes(p.state)&&pubAgain){pubAgain=false;startPublish(true)}
+}
+let pubRetrying=false;
+$("#btnPublish").onclick=()=>startPublish(false);
 setInterval(renderPublish,30000);
 
 /* ================= views ================= */
@@ -665,6 +710,7 @@ async function connect(){
   db.doc("meta/publish").onSnapshot(s=>{PUB=s.exists?s.data():null;renderPublish()},()=>{});
   db.collection("groups").onSnapshot(q=>{GROUPS={};q.docs.forEach(d=>GROUPS[d.id]=d.data());status();onData()},()=>{});
   db.doc("autofill/config").onSnapshot(s=>{AUTO=s.exists?s.data():null;onData()},()=>{});
+  db.doc("autofill/report").onSnapshot(s=>{REPORT=s.exists?s.data():null;renderReport()},()=>{});
   db.doc("autofill/queue").onSnapshot(s=>{QUEUE=s.exists?s.data():null;if(!$("#viewAuto").hidden)renderQueue()},()=>{});
   db.doc("meta/manifest").onSnapshot(s=>{got=true;clearTimeout(timer);
     if(!s.exists){MANIFEST=null;setStatus("The data store is empty.");return}
