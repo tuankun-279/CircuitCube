@@ -28,6 +28,8 @@ FEATURES
 • Hundreds of levels that grow from easy to brain-bending.
 • Earn up to three stars, and go for Expert by solving with as few wasted moves as you can.
 • A play clock shows how long each level takes you.
+• Weekly Challenge: three new levels for every shape each week. No hints, no undo: fewest moves wins, then the fastest time.
+• Leaderboards for every shape: collect Expert levels and see where you rank among players everywhere.
 • Stuck? Use a hint, or undo a move.
 • Dark and light themes, relaxing music and soft sounds.
 • Play offline. New level packs arrive automatically.
