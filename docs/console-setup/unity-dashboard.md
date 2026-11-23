@@ -49,7 +49,10 @@ ugs deploy Tools/CloudCode/Deploy
   2026-11-22 (first publish: it also needed description, category Puzzle, icon and feature graphic from
   `StoreListing/`). Before that only testers could sign in with Play Games.
 - Player Authentication: Google Play Games identity provider enabled with that client id (secret typed by the owner).
-- Not yet: Cloud Code module `CircuitCubeRanks` (needs `ugs deploy` from a machine with .NET 6).
+- 2026-11-23: deployed from the PC with `Tools/CloudCode/deploy.ps1` (service account login): module
+  `CircuitCubeRanks` (SubmitWeekly, SubmitShape), the 24 weekly and 6 shape boards from the `.lb` files, policy
+  `PlayersCannotPostScores`. The old hand-made boards `weekly_1..5` and `weekly_total` are still there (unused).
+- Game: UGS packages installed in 1.4.0 (authentication 3.9.0, leaderboards 2.4.0, cloudcode 2.10.4), so `CC_UGS` is on.
 
 ## 4. Check after deploying
 
