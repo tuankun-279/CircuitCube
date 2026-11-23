@@ -34,7 +34,27 @@ Keep it in step with `PRIVACY.md`.
 
 ## Release
 
-Production / closed testing tracks as before; the version code goes up in Player Settings for each upload.
+The version code goes up in Player Settings for every upload (Play refuses a code it has seen, even from a draft).
+Next build: 1.4.1 (code 8).
+
+### State
+
+| Date | Track | Release | Notes |
+|---|---|---|---|
+| 2026-11-17 | Closed testing - Alpha | 5 (1.2.0) | |
+| 2026-11-23 | Closed testing - Alpha | **7 (1.4.0)**, rolled out about 10:40 (UTC+7), replaces 5 (1.2.0) | Notes from `StoreListing/release_notes.txt` (en-US, vi-VN). Code 6 (1.3.0) was never uploaded. |
+
+Checks Play showed for 7 (1.4.0):
+- No deobfuscation file: the game does not use R8/ProGuard. Ignore.
+- Native code without debug symbols, and `android.hardware.screen.portrait` declared as required (keeps the game off
+  Chromebooks, Play Games on PC and XR). Ignored for this test with "I already have plans to resolve this issue";
+  both are fixed for the next build by `Assets/CircuitCube/Editor/AndroidReleaseFixes.cs` (commit bd00367: the
+  feature becomes required=false, symbols go into the bundle).
+- The bundle (103 MB) was uploaded by the owner by hand: browser tools cannot attach files over 10 MB. Next builds go
+  through `Tools/PlayUpload/upload_play.py` once its service account is set up (see Release upload below).
+
+Before Production: update the **Data safety** form (section above) for the leaderboards: User IDs (UGS player id),
+App activity / other user-generated content (scores, player name), purpose App functionality, encrypted in transit.
 
 ## Release upload
 
