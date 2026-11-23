@@ -43,5 +43,5 @@ Production / closed testing tracks as before; the version code goes up in Player
   `--draft` to check it in Play Console first). Release notes come from `StoreListing/release_notes.txt`.
 - One-time setup (Google Play Android Developer API, service account, JSON key in `D:\Projects\KeyPublish`, Play
   Console invite with "Release apps to testing tracks"): [Tools/PlayUpload/README.md](../../Tools/PlayUpload/README.md).
-- The browser route only works for files under 10 MB with Claude''s browser tools; a 100 MB bundle must be dragged in by
+- The browser route only works for files under 10 MB with Claude's browser tools; a 100 MB bundle must be dragged in by
   the owner or sent through the script.
