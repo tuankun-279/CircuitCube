@@ -59,3 +59,4 @@ Thumbs.db
 # Cloud Code module build output
 Tools/CloudCode/CircuitCubeRanks/bin/
 Tools/CloudCode/CircuitCubeRanks/obj/
+Tools/CloudCode/Build/

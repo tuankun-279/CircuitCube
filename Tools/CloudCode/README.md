@@ -33,8 +33,11 @@ Refusals: `content`, `week`, `closed`, `args`, `shape`, `level`, `taps`, `tap`, 
    Play Console "Game server" credential), Leaderboards and Cloud Code turned on.
 2. Install the UGS CLI (`npm i -g ugs`), then `ugs login` and `ugs config set project-id <id>` and
    `ugs config set environment-name production`.
-3. From this folder: `ugs deploy Deploy` (boards, access policy and the module through `CircuitCubeRanks.ccmr`;
-   the CLI builds the solution, which needs the .NET 6 SDK).
+3. Run `deploy.ps1` in this folder (PowerShell). It publishes the module (`CircuitCubeRanks.csproj`, .NET 6 SDK),
+   zips it into `Build/CircuitCubeRanks.ccm` and runs `ugs deploy` with it and `Deploy/` (boards, access policy).
+   The CLI on its own does not build the `.ccmr` reference outside the Unity editor ("No content deployed").
+   First deployed 2026-11-23: module CircuitCubeRanks (SubmitWeekly, SubmitShape), 24 weekly + 6 shape boards,
+   policy `PlayersCannotPostScores`.
 
 In the game, the packages `com.unity.services.authentication`, `com.unity.services.leaderboards` and
 `com.unity.services.cloudcode` turn the boards on (define `CC_UGS`); without them the game plays as before.
