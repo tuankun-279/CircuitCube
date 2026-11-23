@@ -223,7 +223,7 @@ namespace CircuitCubeRanks
 
         async Task Post(IExecutionContext ctx, string board, double score) =>
             await _api.Leaderboards.AddLeaderboardPlayerScoreAsync(ctx, ctx.ServiceToken, new Guid(ctx.ProjectId), board, ctx.PlayerId,
-                new LeaderboardScore(score));
+                new AddLeaderboardScore(score));
 
         async Task<RankReply> Reply(IExecutionContext ctx, string board, double score)
         {
@@ -232,7 +232,7 @@ namespace CircuitCubeRanks
             {
                 var mine = await _api.Leaderboards.GetLeaderboardPlayerScoreAsync(ctx, ctx.ServiceToken, new Guid(ctx.ProjectId), board, ctx.PlayerId);
                 r.rank = mine.Data.Rank + 1;
-                var top = await _api.Leaderboards.GetLeaderboardScoresAsync(ctx, ctx.ServiceToken, new Guid(ctx.ProjectId), board, 0, 1);
+                var top = await _api.Leaderboards.GetLeaderboardScoresAsync(ctx, ctx.ServiceToken, new Guid(ctx.ProjectId), board, offset: 0, limit: 1);
                 r.players = top.Data.Total;
             }
             catch (Exception) { r.rank = 0; }
