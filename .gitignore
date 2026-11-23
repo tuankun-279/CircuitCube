@@ -60,3 +60,8 @@ Thumbs.db
 Tools/CloudCode/CircuitCubeRanks/bin/
 Tools/CloudCode/CircuitCubeRanks/obj/
 Tools/CloudCode/Build/
+
+# Play upload service account keys stay outside the repo
+play-upload*.json
+*service-account*.json
+__pycache__/

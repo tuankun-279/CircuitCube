@@ -32,7 +32,7 @@ Decide before the first step. Check what is connected (`list_devices`, `get_devi
 | Generate art (ChatGPT images) | **Codex CLI** from the Remote Control session on the PC (`codex exec ... -i ref.png`) | No computer use, no Allow prompts; see chatgpt-art-pipeline |
 | Drive a PC app (ChatGPT app as a fallback, Unity window screenshots) | Computer use **from the Remote Control session on the PC** | See "Permission traps" |
 | Plans, docs, mockups, research, code drafts | Cloud clone of the repo | Never called done until compiled and tested on the PC |
-| Web consoles (Play Console, Unity Dashboard, Firebase) | Any browser that is connected | Not a game change |
+| Web consoles (Play Console, Unity Dashboard, Firebase) | Any browser that is connected | Not a game change. Play **uploads** go through `Tools/PlayUpload/upload_play.py` (Android Publisher API, service account key outside the repo), not the browser: browser tools cannot attach files over 10 MB |
 | Xcode archive for the App Store | Mac, from the pushed branch | No game edits on the Mac; fixes go back to the PC |
 
 If the thread's device link points at the Mac (or nothing), do not edit the game from there. Start a Remote Control
