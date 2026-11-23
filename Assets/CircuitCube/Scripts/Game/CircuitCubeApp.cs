@@ -115,7 +115,7 @@ namespace CircuitCube.Game
             {
                 if (_state != State.Playing || _busy || CardOpen) return;
                 if (InFtue) { StartFtueLevel(_ftue, false); return; }
-                GameAnalytics.Log("level_restart", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("moves", _moves));
+                LogRestart();
                 StartLevel(_group, _level.Number);
             });
             hud.HintButton.onClick.AddListener(UseHint);
@@ -145,7 +145,7 @@ namespace CircuitCube.Game
             var st = UI.Settings;
             st.Close.onClick.AddListener(CloseSettings);
             st.Resume.onClick.AddListener(CloseSettings);
-            st.Restart.onClick.AddListener(() => { CloseSettings(); AppReview.Quit(); if (InFtue) StartFtueLevel(_ftue, false); else StartLevel(_group, _level.Number); });
+            st.Restart.onClick.AddListener(() => { CloseSettings(); AppReview.Quit(); if (InFtue) StartFtueLevel(_ftue, false); else { LogRestart(); StartLevel(_group, _level.Number); } });
             st.Home.onClick.AddListener(() => { CloseSettings(); AppReview.Quit(); SaveInProgress(); ShowHome(); });
             st.ThemePicked += SetTheme;
             st.ZoomButtonsChanged += UpdateZoomPanel;
@@ -156,6 +156,7 @@ namespace CircuitCube.Game
         void Start()
         {
             GameAnalytics.Init();
+            SendLeftoverQuit();
             CrashReports.Init();
             RewardedAds.Init();
             Loc.Changed += OnLanguageChanged;
@@ -177,7 +178,8 @@ namespace CircuitCube.Game
 
         void OnApplicationPause(bool paused)
         {
-            if (!paused) return;
+            if (!paused) { ResumeAttempt(); return; }
+            HoldQuit();
             SaveInProgress();
             CloudSave.Flush();
             AppUpdates.OnPause();
@@ -203,7 +205,88 @@ namespace CircuitCube.Game
             if (focus && CubeSave.Settings != null && CubeSave.Settings.theme == "system" && Themes.Current != null && Themes.IsDark != SystemTheme.IsDark())
                 SetTheme("system");
         }
-        void OnApplicationQuit() => SaveInProgress();
+        void OnApplicationQuit()
+        {
+            SaveInProgress();
+            QuitAttempt();
+            PlayerPrefs.DeleteKey(PendingQuitKey);
+        }
+
+        // ---------------- Level analytics ----------------
+
+        /// <summary>The attempt at the level in play, for level_quit (only real levels: no tutorial, no debug cheats).</summary>
+        readonly LevelAttempt _attempt = new LevelAttempt();
+        const string PendingQuitKey = "cc_pending_quit";
+
+        static int ContentVersion => GameData.Manifest != null ? GameData.Manifest.contentVersion : 0;
+
+        /// <summary>shape, level, serial, rev and cv of the level in play, then <paramref name="extra"/>.</summary>
+        (string key, object value)[] LevelParams(params (string key, object value)[] extra)
+        {
+            int n = _level.Number;
+            var p = new (string key, object value)[5 + extra.Length];
+            p[0] = ("shape", GameData.Group(_group).id);
+            p[1] = ("level", n);
+            p[2] = ("serial", GameData.SerialAt(_group, n));
+            p[3] = ("rev", GameData.RevAt(_group, n));
+            p[4] = ("cv", ContentVersion);
+            System.Array.Copy(extra, 0, p, 5, extra.Length);
+            return p;
+        }
+
+        void LogRestart()
+        {
+            _attempt.Close();   // a restart is logged as level_restart, not level_quit
+            GameAnalytics.Log("level_restart", LevelParams(("moves", _moves)));
+        }
+
+        /// <summary>The player leaves the level in play (menu, another level, the app closing): send level_quit once.</summary>
+        void QuitAttempt()
+        {
+            var q = _state == State.Playing ? _attempt.Quit(_moves, _hintsUsed, _undosUsed, _playSeconds) : null;
+            _attempt.Close();
+            if (q != null) GameAnalytics.Log("level_quit", q.Params());
+        }
+
+        /// <summary>Going to the background: keep the quit on disk, in case the app is killed there.</summary>
+        void HoldQuit()
+        {
+            var q = _state == State.Playing ? _attempt.Peek(_moves, _hintsUsed, _undosUsed, _playSeconds) : null;
+            if (q == null) { PlayerPrefs.DeleteKey(PendingQuitKey); return; }
+            q.pausedAt = System.DateTime.UtcNow.Ticks;
+            PlayerPrefs.SetString(PendingQuitKey, JsonUtility.ToJson(q));
+            PlayerPrefs.Save();
+        }
+
+        /// <summary>Back from the background: a pause over a minute ends the attempt with the quit kept when it left.</summary>
+        void ResumeAttempt()
+        {
+            var q = TakePendingQuit();
+            if (q == null) return;
+            // no attempt open: the quit is left over from a run killed in the background (Unity also calls this at launch)
+            if (_attempt.Open)
+            {
+                if (!LevelAttempt.PausedTooLong(q.pausedAt, System.DateTime.UtcNow)) return;   // a short break: keep playing
+                _attempt.Close();
+            }
+            GameAnalytics.Log("level_quit", q.Params());
+        }
+
+        /// <summary>A quit kept by the last run, which was killed in the background: send it now.</summary>
+        void SendLeftoverQuit()
+        {
+            var q = TakePendingQuit();
+            if (q != null) GameAnalytics.Log("level_quit", q.Params());
+        }
+
+        static LevelQuit TakePendingQuit()
+        {
+            string json = PlayerPrefs.GetString(PendingQuitKey, "");
+            if (json.Length == 0) return null;
+            PlayerPrefs.DeleteKey(PendingQuitKey);
+            try { return JsonUtility.FromJson<LevelQuit>(json); }
+            catch (System.Exception) { return null; }
+        }
 
         /// <summary>Remember the board of the level being played, so it continues where it stopped.</summary>
         void SaveInProgress()
@@ -287,6 +370,7 @@ namespace CircuitCube.Game
 
         void ShowHome()
         {
+            QuitAttempt();
             _ftue = 0;
             ClearNotes();
             _state = State.Home;
@@ -326,6 +410,7 @@ namespace CircuitCube.Game
 
         void ShowShapes()
         {
+            QuitAttempt();
             _state = State.Shapes;
             HideAll();
             GameAudio.Music(MusicTrack.Menu);
@@ -393,6 +478,7 @@ namespace CircuitCube.Game
 
         void ShowLevels(int group)
         {
+            QuitAttempt();
             _state = State.Levels;
             _group = group;
             HideAll();
@@ -475,6 +561,7 @@ namespace CircuitCube.Game
         /// <param name="cheat">Debug menu: play any level of any group without unlocking it first.</param>
         void StartLevel(int group, int number, bool cheat)
         {
+            QuitAttempt();
             int max = GameData.MaxLevel(group);
             if (cheat) number = Mathf.Clamp(number, 1, max);
             else
@@ -512,7 +599,8 @@ namespace CircuitCube.Game
             if (!cheat) RestoreInProgress();
             CrashReports.SetLevel(GameData.Group(group).id, number);
             _zoomLogged = false;
-            GameAnalytics.Log("level_start", ("shape", GameData.Group(group).id), ("level", number), ("resumed", _moves > 0));
+            GameAnalytics.Log("level_start", LevelParams(("resumed", _moves > 0)));
+            if (!cheat) _attempt.Begin(GameData.Group(group).id, number, GameData.SerialAt(group, number), GameData.RevAt(group, number), ContentVersion);
             _busy = false;
             _state = State.Playing;
             HideAll();
@@ -1036,9 +1124,10 @@ namespace CircuitCube.Game
             for (int g = 0; g < wasOpen.Length && newGroup < 0; g++) if (!wasOpen[g] && CubeSave.GroupOpen(g)) newGroup = g;
             bool unlocksNext = newGroup >= 0;
             _unlockedGroup = newGroup;
-            if (real) GameAnalytics.Log("level_complete", ("shape", GameData.Group(_group).id), ("level", _level.Number), ("moves", _moves),
+            _attempt.Close();   // finished: no level_quit for this attempt
+            if (real) GameAnalytics.Log("level_complete", LevelParams(("moves", _moves),
                 ("par", _level.Par), ("waste", LevelScore.Waste(_moves, MinTaps())), ("stars", LevelScore.WholeStars(points)), ("expert", LevelScore.IsExpert(points)),
-                ("hints", _hintsUsed), ("undos", _undosUsed), ("seconds", Mathf.RoundToInt(_playSeconds)));
+                ("hints", _hintsUsed), ("undos", _undosUsed), ("seconds", Mathf.RoundToInt(_playSeconds))));
             if (unlocksNext) GameAnalytics.Log("shape_unlocked", ("shape", GameData.Group(newGroup).id));
             _board.Celebrate();
             GameAudio.Play(Sfx.Win);
