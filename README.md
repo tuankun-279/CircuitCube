@@ -5,6 +5,32 @@ A 3D circuit puzzle for mobile: rotate the tiles on a cube (and other shapes) so
 - **Engine:** Unity 6000.0.76f1 (URP), Android first.
 - **Version:** 1.4.0 (version code 7)
 
+## Demo
+
+<p align="center">
+  <a href="docs/demo/circuitcube-1.4.0-demo.mp4">
+    <img src="docs/demo/circuitcube-1.4.0-demo.gif" alt="Circuit Cube 1.4.0 gameplay demo" width="280">
+  </a>
+</p>
+
+Gameplay of 1.4.0 (7), shown at 1.5x speed: home screen, two cube levels solved, the leaderboard and the light theme.
+Click it for the full 97 s video ([`docs/demo/circuitcube-1.4.0-demo.mp4`](docs/demo/circuitcube-1.4.0-demo.mp4)).
+
+## What is in 1.4.0
+
+- **Six shapes:** cube (Moonbase), tetrahedron (Pyramid), octahedron (Star Gem), sphere (Planet), dodecahedron
+  (Galaxy) and megamix (Nebula). The build ships the first 100 cube levels; everything else downloads as content.
+- **Weekly Challenge:** every Thursday three new levels per shape. No hints, no undo; fewest moves wins, then time.
+- **Leaderboards** on Unity Gaming Services: a weekly board per shape (and per challenge level) and a lifetime board
+  per shape (Expert levels, then moves, then time). The server replays every win before it posts a score
+  (`Tools/CloudCode`, rules in `docs/leaderboards/logic.md`).
+- **Expert and stars** judged by wasted moves past the fewest taps (`rules.wasteAllowed`, default 3), with a play
+  clock that stops while Lumi talks.
+- **Tutorial with Lumi** for new players, a lamp tray that shows each colour's progress, zoom on the shape.
+- **New levels without an update:** levels are generated every month by AI, released weekly and follow player clear
+  rates (see "Levels and config without a new build").
+- English and Vietnamese, dark and light themes, crash reports, cloud save, in-app review and update prompts.
+
 ## Layout
 
 | Path | What |
@@ -19,6 +45,11 @@ A 3D circuit puzzle for mobile: rotate the tiles on a cube (and other shapes) so
 | `Tools/LevelLab/poly.js`, `publish.py` | The polygon shapes Level Lab shares with the game, and the script that turns its database into `content/` |
 | `content/` | Levels and config as the game downloads them (written only by the publish task) |
 | `ArtRef` | Art references, mockup and the sprite cutting scripts (`tools/cut_v2.py`) |
+| `Tools/CloudCode` | Cloud Code module `CircuitCubeRanks` (replays wins, posts scores), leaderboard definitions and `deploy.ps1` |
+| `StoreListing` | Play Store text, release notes, icon, feature graphic and screenshots |
+| `docs/console-setup` | Play Console, Unity Dashboard (UGS) and Firebase setup |
+| `docs/leaderboards`, `docs/demo` | Leaderboard rules; the demo video |
+| `studio` | Studio kit reused by new games: skills, workflow rules, templates |
 
 See `Assets/CircuitCube/README.md` for the data format and editor menus.
 
@@ -52,7 +83,7 @@ A new build is needed only for new code: a new kind of shape, a new screen or ru
 Unity is only needed to ship a new build: run Tools > Circuit Cube > Data > Copy Published Content into the Build so
 the build carries the latest publish for offline players.
 
-## Services (1.2.0)
+## Services (1.4.0)
 
 Each one is built only when its package is in `Packages/manifest.json` (version defines in `CircuitCube.asmdef`);
 without it the game runs as before.
@@ -62,6 +93,7 @@ without it the game runs as before.
 | Crash reports | `com.google.firebase.crashlytics` (CC_CRASHLYTICS) | `Game/Services/CrashReports.cs` | Firebase console > Crashlytics: enable |
 | Rating card | `com.google.play.review` (CC_REVIEW) | `Game/Services/AppReview.cs` | none (works from a Play install) |
 | Cloud save | `com.google.play.games` (CC_PLAYGAMES) | `Game/Services/CloudSave.cs`, `CubeSave.Cloud.cs` | Play Console > Play Games Services: create, add the Android credential (SHA-1 of the app signing key), Saved Games on; paste the resources into Window > Google Play Games > Setup > Android setup |
+| Leaderboards | `com.unity.services.authentication`, `.leaderboards`, `.cloudcode` (CC_UGS) | `Game/Services/Ranks.cs`, `CircuitCubeApp.Ranks.cs` | Unity Cloud Dashboard: link the project, turn on Authentication, Leaderboards, Cloud Code; deploy with `Tools/CloudCode/deploy.ps1` (see `Tools/CloudCode/README.md`) |
 | Vietnamese | built in | `Game/Loc.cs`, `Game/LocVi.cs`, `UI/LocText.cs` | none |
 
 ## Getting started
