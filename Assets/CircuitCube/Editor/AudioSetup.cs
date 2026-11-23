@@ -61,7 +61,7 @@ namespace CircuitCube.EditorTools
                     // long loops: stream from disk, Vorbis, decoded in the background
                     s.loadType = AudioClipLoadType.Streaming;
                     s.compressionFormat = AudioCompressionFormat.Vorbis;
-                    s.quality = 0.6f;
+                    s.quality = 0.35f;   // ~100 kbps: plenty for phone speakers, keeps the download small
                     imp.loadInBackground = true;
                     imp.forceToMono = false;
                 }

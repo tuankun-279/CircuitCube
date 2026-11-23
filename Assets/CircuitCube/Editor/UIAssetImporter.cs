@@ -7,7 +7,7 @@ namespace CircuitCube.EditorTools
     /// <summary>
     /// Import settings for the ChatGPT art (folders in <see cref="ArtPaths"/>). Only import settings: no UI is built here.
     /// - Art/UI: sprites without mipmaps, uncompressed (the UI atlas compresses them once). The rounded shapes in UI/Common get 9-slice borders from their corner
-    ///   radius; backgrounds may be 2048 px, the app icon 1024, everything else 512.
+    ///   radius; backgrounds may be 2048 px, the app icon and the crisp FTUE art 1024, everything else (glow art included) 512.
     /// - Art/Board: textures for the board layers (mipmapped, clamped, alpha kept, 512 px).
     /// Applied once per file (marked in the importer's user data); after that changes made in the inspector or Sprite
     /// Editor are kept. <see cref="Reapply"/> clears the mark and imports again.
@@ -68,7 +68,9 @@ namespace CircuitCube.EditorTools
                 ti.textureType = TextureImporterType.Sprite;
                 ti.spriteImportMode = SpriteImportMode.Single;
                 ti.mipmapEnabled = false;
-                ti.maxTextureSize = path.Contains("/Backgrounds/") ? 2048 : name == "app_icon" || path.Contains("/Expert/") || path.Contains("/Ftue/") || name.StartsWith("fx_boom_core") ? 1024 : 512;   // the neon word and the blast keep full size
+                // the soft glow art (neon word letters, FTUE halos, blast core) is mostly glow, so 512 px is enough; the crisp FTUE frames and logo keep 1024
+                bool glow = path.Contains("/Expert/") || name.StartsWith("ftue_halo") || name.StartsWith("fx_boom_core");
+                ti.maxTextureSize = path.Contains("/Backgrounds/") ? 2048 : !glow && (name == "app_icon" || path.Contains("/Ftue/")) ? 1024 : 512;
                 // sprites are packed into the UI atlas, which is compressed once; the full-screen backgrounds are not
                 ti.textureCompression = path.Contains("/Backgrounds/") ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed;
                 if (ExactBorders.TryGetValue(name, out float eb)) SetBorder(ti, eb);
