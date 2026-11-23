@@ -523,6 +523,7 @@ namespace CircuitCube.Game
                     Loc.T("Connect to the internet and open the game again to download them."), Loc.T("OK"), null);
                 return;
             }
+            QuitAttempt();   // a normal level left for the weekly one ends its attempt; weekly runs never open one (no level_* events)
             _tw.Clear();
             _ftue = 0;
             _group = g;

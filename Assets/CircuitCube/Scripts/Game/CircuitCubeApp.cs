@@ -839,7 +839,7 @@ namespace CircuitCube.Game
             bool buttons = UI.Hud.ZoomPanel != null && UI.Hud.ZoomPanel.activeSelf;   // the pill has its own fit button
             if (reset != null && reset.gameObject.activeSelf != (_zoom > 1.02f && !buttons)) reset.gameObject.SetActive(_zoom > 1.02f && !buttons);
             if (buttons) ShowZoomLevel();
-            if (!_zoomLogged && _zoom > 1.25f && _state == State.Playing && _level != null)
+            if (!_zoomLogged && _zoom > 1.25f && _state == State.Playing && _level != null && _weeklySlot == 0)   // weekly runs log weekly_* only
             {
                 _zoomLogged = true;
                 GameAnalytics.Log("zoom_used", ("shape", GameData.Group(_group).id), ("level", _level.Number));
