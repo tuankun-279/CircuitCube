@@ -28,6 +28,11 @@ Six groups of 100 levels. Beating level 100 of a group opens the next one; Megam
 Players see space names (ids stay the shape names): Moonbase (cube), Pyramid (tetra), Star Gem (octa), Planet
 (sphere), Galaxy (dodeca), Nebula (megamix). Names and blurbs are edited in Level Lab.
 
+Levels are not made by hand. Level Lab (Tools/LevelLab) only holds the rules, groups and auto-level settings;
+the monthly AI task makes the levels and publishes them to `content/`, which the game downloads, so new levels need
+no new build. Tools > Circuit Cube > Data: Validate, Clear Download Cache, and Copy Published Content into the Build
+(the offline fallback in `Resources/CircuitCubeData`).
+
 | Group | Shapes |
 |---|---|
 | Cube | 2x2 to 5x5 cubes (the first release's levels) |

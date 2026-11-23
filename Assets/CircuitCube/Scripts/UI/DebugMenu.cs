@@ -12,7 +12,7 @@ namespace CircuitCube.UI
     /// builds; release builds switch it off. Pick a shape group, type a level, Play; or unlock shapes.
     /// The Win row ends the level in play (or starts one) with a set result: 1.5, 2.5 or 3 stars, a three-star streak,
     /// Expert or an Expert streak, to check each result screen.
-    /// Keys: F2 dark / light, F3 skip ads, F4 sample leaderboards, F5 reset every lesson, F6 (editor) play the Level Lab import zips.
+    /// Keys: F2 dark / light, F3 skip ads, F4 sample leaderboards, F5 reset every lesson.
     /// Levels started here show their lessons again.
     /// </summary>
     public sealed class DebugMenu : MonoBehaviour
@@ -82,28 +82,7 @@ namespace CircuitCube.UI
                 Debug.Log("[CircuitCube] lessons reset");
                 if (Status != null) Status.text = "Lessons reset (F5)";
             }
-#if UNITY_EDITOR
-            // F6 plays the Level Lab import zips (Tools/LevelLab/import) instead of the published levels, or stops
-            if (kb != null && kb.f6Key.wasPressedThisFrame)
-            {
-                bool on = !GameData.Previewing;
-                if (on) EditorPreview(); else System.IO.Directory.Delete(GameData.PreviewRoot, true);
-                GameData.Reload();
-                if (App != null) App.DebugRefresh();
-                Debug.Log("[CircuitCube] import preview " + (on ? "on" : "off"));
-                if (Status != null) Status.text = on ? "Playing the import zips (F6)" : "Playing the published levels (F6)";
-            }
-#endif
         }
-
-#if UNITY_EDITOR
-        /// <summary>Same as Tools/Circuit Cube/Data/Preview Level Lab Imports (the editor assembly is out of reach here).</summary>
-        static void EditorPreview()
-        {
-            var m = System.Type.GetType("CircuitCube.EditorTools.DataTools, CircuitCube.Editor")?.GetMethod("PreviewImports");
-            if (m != null) m.Invoke(null, null);
-        }
-#endif
 
         void Select(int g)
         {

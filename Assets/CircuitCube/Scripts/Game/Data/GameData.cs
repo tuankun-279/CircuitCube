@@ -94,23 +94,10 @@ namespace CircuitCube.Game
 
         // ---------------- files ----------------
 
-#if UNITY_EDITOR
-        /// <summary>
-        /// Editor only: data files here win over downloads and the build, to play Level Lab import zips before they
-        /// are published (Tools/Circuit Cube/Data/Preview Level Lab Imports). Absent = no preview.
-        /// </summary>
-        public static string PreviewRoot => Path.Combine(Path.GetDirectoryName(Application.dataPath), "Temp", "ContentPreview");
-        public static bool Previewing => Directory.Exists(PreviewRoot);
-#endif
-
         public static string ReadText(string relPath)
         {
             try
             {
-#if UNITY_EDITOR
-                string pv = Path.Combine(PreviewRoot, relPath);
-                if (File.Exists(pv)) return File.ReadAllText(pv);
-#endif
                 string p = Path.Combine(CacheRoot, relPath);
                 if (File.Exists(p)) return File.ReadAllText(p);
             }

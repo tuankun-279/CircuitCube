@@ -15,25 +15,40 @@ A 3D circuit puzzle for mobile: rotate the tiles on a cube (and other shapes) so
 | `Assets/CircuitCube/Art` | Art: `Board/{Dark,Light,Shared}`, `UI/{Common,Icons,Shapes,Brand,Mascot,Backgrounds}`, `Fonts`, `Atlases`, `Materials/Board` (layout in `Editor/ArtPaths.cs`) |
 | `Assets/CircuitCube/Themes` | `Theme_Dark` / `Theme_Light` assets |
 | `Assets/CircuitCube/Tests` | Edit-mode tests |
-| `Tools/LevelLab/index.html` | Level Lab, the web level editor (published as a claude.ai artifact): shapes, boards, play test, batch generation, groups and rules, **Publish to game** |
+| `Tools/LevelLab/index.html` | Level Lab (published as a claude.ai artifact): game rules, groups, the auto-level settings (shapes, levels per month, difficulty curve), queue status and **Publish to game**. It also holds the level generator the monthly task runs headless |
 | `Tools/LevelLab/poly.js`, `publish.py` | The polygon shapes Level Lab shares with the game, and the script that turns its database into `content/` |
-| `content/` | Levels as the game downloads them (written only by publishing from Level Lab) |
+| `content/` | Levels and config as the game downloads them (written only by the publish task) |
 | `ArtRef` | Art references, mockup and the sprite cutting scripts (`tools/cut_v2.py`) |
 
 See `Assets/CircuitCube/README.md` for the data format and editor menus.
 
-## Making levels without Unity
+## Levels and config without a new build
 
-1. Open Level Lab (claude.ai artifact `WUkC8DCM543afEtakLwwx3`). Design or batch-generate levels, reorder them, edit
-   groups and rules; everything saves in the page's database.
-2. Press **Publish to game**. It starts the scheduled task "Circuit Cube: publish Level Lab levels", which checks
+Levels are made by AI only; nobody draws or edits them by hand.
+
+1. Settings live in Level Lab (claude.ai artifact `WUkC8DCM543afEtakLwwx3`): **Rules & groups** (wasted moves for
+   Expert, hints, undos, points, ads, forced update, group names, unlock order) and **Auto levels** (each group's
+   shapes and sizes, levels per month, start difficulty, rise per month, cap, hard-level spacing, target clear rate,
+   top-up). Saving rules or groups publishes by itself; a failed or stalled publish is retried once.
+2. On day 1 of each month the scheduled task "Circuit Cube: monthly level batch" generates each group's levels and
+   weekly challenge sets with Level Lab's own generator (scripts in the Level Lab database, collection `autofill`),
+   checks and bot-plays every one, and queues them. Every Thursday "Circuit Cube: weekly level release" releases a
+   share of the queue, opens the week's challenge and starts the publish task.
+   With player data (Firebase Analytics exported to BigQuery, read with the service account key in the cloud
+   environment variable `GCP_SA_KEY`), both runs follow the players: `stats.js` turns the export into clear rates per
+   group; the monthly batch moves a group's difficulty towards the target clear rate (70-85 % by default), the weekly
+   run releases twice as many levels and tops up the queue when many players are at a group's last levels, and the
+   monthly run writes a Vietnamese report (Level Lab, Auto levels). Without the key, the fixed curve is used.
+3. Publishing ("Circuit Cube: publish Level Lab levels", or the **Publish to game** button for a rules change) checks
    every level (`Tools/LevelLab/publish.py`), commits `content/` to main, then pins that commit in
-   `content/manifest.json` (`cdn` = the commit on jsDelivr). The status line in Level Lab shows the result.
-3. Players get it without restarting: the game reads `content/manifest.json` from GitHub
+   `content/manifest.json` (`cdn` = the commit on jsDelivr), then waits until the manifest players read shows the
+   new version and records how long that took. The status line in Level Lab shows the result.
+4. Players get it without an update: the game reads `content/manifest.json` from GitHub
    (`CircuitCubeApp.ContentBaseUrl`) at start (the splash waits up to 3.5 s for it), every 3 minutes and when it
    comes back to the front, then downloads new or edited levels around their position from the pinned commit. A
    player in a level finishes it first and then sees a "New levels are here" card.
 
+A new build is needed only for new code: a new kind of shape, a new screen or rule the game does not know yet.
 Unity is only needed to ship a new build: run Tools > Circuit Cube > Data > Copy Published Content into the Build so
 the build carries the latest publish for offline players.
 

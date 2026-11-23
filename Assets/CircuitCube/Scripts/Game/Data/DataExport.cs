@@ -5,8 +5,8 @@ using UnityEngine;
 namespace CircuitCube.Game
 {
     /// <summary>
-    /// Builds level data files (format v3) from the built-in generator: the first N levels of every generator group.
-    /// Used by the editor menu Tools/Circuit Cube/Data and by the tests. Returns relative path → JSON text.
+    /// Builds level data files (format v3) from the built-in generator (the first N levels of every generator group,
+    /// used by the tests) and validates the data that ships with the game (Tools/Circuit Cube/Data/Validate).
     /// </summary>
     public static class DataExport
     {
@@ -41,21 +41,6 @@ namespace CircuitCube.Game
             }
             files["manifest.json"] = JsonUtility.ToJson(manifest, true);
             files["shapes.json"] = JsonUtility.ToJson(catalog, true);
-            return files;
-        }
-
-        /// <summary>
-        /// Levels <paramref name="from"/> to <paramref name="to"/> of one group as data files: levels/... and, for Nebula's
-        /// mixed levels, shapes/voxel/... (other shapes are in the catalog already). Used to add levels to Level Lab.
-        /// </summary>
-        public static Dictionary<string, string> Range(int group, int from, int to)
-        {
-            var files = new Dictionary<string, string>();
-            for (int l = from; l <= to; l++)
-            {
-                LevelFile(group, l, files, out var d);
-                files[GameData.LevelPath(LevelPlan.GroupIds[group], l)] = JsonUtility.ToJson(d, true);
-            }
             return files;
         }
 

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using CircuitCube.Game;
 using UnityEditor;
 using UnityEngine;
@@ -8,134 +7,14 @@ using UnityEngine;
 namespace CircuitCube.EditorTools
 {
     /// <summary>
-    /// Level data (format v3) in Assets/CircuitCube/Resources/CircuitCubeData. The zip layout is the CDN layout, so a
-    /// zip from the web config tool imports as-is and an exported zip uploads as-is.
+    /// Level data (format v3) in Assets/CircuitCube/Resources/CircuitCubeData. Levels are made by the monthly AI task and
+    /// published to content/ (the files the game downloads); these menus only check the data, clear the download cache
+    /// and copy the latest publish into the build as its offline fallback.
     /// </summary>
     public static class DataTools
     {
         public const string DataFolder = "Assets/CircuitCube/Resources/CircuitCubeData";
         const string Menu = "Tools/Circuit Cube/Data/";
-
-        public const string ImportFolder = "Tools/LevelLab/import";
-
-        /// <summary>
-        /// Play the Level Lab import zips (Tools/LevelLab/import/*.zip) in the editor before they are published: their
-        /// groups, orders and levels are unpacked to Temp/ContentPreview, which GameData reads first. Manifests are
-        /// left out (they hold no rules). Zips are applied in name order, so a later one wins.
-        /// </summary>
-        [MenuItem(Menu + "Preview Level Lab Imports")]
-        public static void PreviewImportsMenu()
-        {
-            int n = PreviewImports();
-            EditorUtility.DisplayDialog("Circuit Cube data", n + " files from " + ImportFolder + " are previewed in the editor.\n\nStop with Data > Stop Previewing Imports.", "OK");
-        }
-
-        public static int PreviewImports()
-        {
-            string root = GameData.PreviewRoot;
-            if (Directory.Exists(root)) Directory.Delete(root, true);
-            Directory.CreateDirectory(root);
-            int n = 0;
-            var zips = Directory.Exists(ImportFolder) ? Directory.GetFiles(ImportFolder, "*.zip") : new string[0];
-            System.Array.Sort(zips, System.StringComparer.Ordinal);
-            foreach (var zip in zips)
-                using (var z = ZipFile.OpenRead(zip))
-                    foreach (var e in z.Entries)
-                    {
-                        if (!e.FullName.EndsWith(".json") || e.FullName.EndsWith("manifest.json") || e.FullName.Contains("..")) continue;
-                        string path = Path.Combine(root, e.FullName);
-                        Directory.CreateDirectory(Path.GetDirectoryName(path));
-                        e.ExtractToFile(path, true);
-                        n++;
-                    }
-            GameData.Reload();
-            Debug.Log("[CircuitCube] Previewing " + n + " files from " + zips.Length + " import zips (Temp/ContentPreview).");
-            return n;
-        }
-
-        [MenuItem(Menu + "Stop Previewing Imports")]
-        public static void StopPreview()
-        {
-            if (Directory.Exists(GameData.PreviewRoot)) Directory.Delete(GameData.PreviewRoot, true);
-            GameData.Reload();
-            Debug.Log("[CircuitCube] Import preview stopped.");
-        }
-
-        [MenuItem(Menu + "Export Sample Data (10 per group)")]
-        public static void ExportSampleMenu()
-        {
-            if (Directory.Exists(DataFolder) && !EditorUtility.DisplayDialog("Circuit Cube data",
-                    "Replace the data in " + DataFolder + " with 10 generated levels per group?", "Replace", "Cancel")) return;
-            int n = ExportSample(10);
-            EditorUtility.DisplayDialog("Circuit Cube data", "Wrote " + n + " files to " + DataFolder + ".", "OK");
-        }
-
-        /// <summary>Writes the generator's first N levels of every group as data files. Returns the file count.</summary>
-        public static int ExportSample(int perGroup)
-        {
-            var files = DataExport.FromGenerator(perGroup);
-            WriteAll(files, true);
-            return files.Count;
-        }
-
-        [MenuItem(Menu + "Import Data Zip…")]
-        public static void ImportZipMenu()
-        {
-            string path = EditorUtility.OpenFilePanel("Import level data zip", "", "zip");
-            if (string.IsNullOrEmpty(path)) return;
-            int n = ImportZip(path, true);
-            var problems = DataExport.Validate();
-            EditorUtility.DisplayDialog("Circuit Cube data", "Imported " + n + " files.\n" +
-                (problems.Count == 0 ? "Validate: all good." : "Validate found " + problems.Count + " problems (see Console)."), "OK");
-            Log(problems);
-        }
-
-        /// <summary>Copies every .json inside the zip (manifest.json may sit in a sub-folder) into the data folder.</summary>
-        public static int ImportZip(string zipPath, bool replace)
-        {
-            var files = new Dictionary<string, string>();
-            using (var zip = ZipFile.OpenRead(zipPath))
-            {
-                string prefix = null;
-                foreach (var e in zip.Entries)
-                    if (e.Name == "manifest.json") { prefix = e.FullName.Substring(0, e.FullName.Length - e.Name.Length); break; }
-                if (prefix == null) throw new IOException("The zip has no manifest.json");
-                foreach (var e in zip.Entries)
-                {
-                    if (!e.FullName.StartsWith(prefix) || !e.Name.EndsWith(".json")) continue;
-                    string rel = e.FullName.Substring(prefix.Length).Replace('\\', '/');
-                    if (rel.Contains("..")) continue;
-                    using (var r = new StreamReader(e.Open())) files[rel] = r.ReadToEnd();
-                }
-            }
-            WriteAll(files, replace);
-            return files.Count;
-        }
-
-        [MenuItem(Menu + "Export Data Zip…")]
-        public static void ExportZipMenu()
-        {
-            string path = EditorUtility.SaveFilePanel("Export level data zip", "", "circuitcube-data.zip", "zip");
-            if (string.IsNullOrEmpty(path)) return;
-            int n = ExportZip(path);
-            EditorUtility.RevealInFinder(path);
-            Debug.Log("[CircuitCube] Exported " + n + " data files to " + path);
-        }
-
-        public static int ExportZip(string zipPath)
-        {
-            if (!Directory.Exists(DataFolder)) throw new IOException("No data in " + DataFolder);
-            if (File.Exists(zipPath)) File.Delete(zipPath);
-            int n = 0;
-            using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
-                foreach (var f in Directory.GetFiles(DataFolder, "*.json", SearchOption.AllDirectories))
-                {
-                    string rel = f.Substring(DataFolder.Length + 1).Replace('\\', '/');
-                    zip.CreateEntryFromFile(f, rel);
-                    n++;
-                }
-            return n;
-        }
 
         [MenuItem(Menu + "Validate")]
         public static void ValidateMenu()
@@ -159,13 +38,13 @@ namespace CircuitCube.EditorTools
             foreach (var p in problems) Debug.LogWarning("[CircuitCube] " + p);
         }
 
-        /// <summary>The levels Level Lab published to the repo (content/ next to Assets, the files the game downloads).</summary>
+        /// <summary>The levels the monthly AI task published to the repo (content/ next to Assets, the files the game downloads).</summary>
         public const string ContentFolder = "content";
 
         [MenuItem(Menu + "Copy Published Content into the Build")]
         public static void CopyContentMenu()
         {
-            if (!Directory.Exists(ContentFolder)) { EditorUtility.DisplayDialog("Circuit Cube data", "No content/ folder: publish from Level Lab and pull the repo first.", "OK"); return; }
+            if (!Directory.Exists(ContentFolder)) { EditorUtility.DisplayDialog("Circuit Cube data", "No content/ folder: pull the repo after the monthly level task has published.", "OK"); return; }
             int n = CopyContent();
             EditorUtility.DisplayDialog("Circuit Cube data", "Copied " + n + " files from content/ into " + DataFolder + ". The build now ships this publish; players still download newer ones.", "OK");
         }

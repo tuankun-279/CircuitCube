@@ -107,6 +107,7 @@ namespace CircuitCube.Game
         /// <summary>Start tutorial level <paramref name="n"/> (1-6); <paramref name="slide"/> brings the board in from the right.</summary>
         void StartFtueLevel(int n, bool slide)
         {
+            QuitAttempt();
             _ftue = n;
             _weeklySlot = 0;
             SetHelpButtons(true);
