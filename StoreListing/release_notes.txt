@@ -3,8 +3,10 @@ Release notes for Play Console (paste each block into its language; max 500 char
 
 <en-US>
 • Fixed: players signed in to Google Play Games could not reach the leaderboards or post scores.
+• Weekly Challenge: the clock keeps running when you restart, so solve it right the first time.
 </en-US>
 
 <vi-VN>
 • Sửa lỗi: người chơi đã đăng nhập Google Play Games không vào được bảng xếp hạng và không gửi được điểm.
+• Thử thách tuần: đồng hồ chạy tiếp khi chơi lại, hãy giải đúng ngay lần đầu.
 </vi-VN>
