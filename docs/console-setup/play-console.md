@@ -78,7 +78,9 @@ Checks Play showed for 7 (1.4.0):
 - Native code without debug symbols, and `android.hardware.screen.portrait` declared as required (keeps the game off
   Chromebooks, Play Games on PC and XR). Ignored for this test with "I already have plans to resolve this issue";
   both should be fixed by `Assets/CircuitCube/Editor/AndroidReleaseFixes.cs` (commit bd00367: the feature becomes
-  required=false, symbols go into the bundle), not yet confirmed in a real build: check them on 1.4.1.
+  required=false, symbols go into the bundle), checked on the 1.4.1 (8) bundle of 2026-11-25: portrait is
+  required=false, and the symbols are inside once the symbol format includes the bundle (the first bundle lacked them;
+  the script now sets it). The bundle is 159 MB with symbols, 103 MB without.
 - The bundle (103 MB) was uploaded by the owner by hand: browser tools cannot attach files over 10 MB. Next builds go
   through `Tools/PlayUpload/upload_play.py` once its service account is set up (see Release upload below).
 
