@@ -30,6 +30,8 @@ namespace CircuitCube.EditorTools
             if (report.summary.platform != UnityEditor.BuildTarget.Android) return;
             if (UserBuildSettings.DebugSymbols.level == Unity.Android.Types.DebugSymbolLevel.None)
                 UserBuildSettings.DebugSymbols.level = Unity.Android.Types.DebugSymbolLevel.SymbolTable;
+            // without this flag the symbols only go into a separate zip (seen on the first 1.4.1 bundle)
+            UserBuildSettings.DebugSymbols.format |= Unity.Android.Types.DebugSymbolFormat.IncludeInBundle;
         }
 
         public void OnPostGenerateGradleAndroidProject(string path)
