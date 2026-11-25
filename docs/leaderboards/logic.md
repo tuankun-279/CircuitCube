@@ -25,6 +25,11 @@ Each Thursday the content publish adds a **challenge set per shape**: `N` = **3*
 
 - A player sees the sets of the shapes they have unlocked; a locked shape shows "Unlock Pyramid to join".
 - Rules while playing a challenge level: no hints, no undo (restart is allowed; only the winning run is sent).
+- **The clock never resets** (2026-11-25): each level (week, shape, slot) has one play clock over all its attempts. Restart,
+  "Try again", leaving the level and closing the game keep it; only the move count starts again. A win scores the moves of
+  that attempt and the whole clock, so solving well on the first try beats practising. It stops where the play clock of
+  any level stops (cards, notes, background). A new week starts at zero. A later run only improves a board with
+  fewer moves.
 - Boards per shape:
   - `weekly_<group>_<slot>`: one per level, best run counts (score = moves x 100000 + tenths of a second).
   - `weekly_<group>`: the set total, only after all `N` levels are solved: sum of best moves, then sum of best times.
@@ -66,7 +71,8 @@ used for special events. That supports splitting the weekly challenge by shape.
 
 ## Data kept per player (protected Cloud Save, written only by the server)
 
-- `weekly`: `{ week, sets: { <group>: [best score per slot] } }`. Replaced when the week changes.
+- `weekly`: `{ week, sets: { <group>: [best score per slot] }, clocks: { <group>: [highest tenths per slot] } }`. Replaced
+  when the week changes. On the phone the clocks are in `save/weekly.json` (not part of the cloud save).
 - `shape_<group>`: `{ levels: { <serial>: { m: moves, t: tenths } } }`, only Expert levels. About 20 bytes per Expert level.
 
 ## Flow of one win
@@ -83,7 +89,11 @@ used for special events. That supports splitting the weekly challenge by shape.
 
 - Clients cannot write to Leaderboards (Access Control deny statement); only Cloud Code posts with the service token.
 - Replays use the published level file, never level data from the client.
-- Time is still self-reported; the minimum-time check stops the obvious fakes.
+- Time is still self-reported; the minimum-time check stops the obvious fakes. A weekly win is scored with the
+  highest time submitted for that level when the one sent is lower, so clearing the app's data or a second phone does not
+  turn the clock back once a win was sent. The reply says which time counted and the app's clock goes on from it.
+  Before the first win of a level nothing is on the server, so cleared data does start that level's clock again.
+- Apps up to 1.4.0 send the time of one run; a faster replay from them counts with the highest time sent so far.
 
 ## Implementation (done in PR #3, 2026-11-22)
 
