@@ -168,7 +168,7 @@ namespace CircuitCube.EditorTools
             Round(rules, S("ui_card"), UiRole.Row, 39, 202).raycastTarget = false;
             Pic(rules, "Icon", new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(36, 0), new Vector2(66, 66), Icon("icon_info"), UiRole.Primary);
             Label(rules, "Text", Vector2.zero, Vector2.one, new Vector2(0, 0.5f), new Vector2(124, 0), new Vector2(-124 - 39, -40),
-                "No hints, no undo. Fewest moves wins, then fastest time. Replay as often as you like; your best run counts.", 36, UiRole.Text, TextAnchor.MiddleLeft)
+                "No hints, no undo. Fewest moves wins, then fastest time. Replay as you like, but the clock never resets.", 36, UiRole.Text, TextAnchor.MiddleLeft)
                 .GetComponent<ThemeRole>().Alpha = 0.85f;
 
             // the three levels

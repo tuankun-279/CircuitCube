@@ -44,6 +44,8 @@ namespace CircuitCubeRanks
         public string week { get; set; } = "";
         /// <summary>Per shape: best weekly score per slot, index 0 = slot 1; 0 = not won yet.</summary>
         public Dictionary<string, List<double>> sets { get; set; } = new Dictionary<string, List<double>>();
+        /// <summary>Per shape: highest play clock seen per slot, in tenths of a second (<see cref="WeeklyClocks"/>).</summary>
+        public Dictionary<string, List<int>> clocks { get; set; } = new Dictionary<string, List<int>>();
     }
 
     /// <summary>The best Expert run of one level: fewest moves, then the shorter time.</summary>
@@ -165,14 +167,21 @@ namespace CircuitCubeRanks
             if (rec.week != w.id || rec.sets == null) rec = new WeekRecord { week = w.id };
             if (!rec.sets.TryGetValue(group, out var best) || best == null) rec.sets[group] = best = new List<double>();
             while (best.Count < w.count) best.Add(0);
-            bool better = best[index - 1] <= 0 || score < best[index - 1];
-            if (better)
-            {
-                best[index - 1] = score;
-                await WriteProtected(ctx, recKey, Content.Serialize(rec));
-            }
-
             string board = RankScore.WeeklyBoard(group, index);
+            // the clock of a level never goes back, whatever happened to the app's data
+            tenths = Math.Min(tenths, RankScore.MaxTenths);
+            if (rec.clocks == null) rec.clocks = new Dictionary<string, List<int>>();
+            if (!rec.clocks.TryGetValue(group, out var clocks) || clocks == null) rec.clocks[group] = clocks = new List<int>();
+            while (clocks.Count < w.count) clocks.Add(0);
+            if (!WeeklyClocks.Accepts(clocks[index - 1], tenths))
+                return new RankReply { ok = false, error = "clock", board = board, tenths = clocks[index - 1] };
+            bool later = tenths > clocks[index - 1];
+            clocks[index - 1] = tenths;
+
+            bool better = best[index - 1] <= 0 || score < best[index - 1];
+            if (better) best[index - 1] = score;
+            if (better || later) await WriteProtected(ctx, recKey, Content.Serialize(rec));
+
             if (better) await Post(ctx, board, score);
             // the set total: all levels won; sum of their best moves, then of their best times
             if (better && best.Take(w.count).All(s => s > 0))

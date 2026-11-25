@@ -19,6 +19,10 @@ namespace CircuitCube.Game
         const string WeekSeenKey = "cc_week_seen";
 
         int _weeklySlot;               // the weekly level in play (1..3), 0 = a normal level
+        WeeklyClockEntry _weeklyClock; // its play time over all attempts; _playSeconds continues from it
+        float _weeklyClockSaved;       // the time last written to disk
+        WeeklyClocks _sampleClocks;    // clocks of the debug sample week (F4), never saved
+        const float WeeklyClockSaveEvery = 5f;
         int _weekGroup = -1;           // shape shown on the Weekly page and the weekly boards
         int _boardGroup = -1;          // shape shown on the All-time board
         bool _boardsAllTime;
@@ -532,6 +536,7 @@ namespace CircuitCube.Game
             _cheat = false;
             _level = level;
             CaptureStart();
+            OpenWeeklyClock(g, slot);
             _moves = 0;
             _hintsUsed = _undosUsed = 0;
             _hintsLeft = _undosLeft = 0;
@@ -551,13 +556,60 @@ namespace CircuitCube.Game
             var hud = UI.Hud;
             hud.Show();
             hud.Title.text = HudTitle();
-            hud.Tip.text = Loc.T("No hints, no undo. Fewest moves wins, then fastest time.");
+            hud.Tip.text = Loc.T("No hints, no undo. Fewest moves wins, then fastest time. The clock never resets.");
             SetHelpButtons(false);
             ResetMascot();
             if (hud.Mascot != null) hud.Mascot.Say(Mascot.Mood.Idle, null);
             if (hud.LampTray != null) SetupLampTray();
             UpdateHud();
             UpdateZoomPanel();
+        }
+
+        /// <summary>The clock of the level goes on from its earlier attempts (<see cref="WeeklyClocks"/>).</summary>
+        void OpenWeeklyClock(int g, int slot)
+        {
+            SaveWeeklyClock();   // the attempt before, which may be of another level
+            if (RanksDebug.On && _sampleClocks == null) _sampleClocks = new WeeklyClocks();
+            var clocks = RanksDebug.On ? _sampleClocks : CubeSave.WeeklyClocks;
+            bool pruned = clocks.KeepOnly(WeekId);
+            _weeklyClock = clocks.Get(WeekId, GameData.GroupId(g), slot);
+            _playSeconds = _weeklyClockSaved = _weeklyClock.seconds;
+            if (pruned && !RanksDebug.On) CubeSave.SaveWeeklyClocks();
+        }
+
+        /// <summary>Every frame of a weekly level: keeps the clock, and writes it to disk every few seconds.</summary>
+        void TickWeeklyClock()
+        {
+            WeeklyClocks.Raise(_weeklyClock, _playSeconds);
+            if (_playSeconds - _weeklyClockSaved >= WeeklyClockSaveEvery) SaveWeeklyClock();
+        }
+
+        /// <summary>Write the clock of the weekly level in play, if it moved since the last time.</summary>
+        void SaveWeeklyClock()
+        {
+            if (_weeklyClock == null || _weeklyClock.seconds <= _weeklyClockSaved) return;
+            _weeklyClockSaved = _weeklyClock.seconds;
+            if (_sampleClocks == null || !_sampleClocks.entries.Contains(_weeklyClock)) CubeSave.SaveWeeklyClocks();
+        }
+
+        /// <summary>The server saw a later clock for a level (data cleared, or another phone): go on from that one.</summary>
+        void AdoptWeeklyClock(RankReply reply)
+        {
+            for (int g = 0; g < GameData.GroupCount; g++)
+                for (int slot = 1; slot <= WeekCount; slot++)
+                {
+                    string gid = GameData.GroupId(g);
+                    if (reply.board != RankScore.WeeklyBoard(gid, slot)) continue;
+                    var entry = CubeSave.WeeklyClocks.Get(GameData.Challenge.id, gid, slot);
+                    if (!WeeklyClocks.Raise(entry, reply.tenths / 10f)) return;
+                    if (entry == _weeklyClock)
+                    {
+                        _weeklyClockSaved = entry.seconds;
+                        if (_weeklySlot > 0 && _state == State.Playing) _playSeconds = Mathf.Max(_playSeconds, entry.seconds);
+                    }
+                    CubeSave.SaveWeeklyClocks();
+                    return;
+                }
         }
 
         void SetHelpButtons(bool on)
@@ -575,6 +627,8 @@ namespace CircuitCube.Game
             ResetZoom(true);
             int g = _group, slot = _weeklySlot;
             string gid = GameData.GroupId(g);
+            WeeklyClocks.Raise(_weeklyClock, _playSeconds);
+            SaveWeeklyClock();
             int tenths = RankScore.Tenths(_playSeconds);
             bool had = WeeklyBest(g, slot, out int oldMoves, out int oldTenths);
             bool better = !had || RankScore.Weekly(_moves, tenths) < RankScore.Weekly(oldMoves, oldTenths);
@@ -650,8 +704,18 @@ namespace CircuitCube.Game
 
         void OnRankPosted(RankReply reply)
         {
-            if (this == null || reply == null || !reply.ok || UI.WeeklyResult == null || !UI.WeeklyResult.gameObject.activeSelf) return;
+            if (this == null || reply == null) return;
+            bool behind = !reply.ok && reply.error == "clock";
+            if (behind) AdoptWeeklyClock(reply);
+            if ((!reply.ok && !behind) || UI.WeeklyResult == null || !UI.WeeklyResult.gameObject.activeSelf) return;
             if (reply.board != RankScore.WeeklyBoard(GameData.GroupId(_group), _weeklySlot)) return;
+            if (behind)
+            {
+                UI.WeeklyResult.RankBox.gameObject.SetActive(false);
+                UI.WeeklyResult.Offline.SetActive(true);
+                UI.WeeklyResult.OfflineText.text = Loc.T("Not ranked: the clock on this phone was behind an earlier run of yours. It is corrected now.");
+                return;
+            }
             int up = _resultOldRank > 0 && reply.rank > 0 ? _resultOldRank - reply.rank : 0;
             FillRankBox(reply.rank, reply.players, up);
         }

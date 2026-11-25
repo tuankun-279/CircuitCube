@@ -22551,8 +22551,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: No hints, no undo. Fewest moves wins, then fastest time. Replay as often
-    as you like; your best run counts.
+  m_text: No hints, no undo. Fewest moves wins, then fastest time. Replay as you
+    like, but the clock never resets.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 9e97401a86c1dfa4f95a726727c49e71, type: 2}
   m_sharedMaterial: {fileID: -2201992284077628858, guid: 9e97401a86c1dfa4f95a726727c49e71, type: 2}

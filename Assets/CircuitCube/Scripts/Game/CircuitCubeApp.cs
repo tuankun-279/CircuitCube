@@ -187,6 +187,7 @@ namespace CircuitCube.Game
             if (!paused) { ResumeAttempt(); return; }
             HoldQuit();
             SaveInProgress();
+            SaveWeeklyClock();
             CloudSave.Flush();
             AppUpdates.OnPause();
         }
@@ -214,6 +215,7 @@ namespace CircuitCube.Game
         void OnApplicationQuit()
         {
             SaveInProgress();
+            SaveWeeklyClock();
             QuitAttempt();
             PlayerPrefs.DeleteKey(PendingQuitKey);
         }
@@ -336,6 +338,7 @@ namespace CircuitCube.Game
 
         void HideAll()
         {
+            SaveWeeklyClock();   // whatever screen comes next, the time played so far is kept
             UI.Splash.Hide(); UI.Home.Hide(); UI.Shapes.Hide(); UI.Levels.Hide(); UI.Hud.Hide();
             if (UI.Weekly != null) UI.Weekly.Hide();
             CloseCards();
@@ -950,6 +953,7 @@ namespace CircuitCube.Game
         {
             if (_state != State.Playing || _level == null || CardOpen || LessonTalking) return;
             _playSeconds += Mathf.Min(Time.unscaledDeltaTime, 0.5f);
+            if (_weeklySlot > 0) TickWeeklyClock();
             if ((int)_playSeconds != _shownSecond) UpdateHud();
         }
 

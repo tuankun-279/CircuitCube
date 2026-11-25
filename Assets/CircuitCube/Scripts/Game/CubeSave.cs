@@ -9,6 +9,7 @@ namespace CircuitCube.Game
     // ---------------- save files, format v3 ----------------
     //   save/profile.json                    PlayerProfile   settings, flags, index of groups {id, unlocked}
     //   save/groups/<id>.json                GroupProgress   cleared position + level in progress
+    //   save/weekly.json                     WeeklyClocks    play time of this week's challenge levels
     //   save/groups/<id>/stars-<k>.json      StarChunk       100 digits: score of serials k*100+1 … k*100+100
 
     [Serializable] public class SaveSettings
@@ -84,6 +85,7 @@ namespace CircuitCube.Game
         // ---------------- files ----------------
 
         static string ProfilePath => Path.Combine(RootDir, "profile.json");
+        static string WeeklyPath => Path.Combine(RootDir, "weekly.json");
         static string GroupPath(string id) => Path.Combine(RootDir, "groups", id + ".json");
         static string StarPath(string id, int k) => Path.Combine(RootDir, "groups", id, "stars-" + k + ".json");
 
@@ -171,7 +173,7 @@ namespace CircuitCube.Game
         }
 
         /// <summary>Forget everything cached in memory (after files changed on disk, and in tests).</summary>
-        public static void Unload() { _profile = null; _groups.Clear(); _stars.Clear(); }
+        public static void Unload() { _profile = null; _weekly = null; _groups.Clear(); _stars.Clear(); }
 
         // ---------------- progress ----------------
 
@@ -261,6 +263,27 @@ namespace CircuitCube.Game
             var g = Prog(group);
             g.inProgress = ip ?? new InProgress();
             SaveProg(g);
+        }
+
+        // ---------------- weekly clocks ----------------
+
+        static WeeklyClocks _weekly;
+
+        /// <summary>The play clocks of the weekly challenge levels on this device.</summary>
+        public static WeeklyClocks WeeklyClocks
+        {
+            get
+            {
+                if (_weekly == null) _weekly = Read<WeeklyClocks>(WeeklyPath) ?? new WeeklyClocks();
+                if (_weekly.entries == null) _weekly.entries = new List<WeeklyClockEntry>();
+                return _weekly;
+            }
+        }
+
+        public static void SaveWeeklyClocks()
+        {
+            try { WriteAtomic(WeeklyPath, JsonUtility.ToJson(WeeklyClocks)); }
+            catch (Exception e) { Debug.LogWarning("[CircuitCube] Weekly clocks not saved: " + e.Message); }
         }
 
         // ---------------- profile ----------------
