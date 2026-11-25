@@ -30,6 +30,13 @@ ugs config set environment-name production
 ugs deploy Tools/CloudCode/Deploy
 ```
 
+Service account for `ugs login` (Unity Cloud > Administration > Service Accounts > New, e.g. `circuitcube-deploy`),
+Manage project roles on the game's project:
+- Admin: Project Resource Policy Editor, Player Resource Policy Editor, Unity Environments Viewer.
+- LiveOps: Cloud Code Editor, Leaderboards Admin, Cloud Save Editor.
+- DevOps: none. Then Add key; the owner runs `ugs login` > Service Account and pastes the key on the PC (never in git
+  or chat). Delete the key when deploys are done; make a new one next time.
+
 - 24 weekly boards, per shape `weekly_<group>_1..3` and the set total `weekly_<group>`, reset Thursdays 00:00 UTC;
   the first `Start` in the files is 2026-12-03. 6 shape boards `shape_<group>`.
 - After the first deploy, delete the 6 old hand-made boards `weekly_1..5` and `weekly_total` (unused since the
