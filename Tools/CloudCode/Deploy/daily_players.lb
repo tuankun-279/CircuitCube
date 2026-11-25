@@ -1,0 +1,11 @@
+{
+  "$schema": "https://ugs-config-schemas.unity3d.com/v1/leaderboards.schema.json",
+  "SortOrder": "desc",
+  "UpdateType": "keepBest",
+  "Name": "Players today",
+  "ResetConfig": {
+    "Start": "2026-11-25T17:00:00Z",
+    "Schedule": "0 17 * * *",
+    "Archive": true
+  }
+}
