@@ -93,7 +93,8 @@ namespace CircuitCube.Game
         /// <summary>A win was ranked: the board and the server's answer (for the result card).</summary>
         public static event Action<RankReply> Posted;
 
-        static bool _started, _signingIn, _sending;
+        static bool _started, _signingIn, _sending, _checkingIn;
+        static DateTime _checkedDay;   // Asia/Saigon date of the last check-in
         static float _nextTry;
         static PendingFile _pending;
 
@@ -106,12 +107,13 @@ namespace CircuitCube.Game
             _pending = LoadPending();
         }
 
-        /// <summary>Called every frame: signs in once Play Games has answered, then sends waiting wins.</summary>
+        /// <summary>Called every frame: signs in once Play Games has answered, checks in for today, then sends waiting wins.</summary>
         public static void Tick()
         {
 #if CC_UGS
             if (!_started || Time.realtimeSinceStartup < _nextTry) return;
             if (!SignedIn) { if (!_signingIn && CloudSave.AuthDone) SignIn(); return; }
+            if (!_checkingIn && _checkedDay != SaigonToday) CheckIn();
             if (!_sending && _pending.runs.Count > 0) SendNext();
 #endif
         }
@@ -209,6 +211,29 @@ namespace CircuitCube.Game
             tcs.TrySetResult(null);
 #endif
             return tcs.Task;
+        }
+
+        /// <summary>Today's date in Asia/Saigon (UTC+7, no daylight saving): the day of the daily_players board.</summary>
+        static DateTime SaigonToday => DateTime.UtcNow.AddHours(7).Date;
+
+        /// <summary>Counts this player once on today's unique-players board (daily_players): at launch, and again
+        /// if the game is still open after midnight.</summary>
+        static async void CheckIn()
+        {
+            _checkingIn = true;
+            var day = SaigonToday;
+            try
+            {
+                var reply = await CloudCodeService.Instance.CallModuleEndpointAsync<RankReply>(Module, "CheckIn", new Dictionary<string, object>());
+                _checkedDay = day;
+                if (reply != null) Debug.Log("[Ranks] players today: " + reply.players);
+            }
+            catch (Exception e)
+            {
+                _nextTry = Time.realtimeSinceStartup + RetrySeconds;
+                Debug.LogWarning("[Ranks] check-in: " + e.Message);
+            }
+            _checkingIn = false;
         }
 
         static async void SendNext()

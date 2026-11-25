@@ -133,6 +133,7 @@ namespace CircuitCubeRanks
     public class Ranks
     {
         const int MaxTaps = 5000;
+        const string DailyBoard = "daily_players";
         readonly IGameApiClient _api;
         readonly Content _content;
 
@@ -217,6 +218,17 @@ namespace CircuitCubeRanks
             reply.moves = moves;
             reply.tenths = total;
             return reply;
+        }
+
+        /// <summary>
+        /// Counts the player once on today's board of unique players (Deploy/daily_players.lb, reset every day at
+        /// 00:00 Asia/Saigon). Called once per app launch after sign-in. Answers how many players are on it so far.
+        /// </summary>
+        [CloudCodeFunction("CheckIn")]
+        public async Task<RankReply> CheckIn(IExecutionContext ctx)
+        {
+            await Post(ctx, DailyBoard, 1);
+            return await Reply(ctx, DailyBoard, 1);
         }
 
         static RankReply Fail(string error) => new RankReply { ok = false, error = error };
