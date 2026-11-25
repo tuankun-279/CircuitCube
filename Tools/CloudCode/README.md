@@ -29,9 +29,9 @@ The old `weekly_1..5` and `weekly_total` boards (made by hand on 2026-11-22) are
   midnight Asia/Saigon). Posts 1 for the player on `daily_players` and answers `players` = unique players today.
 
 All answer `RankReply` (ok, error, board, score, rank, players, experts, moves, tenths).
-`SubmitWeekly` refuses a `tenths` below the highest one it has seen for that level this week (`clock`, with that value in
-`tenths`): the play clock of a weekly level never resets.
-Refusals: `clock`, `content`, `week`, `closed`, `args`, `shape`, `level`, `taps`, `tap`, `unsolved`, `fast`, `not_expert`.
+`SubmitWeekly` scores a win with the highest `tenths` it has seen for that level this week, if that is above the one sent
+(the play clock of a weekly level never resets), and answers with the time that counted in `tenths`.
+Refusals: `content`, `week`, `closed`, `args`, `shape`, `level`, `taps`, `tap`, `unsolved`, `fast`, `not_expert`.
 
 ## Deploy
 

@@ -243,7 +243,6 @@ namespace CircuitCube.Game
             { "This week's levels are not here yet", "Màn của tuần này chưa tải về" },
             { "Connect to the internet and open the game again to download them.", "Hãy kết nối mạng và mở lại trò chơi để tải về." },
             { "No hints, no undo. Fewest moves wins, then fastest time. The clock never resets.", "Không gợi ý, không hoàn tác. Ít nước nhất thắng, rồi đến nhanh nhất. Đồng hồ không bao giờ về 0." },
-            { "Not ranked: the clock on this phone was behind an earlier run of yours. It is corrected now.", "Chưa được xếp hạng: đồng hồ trên máy này chậm hơn lượt trước của bạn. Đã chỉnh lại." },
             { "was {0}", "trước {0}" },
             { "Saved. Your score posts when you're back online.", "Đã lưu. Điểm sẽ được gửi khi bạn có mạng." },
             { "Posting your score...", "Đang gửi điểm..." },

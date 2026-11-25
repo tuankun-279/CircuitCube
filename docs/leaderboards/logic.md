@@ -89,10 +89,11 @@ used for special events. That supports splitting the weekly challenge by shape.
 
 - Clients cannot write to Leaderboards (Access Control deny statement); only Cloud Code posts with the service token.
 - Replays use the published level file, never level data from the client.
-- Time is still self-reported; the minimum-time check stops the obvious fakes. A weekly clock below the highest one
-  submitted for that level is refused (`clock`), so clearing the app's data does not turn it back once a win was sent.
+- Time is still self-reported; the minimum-time check stops the obvious fakes. A weekly win is scored with the
+  highest time submitted for that level when the one sent is lower, so clearing the app's data or a second phone does not
+  turn the clock back once a win was sent. The reply says which time counted and the app's clock goes on from it.
   Before the first win of a level nothing is on the server, so cleared data does start that level's clock again.
-- Apps up to 1.4.0 send the time of one run, so after this module is deployed a faster replay from them is refused.
+- Apps up to 1.4.0 send the time of one run; a faster replay from them counts with the highest time sent so far.
 
 ## Implementation (done in PR #3, 2026-11-22)
 

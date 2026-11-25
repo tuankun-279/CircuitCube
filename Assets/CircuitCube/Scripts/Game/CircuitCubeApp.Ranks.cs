@@ -30,6 +30,7 @@ namespace CircuitCube.Game
         int _boardToken;               // a page that arrives for an older pick is dropped
         int _weekToken;
         int _resultMoves, _resultTenths, _resultWasMoves = -1, _resultWasTenths;
+        bool _resultBest;              // the win just made beat an earlier best on this phone
         int _resultOldRank;
         string _mutedHex, _youHex;
         GameTheme _hexTheme;
@@ -592,7 +593,7 @@ namespace CircuitCube.Game
             if (_sampleClocks == null || !_sampleClocks.entries.Contains(_weeklyClock)) CubeSave.SaveWeeklyClocks();
         }
 
-        /// <summary>The server saw a later clock for a level (data cleared, or another phone): go on from that one.</summary>
+        /// <summary>The server counts a later clock for a level (data cleared, or another phone): go on from that one.</summary>
         void AdoptWeeklyClock(RankReply reply)
         {
             for (int g = 0; g < GameData.GroupCount; g++)
@@ -601,15 +602,36 @@ namespace CircuitCube.Game
                     string gid = GameData.GroupId(g);
                     if (reply.board != RankScore.WeeklyBoard(gid, slot)) continue;
                     var entry = CubeSave.WeeklyClocks.Get(GameData.Challenge.id, gid, slot);
-                    if (!WeeklyClocks.Raise(entry, reply.tenths / 10f)) return;
+                    if (reply.tenths <= RankScore.Tenths(entry.seconds)) return;   // the usual case: our own time came back
+                    WeeklyClocks.Raise(entry, reply.tenths / 10f);
                     if (entry == _weeklyClock)
                     {
                         _weeklyClockSaved = entry.seconds;
-                        if (_weeklySlot > 0 && _state == State.Playing) _playSeconds = Mathf.Max(_playSeconds, entry.seconds);
+                        if (_weeklySlot > 0) _playSeconds = Mathf.Max(_playSeconds, entry.seconds);
+                        if (_weeklySlot > 0 && _state == State.Won) RaiseResult(gid, slot, (int)reply.tenths);
                     }
                     CubeSave.SaveWeeklyClocks();
                     return;
                 }
+        }
+
+        /// <summary>The win just made counts with a later time: correct its card and, when it is the best run, the saved best.</summary>
+        void RaiseResult(string gid, int slot, int tenths)
+        {
+            string key = BestKey(WeekId, gid, slot), mine = _resultMoves + "," + _resultTenths;
+            bool wasBest = PlayerPrefs.GetString(key, "") == mine;
+            _resultTenths = tenths;
+            if (!wasBest) return;
+            bool still = _resultWasMoves < 0 || RankScore.Weekly(_resultMoves, tenths) < RankScore.Weekly(_resultWasMoves, _resultWasTenths);
+            PlayerPrefs.SetString(key, still ? _resultMoves + "," + tenths : _resultWasMoves + "," + _resultWasTenths);
+            _resultBest = still && _resultWasMoves >= 0;
+        }
+
+        /// <summary>The time that counts, on the open win card.</summary>
+        void ShowCountedTime()
+        {
+            UI.WeeklyResult.TimeValue.text = RankScore.TimeText(_resultTenths);
+            UI.WeeklyResult.NewBest.SetActive(_resultBest);
         }
 
         void SetHelpButtons(bool on)
@@ -635,6 +657,7 @@ namespace CircuitCube.Game
             if (better) PlayerPrefs.SetString(BestKey(WeekId, gid, slot), _moves + "," + tenths);
             _resultMoves = _moves; _resultTenths = tenths;
             _resultWasMoves = had ? oldMoves : -1; _resultWasTenths = oldTenths;
+            _resultBest = better && had;
             _resultOldRank = Cached(RankScore.WeeklyBoard(gid, slot), out var page) && page.Mine != null ? page.Mine.Rank : 0;
             _pages.Remove(RankScore.WeeklyBoard(gid, slot));
             _pages.Remove(RankScore.WeeklyTotalBoard(gid));
@@ -655,19 +678,19 @@ namespace CircuitCube.Game
             _tw.Run(0.55f + ResultDelay, p => { }, () =>
             {
                 _busy = false;
-                ShowWeeklyResult(better, RanksDebug.On || Ranks.SignedIn, RanksDebug.On ? 19 : 0, RanksDebug.On ? 902 : 0, RanksDebug.On ? 14 : 0);
+                ShowWeeklyResult(RanksDebug.On || Ranks.SignedIn, RanksDebug.On ? 19 : 0, RanksDebug.On ? 902 : 0, RanksDebug.On ? 14 : 0);
             }, UI.WeeklyResult);
         }
 
         /// <summary>The weekly win card. <paramref name="rank"/> 0 = not ranked yet (filled in when the server answers).</summary>
-        void ShowWeeklyResult(bool best, bool online, int rank, int players, int up)
+        void ShowWeeklyResult(bool online, int rank, int players, int up)
         {
             var r = UI.WeeklyResult;
             if (r == null) return;
             string shape = Loc.Upper(Loc.T(GameData.Group(_group).name));
             r.Caption.text = Loc.T("WEEKLY") + " · " + shape + " · " + Loc.F("LEVEL {0}", _weeklySlot);
             r.Title.text = Loc.T("Solved!");
-            r.NewBest.SetActive(best && _resultWasMoves >= 0);
+            r.NewBest.SetActive(_resultBest);
             r.MovesValue.text = _resultMoves.ToString();
             r.TimeValue.text = RankScore.TimeText(_resultTenths);
             r.MovesWas.gameObject.SetActive(_resultWasMoves >= 0);
@@ -705,17 +728,10 @@ namespace CircuitCube.Game
         void OnRankPosted(RankReply reply)
         {
             if (this == null || reply == null) return;
-            bool behind = !reply.ok && reply.error == "clock";
-            if (behind) AdoptWeeklyClock(reply);
-            if ((!reply.ok && !behind) || UI.WeeklyResult == null || !UI.WeeklyResult.gameObject.activeSelf) return;
+            if (reply.ok) AdoptWeeklyClock(reply);
+            if (!reply.ok || UI.WeeklyResult == null || !UI.WeeklyResult.gameObject.activeSelf) return;
             if (reply.board != RankScore.WeeklyBoard(GameData.GroupId(_group), _weeklySlot)) return;
-            if (behind)
-            {
-                UI.WeeklyResult.RankBox.gameObject.SetActive(false);
-                UI.WeeklyResult.Offline.SetActive(true);
-                UI.WeeklyResult.OfflineText.text = Loc.T("Not ranked: the clock on this phone was behind an earlier run of yours. It is corrected now.");
-                return;
-            }
+            ShowCountedTime();
             int up = _resultOldRank > 0 && reply.rank > 0 ? _resultOldRank - reply.rank : 0;
             FillRankBox(reply.rank, reply.players, up);
         }
@@ -784,8 +800,8 @@ namespace CircuitCube.Game
                 case 5:
                     ShowWeekly(0);
                     _group = 0; _weeklySlot = 2;
-                    _resultMoves = 27; _resultTenths = 729; _resultWasMoves = 31; _resultWasTenths = 1002;
-                    ShowWeeklyResult(true, screen == 4, 19, 902, 14);
+                    _resultMoves = 27; _resultTenths = 729; _resultWasMoves = 31; _resultWasTenths = 1002; _resultBest = true;
+                    ShowWeeklyResult(screen == 4, 19, 902, 14);
                     break;
                 case 6: ShowHome(); OpenBoards(true, 0); OpenNameSheet(); break;
             }

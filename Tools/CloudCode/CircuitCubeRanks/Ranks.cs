@@ -161,7 +161,6 @@ namespace CircuitCubeRanks
             var run = RunCheck.Replay(level, taps, tenths, m.rules);
             if (!run.Valid) return Fail(run.Error);
 
-            double score = RankScore.Weekly(run.Moves, tenths);
             string recKey = "weekly";
             var rec = Content.Parse<WeekRecord>(await ReadProtected(ctx, recKey));
             if (rec.week != w.id || rec.sets == null) rec = new WeekRecord { week = w.id };
@@ -169,15 +168,14 @@ namespace CircuitCubeRanks
             while (best.Count < w.count) best.Add(0);
             string board = RankScore.WeeklyBoard(group, index);
             // the clock of a level never goes back, whatever happened to the app's data
-            tenths = Math.Min(tenths, RankScore.MaxTenths);
             if (rec.clocks == null) rec.clocks = new Dictionary<string, List<int>>();
             if (!rec.clocks.TryGetValue(group, out var clocks) || clocks == null) rec.clocks[group] = clocks = new List<int>();
             while (clocks.Count < w.count) clocks.Add(0);
-            if (!WeeklyClocks.Accepts(clocks[index - 1], tenths))
-                return new RankReply { ok = false, error = "clock", board = board, tenths = clocks[index - 1] };
+            tenths = WeeklyClocks.Counted(clocks[index - 1], tenths);
             bool later = tenths > clocks[index - 1];
             clocks[index - 1] = tenths;
 
+            double score = RankScore.Weekly(run.Moves, tenths);
             bool better = best[index - 1] <= 0 || score < best[index - 1];
             if (better) best[index - 1] = score;
             if (better || later) await WriteProtected(ctx, recKey, Content.Serialize(rec));
@@ -190,7 +188,9 @@ namespace CircuitCubeRanks
                 int time = best.Take(w.count).Sum(s => RankScore.WeeklyTenths(s));
                 await Post(ctx, RankScore.WeeklyTotalBoard(group), RankScore.Weekly(moves, Math.Min(time, RankScore.MaxTenths)));
             }
-            return await Reply(ctx, board, best[index - 1]);
+            var reply = await Reply(ctx, board, best[index - 1]);
+            reply.tenths = tenths;   // the time that counted; the game's clock goes on from it
+            return reply;
         }
 
         /// <summary>A shape level won as Expert. key = group id, index = level serial.</summary>

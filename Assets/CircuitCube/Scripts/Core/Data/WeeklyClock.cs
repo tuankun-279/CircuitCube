@@ -42,9 +42,9 @@ namespace CircuitCube.Core
         }
 
         /// <summary>
-        /// The server's rule: a submitted clock may not be behind the highest one it has seen for that level, so clearing
-        /// the app's data does not turn it back. The same value is fine (a win sent twice).
+        /// The server's rule: the time that counts for a win is never below the highest one it has seen for that level,
+        /// so clearing the app's data or playing on another phone does not turn the clock back.
         /// </summary>
-        public static bool Accepts(int highestTenths, int tenths) => tenths >= highestTenths;
+        public static int Counted(int highestTenths, int tenths) => Math.Min(RankScore.MaxTenths, Math.Max(highestTenths, tenths));
     }
 }

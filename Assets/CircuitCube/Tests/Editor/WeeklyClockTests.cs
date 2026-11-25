@@ -55,12 +55,21 @@ namespace CircuitCube.Tests
         }
 
         [Test]
-        public void ServerRefusesAnEarlierClockOnly()
+        public void ServerCountsTheHighestTimeSeen()
         {
-            Assert.IsTrue(WeeklyClocks.Accepts(0, 1));
-            Assert.IsTrue(WeeklyClocks.Accepts(300, 300));
-            Assert.IsTrue(WeeklyClocks.Accepts(300, 301));
-            Assert.IsFalse(WeeklyClocks.Accepts(300, 299));
+            Assert.AreEqual(1, WeeklyClocks.Counted(0, 1));
+            Assert.AreEqual(300, WeeklyClocks.Counted(300, 299));
+            Assert.AreEqual(300, WeeklyClocks.Counted(300, 300));
+            Assert.AreEqual(301, WeeklyClocks.Counted(300, 301));
+            Assert.AreEqual(RankScore.MaxTenths, WeeklyClocks.Counted(300, int.MaxValue));
+        }
+
+        [Test]
+        public void AnEarlierTimeStillWinsWithFewerMovesOnly()
+        {
+            double best = RankScore.Weekly(20, 300);
+            Assert.AreEqual(best, RankScore.Weekly(20, WeeklyClocks.Counted(300, 50)));
+            Assert.Less(RankScore.Weekly(19, WeeklyClocks.Counted(300, 50)), best);
         }
 
         [Test]
