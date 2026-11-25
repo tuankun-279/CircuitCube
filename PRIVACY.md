@@ -1,6 +1,6 @@
 # Circuit Cube – Privacy Policy
 
-*Last updated: 22 November 2026*
+*Last updated: 25 November 2026*
 
 **English** · [Tiếng Việt](#tiếng-việt)
 
@@ -16,7 +16,7 @@ If you sign in to **Google Play Games**, the game also saves your progress (leve
 
 ## Leaderboards (Unity Gaming Services)
 
-The game has leaderboards: a weekly challenge and one board per shape. To run them, the game signs in to **Unity Gaming Services** (by Unity Technologies) with your Play Games account, or with an anonymous ID if you are not signed in to Play Games. Unity then stores a player ID, the player name shown on the boards (a generated name, or one you choose), and your results: for each leaderboard level, the tiles you turned in order, the number of moves and the time. Your player name, rank, moves and time are shown to other players on the boards. No email, contact or advertising ID is sent. To have your leaderboard data deleted, write to the contact address below with your player name.
+The game has leaderboards: a weekly challenge and one board per shape. To run them, the game signs in to **Unity Gaming Services** (by Unity Technologies) with your Play Games account, or with an anonymous ID if you are not signed in to Play Games. Unity then stores a player ID, the player name shown on the boards (a generated name, or one you choose), and your results: for each leaderboard level, the tiles you turned in order, the number of moves and the time. Your player name, rank, moves and time are shown to other players on the boards. To count how many people play each day, the game also records once a day with Unity that your player ID opened the game; past days are kept. No email, contact or advertising ID is sent. To have your leaderboard data deleted, write to the contact address below with your player name.
 
 ## Advertising (Google AdMob)
 
@@ -73,7 +73,7 @@ Questions or requests: open an issue at <https://github.com/tuankun-279/CircuitC
 
 ## Tiếng Việt
 
-*Cập nhật lần cuối: 22/11/2026*
+*Cập nhật lần cuối: 25/11/2026*
 
 Circuit Cube ("trò chơi") là trò chơi giải đố trên Android do một nhà phát triển độc lập (lokikun) làm. Trang này giải thích trò chơi dùng những dữ liệu gì và vì sao.
 
@@ -87,7 +87,7 @@ Nếu bạn đăng nhập **Google Play Games**, trò chơi lưu thêm tiến tr
 
 ### Bảng xếp hạng (Unity Gaming Services)
 
-Trò chơi có bảng xếp hạng: thử thách hằng tuần và một bảng cho mỗi hình khối. Để làm việc này, trò chơi đăng nhập **Unity Gaming Services** (của Unity Technologies) bằng tài khoản Play Games của bạn, hoặc bằng một mã ẩn danh nếu bạn không đăng nhập Play Games. Unity lưu mã người chơi, tên hiện trên bảng (tên tự tạo, hoặc tên bạn chọn) và kết quả của bạn: với mỗi level có xếp hạng là thứ tự các ô đã xoay, số nước và thời gian. Tên, hạng, số nước và thời gian của bạn được hiện cho người chơi khác trên bảng. Trò chơi không gửi email, danh bạ hay mã quảng cáo. Muốn xóa dữ liệu bảng xếp hạng, hãy viết cho địa chỉ liên hệ bên dưới kèm tên người chơi của bạn.
+Trò chơi có bảng xếp hạng: thử thách hằng tuần và một bảng cho mỗi hình khối. Để làm việc này, trò chơi đăng nhập **Unity Gaming Services** (của Unity Technologies) bằng tài khoản Play Games của bạn, hoặc bằng một mã ẩn danh nếu bạn không đăng nhập Play Games. Unity lưu mã người chơi, tên hiện trên bảng (tên tự tạo, hoặc tên bạn chọn) và kết quả của bạn: với mỗi level có xếp hạng là thứ tự các ô đã xoay, số nước và thời gian. Tên, hạng, số nước và thời gian của bạn được hiện cho người chơi khác trên bảng. Để đếm số người chơi mỗi ngày, trò chơi còn ghi với Unity mỗi ngày một lần rằng mã người chơi của bạn đã mở trò chơi; dữ liệu các ngày trước được giữ lại. Trò chơi không gửi email, danh bạ hay mã quảng cáo. Muốn xóa dữ liệu bảng xếp hạng, hãy viết cho địa chỉ liên hệ bên dưới kèm tên người chơi của bạn.
 
 ### Quảng cáo (Google AdMob)
 
