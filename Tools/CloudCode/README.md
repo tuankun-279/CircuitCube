@@ -8,7 +8,7 @@ compiled into the module) and posts the score with the service token.
 
 | Board | Sort | Score | Reset |
 |---|---|---|---|
-| `weekly_<group>_1` … `_3` | ascending | moves × 100000 + tenths of a second | every Thursday 00:00 UTC, archived |
+| `weekly_<group>_1` … `_3` | ascending | moves × 100000 + tenths of a second | every Wednesday 23:50 UTC (Thursday 06:50 Vietnam, before the 07:00 week start), archived; wins of the old week close at 23:45 UTC |
 | `weekly_<group>` | ascending | sum of the 3 best moves × 100000 + sum of their times | same |
 | `shape_<group>` | descending | Expert levels × 10^12 − total best moves × 10^6 − total seconds | never |
 | `daily_players` | descending | 1 per player (unique players today) | every day 17:00 UTC = 00:00 Asia/Saigon, archived |
