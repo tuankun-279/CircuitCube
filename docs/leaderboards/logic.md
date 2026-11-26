@@ -9,11 +9,23 @@ https://claude.ai/artifact/BudjQEtz8hkYqohpBmw1Do (screens 1-6). This page is th
 - Long-term progress per shape is rewarded without storing a score per level per player.
 - No score is trusted from the phone: the server replays every win (see "Anti-cheat").
 
+## Weekly turnover (Tuan, 2026-11-26: reset before the new week opens)
+
+| Vietnam time (Thursday) | UTC | What happens |
+|---|---|---|
+| 06:45 | Wed 23:45 | Cloud Code stops taking wins of the old week (`CloseEarlyMinutes` = 15, answer `closed`) |
+| 06:50 | Wed 23:50 | UGS resets the 24 weekly boards and archives the old week (`Deploy/weekly_*.lb`) |
+| 07:00 | Thu 00:00 | The new week opens (`challenge.start` in the manifest) |
+| 07:06 | Thu 00:06 | The scheduled weekly release publishes the new challenge levels |
+
+The first scheduled reset is 2026-12-02 23:50 UTC. Week 2026-W48 kept the W47 scores on its boards, because the
+first reset had been set to 2026-12-03 (Tuan chose not to reset it by hand).
+
 ## Two kinds of boards
 
 | Board | What ranks | Sort | Resets | Who can enter |
 |---|---|---|---|---|
-| Weekly challenge | Moves, then time, on the week's challenge levels | ascending | every Thursday 00:00 UTC (07:00 Vietnam) | anyone who has the shape unlocked |
+| Weekly challenge | Moves, then time, on the week's challenge levels | ascending | every Wednesday 23:50 UTC (Thursday 06:50 Vietnam), 10 min before the new week opens | anyone who has the shape unlocked |
 | Shape (lifetime) | Number of Expert levels in the shape, then total moves of their best runs, then total time | descending | never | anyone |
 
 There are **no per-level boards for normal levels** (Tuan, 2026-11-22: keep player data small).

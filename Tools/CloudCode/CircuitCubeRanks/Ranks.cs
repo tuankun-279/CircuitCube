@@ -135,6 +135,12 @@ namespace CircuitCubeRanks
     public class Ranks
     {
         const int MaxTaps = 5000;
+        /// <summary>
+        /// A week stops taking wins this many minutes before it ends. The weekly boards reset 10 minutes before the
+        /// next week opens (Deploy/weekly_*.lb: Wednesday 23:50 UTC = Thursday 06:50 Vietnam), so no win of the old
+        /// week can land on the fresh boards: close 06:45, reset 06:50, new week 07:00, weekly release 07:06.
+        /// </summary>
+        const int CloseEarlyMinutes = 15;
         const string DailyBoard = "daily_players";
         readonly IGameApiClient _api;
         readonly Content _content;
@@ -154,7 +160,7 @@ namespace CircuitCubeRanks
             if (!w.Has(group)) return Fail("shape");
             if (!DateTime.TryParse(w.start, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var opens)) return Fail("week");
             var now = DateTime.UtcNow;
-            if (now < opens || now >= opens.AddDays(Math.Max(1, w.days))) return Fail("closed");
+            if (now < opens || now >= opens.AddDays(Math.Max(1, w.days)).AddMinutes(-CloseEarlyMinutes)) return Fail("closed");
             if (index < 1 || index > w.count || taps == null || taps.Count > MaxTaps) return Fail("args");
 
             var level = await _content.Level(m, ChallengeWeek.LevelPath(w.id, group, index));

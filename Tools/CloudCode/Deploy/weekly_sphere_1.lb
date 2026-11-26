@@ -4,8 +4,8 @@
   "UpdateType": "keepBest",
   "Name": "Weekly Planet 1",
   "ResetConfig": {
-    "Start": "2026-12-03T00:00:00Z",
-    "Schedule": "0 0 * * 4",
+    "Start": "2026-12-02T23:50:00Z",
+    "Schedule": "50 23 * * 3",
     "Archive": true
   }
 }
