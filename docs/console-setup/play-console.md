@@ -58,7 +58,7 @@ reading); AdMob says itself that it collects **and shares**. Overall: data is co
 ## Release
 
 The version code goes up in Player Settings for every upload (Play refuses a code it has seen, even from a draft).
-1.4.1 (code 8) is prepared; the next one is 1.4.2 (code 9).
+1.4.1 (code 8) is uploaded; the next one is 1.4.2 (code 9).
 
 ### State
 
@@ -66,12 +66,14 @@ The version code goes up in Player Settings for every upload (Play refuses a cod
 |---|---|---|---|
 | 2026-11-17 | Closed testing - Alpha | 5 (1.2.0) | |
 | 2026-11-23 | Closed testing - Alpha | **7 (1.4.0)**, rolled out about 10:40 (UTC+7), replaces 5 (1.2.0) | Notes from `StoreListing/release_notes.txt` (en-US, vi-VN). Built with an **empty Play Games web client id** (see below). |
+| 2026-11-25 | Internal testing | 8 (1.4.1), rolled out 15:01 (UTC+7) | First uploaded as a draft through the Android Publisher API (service account `play-upload`). |
+| 2026-11-25 | Closed testing - Alpha | **8 (1.4.1)**, rolled out 15:13 (UTC+7), replaces 7 (1.4.0) | Same bundle and notes, put on Alpha through the API after the owner's phone test. Built from `071b9ae`. |
 
 Known fault in 7 (1.4.0): the bundle has an empty Play Games web client id (checked inside the AAB and APK). From the
 plugin code, a player signed in to Play Games then never signs in to Unity Gaming Services: no leaderboards, no scores,
 no daily count; not tried on a phone. For 1.4.1 the id is also in `ProjectSettings/GooglePlayGameSettings.txt`, which the
 plugin refills the asset from, and `PlayGamesBuildCheck` stops a build without it. What blanked the asset is not known.
-Test 1.4.1 on a phone signed in to Play Games before rolling it out.
+The owner tested 1.4.1 on a phone from Internal testing on 2026-11-25 and reported that it works.
 
 Checks Play showed for 7 (1.4.0):
 - No deobfuscation file: the game does not use R8/ProGuard. Ignore.
@@ -81,8 +83,8 @@ Checks Play showed for 7 (1.4.0):
   required=false, symbols go into the bundle), checked on the 1.4.1 (8) bundle of 2026-11-25: portrait is
   required=false, and the symbols are inside once the symbol format includes the bundle (the first bundle lacked them;
   the script now sets it). The bundle is 159 MB with symbols, 103 MB without.
-- The bundle (103 MB) was uploaded by the owner by hand: browser tools cannot attach files over 10 MB. Next builds go
-  through `Tools/PlayUpload/upload_play.py` once its service account is set up (see Release upload below).
+- The bundle (103 MB) was uploaded by the owner by hand: browser tools cannot attach files over 10 MB. 8 (1.4.1) and
+  later go through the API; the service account is set up (see Release upload below).
 
 Update the **Data safety** form (answers above) with 1.4.1, not only before Production: closed testing needs it too.
 
@@ -91,7 +93,10 @@ Update the **Data safety** form (answers above) with 1.4.1, not only before Prod
 - Build the signed AAB on the PC (version code above every earlier upload), then upload with
   `py -3.12 Tools/PlayUpload/upload_play.py Builds/<name>.aab` (default track: Closed testing - Alpha, rolled out;
   `--draft` to check it in Play Console first). Release notes come from `StoreListing/release_notes.txt`.
-- One-time setup (Google Play Android Developer API, service account, JSON key in `D:\Projects\KeyPublish`, Play
+- 8 (1.4.1) was sent through the same API with a one-off script, because the two Python packages of `upload_play.py` are
+  not installed on the PC yet. `upload_play.py` uploads only; moving a code already in Play to another track is done in Play
+  Console (Promote release) or with a track update through the API.
+- One-time setup, done 2026-11-25 (Google Play Android Developer API, service account, JSON key in `D:\Projects\KeyPublish`, Play
   Console invite with "Release apps to testing tracks"): [Tools/PlayUpload/README.md](../../Tools/PlayUpload/README.md).
 - The browser route only works for files under 10 MB with Claude's browser tools; a 100 MB bundle must be dragged in by
   the owner or sent through the script.
