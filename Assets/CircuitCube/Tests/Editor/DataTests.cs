@@ -111,6 +111,10 @@ namespace CircuitCube.Tests
             Assert.AreEqual("2½", LevelScore.StarText(5));
             Assert.AreEqual("3", LevelScore.StarText(6));
             Assert.AreEqual("0", LevelScore.StarText(0));
+            Assert.AreEqual("2", LevelScore.WholeStarText(5));    // outside the result card the half is left out
+            Assert.AreEqual("29", LevelScore.WholeStarText(59));  // 29½ never reads as 30
+            Assert.AreEqual("3", LevelScore.WholeStarText(6));
+            Assert.AreEqual("0", LevelScore.WholeStarText(1));
         }
 
         [Test]

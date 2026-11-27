@@ -29,7 +29,7 @@ namespace CircuitCube.UI
 
         public void Set(int level, bool open, int points, Action onPick) => Set(level, open, points, onPick, open && points == 0);
 
-        /// <param name="points">The level's best score, 3-7 (0 = not won): stars with half stars, 7 = the Expert comet.</param>
+        /// <param name="points">The level's best score, 3-7 (0 = not won): whole stars (a half star is left out), 7 = the Expert comet.</param>
         /// <param name="current">The next level to play; highlighted like the mockup's level 12.</param>
         public void Set(int level, bool open, int points, Action onPick, bool current)
         {
@@ -48,7 +48,7 @@ namespace CircuitCube.UI
             if (Expert != null) Expert.gameObject.SetActive(expert);
             LockIcon.SetActive(!open);
             Stars.gameObject.SetActive(open && !expert);
-            Stars.SetPoints(points);
+            Stars.SetPoints(points, false);   // whole stars only outside the result card (2½ shows 2)
             Button.interactable = open;
             Button.onClick.RemoveAllListeners();
             if (open) Button.onClick.AddListener(() => onPick());

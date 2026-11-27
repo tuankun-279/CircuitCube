@@ -416,7 +416,7 @@ namespace CircuitCube.Game
             int next = CubeSave.Unlocked(g);
             h.PlayLabel.text = Loc.T("Play");
             h.GroupLabel.text = Loc.T(info.name);
-            h.StarsLabel.text = LevelScore.StarText(CubeSave.TotalStarHalves);
+            h.StarsLabel.text = LevelScore.WholeStarText(CubeSave.TotalStarHalves);
             h.GroupName.text = Loc.T(info.name);
             h.GroupProgress.text = info.endless ? Loc.F("Level {0}", next) : Loc.F("Level {0} / {1}", Mathf.Min(next, total), total);
             h.GroupFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(CubeSave.Beaten(g) / (float)total), h.GroupFill.anchorMax.y);
@@ -439,7 +439,7 @@ namespace CircuitCube.Game
             s.Show();
             SlideIn(s);
             int starHalves = CubeSave.TotalStarHalves;
-            s.StarsLabel.text = LevelScore.StarText(starHalves);
+            s.StarsLabel.text = LevelScore.WholeStarText(starHalves);
             int next = 0;
             for (int g = 0; g < GameData.GroupCount; g++)
             {
@@ -556,10 +556,10 @@ namespace CircuitCube.Game
             int unlocked = CubeSave.Unlocked(group);
             int total = Mathf.Max(1, info.levelCount);
             lv.Subtitle.text = Loc.T(info.blurb);   // hidden in the V2 layout; kept for older prefabs
-            lv.StarsLabel.text = LevelScore.StarText(CubeSave.TotalStarHalves);
+            lv.StarsLabel.text = LevelScore.WholeStarText(CubeSave.TotalStarHalves);
             int beaten = CubeSave.Beaten(group), groupHalves = 0;
             for (int l = 1; l <= beaten; l++) groupHalves += LevelScore.HalfStars(CubeSave.Points(group, l));
-            lv.ProgressValue.text = (info.endless ? beaten.ToString() : Mathf.Min(beaten, total) + " / " + total) + "  ·  " + LevelScore.StarText(groupHalves) + " " + Loc.T(groupHalves == 2 ? "star" : "stars");
+            lv.ProgressValue.text = (info.endless ? beaten.ToString() : Mathf.Min(beaten, total) + " / " + total) + "  ·  " + LevelScore.WholeStarText(groupHalves) + " " + Loc.T(groupHalves / 2 == 1 ? "star" : "stars");
             lv.ProgressFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(beaten / (float)total), lv.ProgressFill.anchorMax.y);
             // which shape players pick: "shapes" = chosen on the Shapes screen, "won"/"play" = back from a level
             GameAnalytics.Log("shape_open", ("shape", info.id), ("beaten", beaten), ("stars_total", CubeSave.TotalStarHalves / 2),
