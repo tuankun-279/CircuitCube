@@ -52,11 +52,26 @@ namespace CircuitCube.UI
             LockedRoot.SetActive(!open);
             ProgressMask.parent.gameObject.SetActive(open);
             Progress.gameObject.SetActive(open);
+            FitLockedText();
             LockedText.text = unlockHint;
             Icon.color = open ? Color.white : new Color(1f, 1f, 1f, 0.35f);
             Button.interactable = open;
             Button.onClick.RemoveAllListeners();
             if (open) Button.onClick.AddListener(() => onPick());
+        }
+
+        bool _fitSet;
+
+        /// <summary>The unlock hint can run to three lines (stars, stars in the previous shape, the level rule):
+        /// shrink it to fit the card, down to 70% of the designed size.</summary>
+        void FitLockedText()
+        {
+            if (_fitSet || LockedText == null) return;
+            _fitSet = true;
+            float size = LockedText.fontSize;
+            LockedText.fontSizeMax = size;
+            LockedText.fontSizeMin = size * 0.7f;
+            LockedText.enableAutoSizing = true;
         }
     }
 }
