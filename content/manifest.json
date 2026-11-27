@@ -73,7 +73,7 @@
     }
   ],
   "contentVersion": 15,
-  "cdn": "",
+  "cdn": "https://cdn.jsdelivr.net/gh/tuankun-279/CircuitCube@3e8f665d253ace38bbc48f7efb7681f561e57b60/content/",
   "challenge": {
     "id": "2026-W48",
     "start": "2026-11-26T00:00:00Z",
