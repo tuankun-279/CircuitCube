@@ -1,7 +1,9 @@
 -- Which shapes players play the most (Firebase Analytics -> BigQuery, dataset analytics_563777735).
 -- One row per shape for the last 30 days: players, levels started and won, minutes played, share of all play
 -- and how often players picked the shape on the Shapes screen (shape_open from 1.4.2).
--- Use it to decide which shape gets more levels in the next monthly batch.
+-- Use it to decide which shape gets more levels in the next monthly batch. Read minutes_per_player, win_rate_pct
+-- and picked, not share_of_play_pct: the first shape is open to everyone and later ones only to players who got far,
+-- so the total share always leans to the first shapes. players = players who started a level of that shape.
 DECLARE days INT64 DEFAULT 30;
 WITH ev AS (
   SELECT
