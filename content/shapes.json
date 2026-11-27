@@ -2,16 +2,6 @@
   "version": 5,
   "cross": [
     {
-      "id": "cross-11",
-      "arm": 1,
-      "thick": 1
-    },
-    {
-      "id": "cross-21",
-      "arm": 2,
-      "thick": 1
-    },
-    {
       "id": "cross-22",
       "arm": 2,
       "thick": 2

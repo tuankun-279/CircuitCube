@@ -29,41 +29,51 @@
     {
       "id": "tetra",
       "unlock": {
-        "cleared": 100,
-        "group": "cube"
+        "cleared": 30,
+        "group": "cube",
+        "groupStars": 0,
+        "stars": 45
       }
     },
     {
       "id": "octa",
       "unlock": {
-        "cleared": 100,
-        "group": "tetra"
+        "cleared": 50,
+        "group": "tetra",
+        "groupStars": 30,
+        "stars": 120
       }
     },
     {
       "id": "sphere",
       "unlock": {
-        "cleared": 100,
-        "group": "octa"
+        "cleared": 70,
+        "group": "octa",
+        "groupStars": 30,
+        "stars": 220
       }
     },
     {
       "id": "dodeca",
       "unlock": {
-        "cleared": 100,
-        "group": "sphere"
+        "cleared": 90,
+        "group": "sphere",
+        "groupStars": 30,
+        "stars": 350
       }
     },
     {
       "id": "megamix",
       "unlock": {
-        "cleared": 100,
-        "group": "dodeca"
+        "cleared": 110,
+        "group": "dodeca",
+        "groupStars": 30,
+        "stars": 500
       }
     }
   ],
-  "contentVersion": 14,
-  "cdn": "https://cdn.jsdelivr.net/gh/tuankun-279/CircuitCube@33e9d52942983c30465583b5baf7fe85781e8e01/content/",
+  "contentVersion": 15,
+  "cdn": "",
   "challenge": {
     "id": "2026-W48",
     "start": "2026-11-26T00:00:00Z",
