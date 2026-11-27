@@ -10,11 +10,29 @@ namespace CircuitCube.Core
     //   levels/<id>/<0001>.json  LevelData      (one board, tiles string)
     //   shapes/voxel/<id>.json   VoxelShapeFile (free-form block shapes)
 
+    /// <summary>
+    /// When a group opens. From 1.4.2 a rule can ask for stars: the total stars won on every group (whole stars,
+    /// half stars count as halves). With stars set, the level rule (beat level <see cref="cleared"/> of
+    /// <see cref="group"/>) is a second way in, so a player who wins with few stars is never stuck; apps before 1.4.2
+    /// only read the level rule.
+    /// </summary>
     [Serializable] public class UnlockRule
     {
-        public string group;   // empty = open from the start
+        public string group;   // empty (and no stars) = open from the start
         public int cleared;
-        public bool IsNone => string.IsNullOrEmpty(group);
+        public int stars;      // total stars needed (0 = the level rule only)
+        public bool IsNone => string.IsNullOrEmpty(group) && stars <= 0;
+
+        /// <summary>Open with this many star halves on every group and this many levels beaten in <see cref="group"/>
+        /// (-1 when that group is not in the game).</summary>
+        public bool Opens(int starHalves, int groupBeaten)
+        {
+            if (IsNone) return true;
+            if (stars > 0 && starHalves >= stars * 2) return true;
+            if (string.IsNullOrEmpty(group)) return false;
+            if (groupBeaten < 0) return stars <= 0;   // prerequisite gone: open, unless stars decide
+            return (stars <= 0 || cleared > 0) && groupBeaten >= cleared;
+        }
     }
 
     [Serializable] public class GroupRef

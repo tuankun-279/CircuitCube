@@ -181,19 +181,15 @@ namespace CircuitCube.Game
         public static int Unlocked(int group) => Beaten(group) + 1;
         public static int Beaten(int group) { var _ = Profile; return Prog(group).cleared; }
 
-        /// <summary>Opens by the manifest rule; once open, stays open even if the rule changes later.</summary>
+        /// <summary>Opens by the manifest rule (stars or levels, see <see cref="UnlockRule.Opens"/>); once open, stays open even if the rule changes later.</summary>
         public static bool GroupOpen(int group)
         {
             string id = GameData.GroupId(group);
             var e = Profile.groups.Find(x => x.id == id);
             if (e != null && e.unlocked) return true;
             var rule = GameData.Unlock(group);
-            bool open = rule.IsNone;
-            if (!open)
-            {
-                int pre = GameData.IndexOf(rule.group);
-                open = pre < 0 || Beaten(pre) >= rule.cleared;
-            }
+            int pre = GameData.IndexOf(rule.group);
+            bool open = rule.Opens(rule.stars > 0 ? TotalStarHalves : 0, pre < 0 ? -1 : Beaten(pre));
             if (open)
             {
                 if (e == null) Profile.groups.Add(e = new GroupUnlock { id = id });
