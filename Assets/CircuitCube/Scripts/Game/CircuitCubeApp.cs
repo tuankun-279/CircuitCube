@@ -522,16 +522,19 @@ namespace CircuitCube.Game
             GameAnalytics.SetUserProperty("main_shape", best >= 0 ? GameData.GroupId(best) : "none");
         }
 
-        /// <summary>What a locked shape card asks for: stars collected out of the stars needed, and the level rule.</summary>
+        /// <summary>
+        /// What a locked shape card asks for: stars collected out of the stars needed, and the level rule. Counts are
+        /// whole stars, half stars left out (29½ shows as 29 / 30), matching the rule, which needs the full 30.
+        /// </summary>
         static string UnlockHint(UnlockRule rule, int pre, int starHalves)
         {
             if (rule.IsNone) return "";
             string levels = pre >= 0 && rule.cleared > 0 ? Loc.F("Beat level {0} of {1}", rule.cleared, Loc.T(GameData.Group(pre).name)) : "";
             if (rule.stars <= 0) return levels;
-            string stars = Loc.F("Collect {0} stars ({1} / {0})", rule.stars, LevelScore.StarText(Mathf.Min(starHalves, rule.stars * 2)));
+            string stars = Loc.F("Collect {0} stars ({1} / {0})", rule.stars, Mathf.Min(starHalves / 2, rule.stars));
             if (rule.groupStars > 0 && pre >= 0)
                 stars += "\n" + Loc.F("{0} of them in {1} ({2} / {0})", rule.groupStars, Loc.T(GameData.Group(pre).name),
-                    LevelScore.StarText(Mathf.Min(CubeSave.GroupStarHalves(pre), rule.groupStars * 2)));
+                    Mathf.Min(CubeSave.GroupStarHalves(pre) / 2, rule.groupStars));
             if (levels.Length == 0) return stars;
             return stars + "\n" + Loc.F("or beat level {0} of {1}", rule.cleared, Loc.T(GameData.Group(pre).name));
         }

@@ -27,7 +27,7 @@ namespace CircuitCube.Tests
         public void StarsOpenBeforeTheLevelRule()
         {
             var r = new UnlockRule { group = "cube", cleared = 30, stars = 45 };
-            Assert.IsFalse(r.Opens(89, 10), "44½ stars is not enough");
+            Assert.IsFalse(r.Opens(89, 10), "44½ stars is not enough: half stars are never rounded up");
             Assert.IsTrue(r.Opens(90, 10), "45 stars");
             Assert.IsTrue(r.Opens(0, 30), "the level rule still opens it");
         }
