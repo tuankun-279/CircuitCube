@@ -12,36 +12,45 @@
     {
       "id": "tetra",
       "unlock": {
-        "cleared": 100,
-        "group": "cube"
+        "cleared": 30,
+        "group": "cube",
+        "stars": 45
       }
     },
     {
       "id": "octa",
       "unlock": {
-        "cleared": 100,
-        "group": "tetra"
+        "cleared": 50,
+        "group": "tetra",
+        "groupStars": 30,
+        "stars": 120
       }
     },
     {
       "id": "sphere",
       "unlock": {
-        "cleared": 100,
-        "group": "octa"
+        "cleared": 70,
+        "group": "octa",
+        "groupStars": 30,
+        "stars": 220
       }
     },
     {
       "id": "dodeca",
       "unlock": {
-        "cleared": 100,
-        "group": "sphere"
+        "cleared": 90,
+        "group": "sphere",
+        "groupStars": 30,
+        "stars": 350
       }
     },
     {
       "id": "megamix",
       "unlock": {
-        "cleared": 100,
-        "group": "dodeca"
+        "cleared": 110,
+        "group": "dodeca",
+        "groupStars": 30,
+        "stars": 500
       }
     }
   ],

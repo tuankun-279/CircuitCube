@@ -70,6 +70,7 @@ namespace CircuitCube.Game
         // every tile turned this game in order, sent with an Expert win so the server can play it again (Ranks)
         readonly List<int> _taps = new List<int>();
         bool _tapsWhole = true;   // false when a game saved by an older version resumed without its taps
+        bool _shapePropsSet;                           // analytics user properties sent this run
         int _unlockedGroup = -1;                       // a shape the last win unlocked, offered after the result card
 
         // Input
@@ -415,7 +416,7 @@ namespace CircuitCube.Game
             int next = CubeSave.Unlocked(g);
             h.PlayLabel.text = Loc.T("Play");
             h.GroupLabel.text = Loc.T(info.name);
-            h.StarsLabel.text = LevelScore.StarText(CubeSave.TotalStarHalves);
+            h.StarsLabel.text = LevelScore.WholeStarText(CubeSave.TotalStarHalves);
             h.GroupName.text = Loc.T(info.name);
             h.GroupProgress.text = info.endless ? Loc.F("Level {0}", next) : Loc.F("Level {0} / {1}", Mathf.Min(next, total), total);
             h.GroupFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(CubeSave.Beaten(g) / (float)total), h.GroupFill.anchorMax.y);
@@ -425,6 +426,7 @@ namespace CircuitCube.Game
             for (int i = 0; i < GameData.GroupCount; i++) anyNew |= CubeSave.HasNewLevels(i);
             if (h.ShapesBadge != null) h.ShapesBadge.SetActive(anyNew);
             FillHomeRanks();
+            if (!_shapePropsSet) { _shapePropsSet = true; SetShapeProperties(); }
         }
 
         void ShowShapes()
@@ -436,7 +438,8 @@ namespace CircuitCube.Game
             var s = UI.Shapes;
             s.Show();
             SlideIn(s);
-            s.StarsLabel.text = LevelScore.StarText(CubeSave.TotalStarHalves);
+            int starHalves = CubeSave.TotalStarHalves;
+            s.StarsLabel.text = LevelScore.WholeStarText(starHalves);
             int next = 0;
             for (int g = 0; g < GameData.GroupCount; g++)
             {
@@ -445,7 +448,7 @@ namespace CircuitCube.Game
                 bool open = CubeSave.GroupOpen(g);
                 var rule = GameData.Unlock(g);
                 int pre = GameData.IndexOf(rule.group);
-                string hint = rule.IsNone || pre < 0 ? "" : Loc.F("Beat level {0} of {1}", rule.cleared, Loc.T(GameData.Group(pre).name));
+                string hint = UnlockHint(rule, pre, starHalves);
                 int total = Mathf.Max(1, info.levelCount);
                 var card = Slot(s.List, s.CardPrefab, ref next);
                 string iconId = string.IsNullOrEmpty(info.icon) ? info.id : info.icon;
@@ -495,8 +498,50 @@ namespace CircuitCube.Game
             return Mathf.Max(0, i);
         }
 
+        static int TotalBeaten()
+        {
+            int n = 0;
+            for (int g = 0; g < GameData.GroupCount; g++) n += CubeSave.Beaten(g);
+            return n;
+        }
+
+        /// <summary>
+        /// Analytics user properties for comparing shapes: how many are open and the one with the most levels beaten
+        /// (the player's main shape). Set at start and after each win.
+        /// </summary>
+        static void SetShapeProperties()
+        {
+            int open = 0, best = -1, bestBeaten = 0;
+            for (int g = 0; g < GameData.GroupCount; g++)
+            {
+                if (CubeSave.GroupOpen(g)) open++;
+                int b = CubeSave.Beaten(g);
+                if (b > bestBeaten) { bestBeaten = b; best = g; }
+            }
+            GameAnalytics.SetUserProperty("shapes_open", open.ToString());
+            GameAnalytics.SetUserProperty("main_shape", best >= 0 ? GameData.GroupId(best) : "none");
+        }
+
+        /// <summary>
+        /// What a locked shape card asks for: stars collected out of the stars needed, and the level rule. Counts are
+        /// whole stars, half stars left out (29½ shows as 29 / 30), matching the rule, which needs the full 30.
+        /// </summary>
+        static string UnlockHint(UnlockRule rule, int pre, int starHalves)
+        {
+            if (rule.IsNone) return "";
+            string levels = pre >= 0 && rule.cleared > 0 ? Loc.F("Beat level {0} of {1}", rule.cleared, Loc.T(GameData.Group(pre).name)) : "";
+            if (rule.stars <= 0) return levels;
+            string stars = Loc.F("Collect {0} stars ({1} / {0})", rule.stars, Mathf.Min(starHalves / 2, rule.stars));
+            if (rule.groupStars > 0 && pre >= 0)
+                stars += "\n" + Loc.F("{0} of them in {1} ({2} / {0})", rule.groupStars, Loc.T(GameData.Group(pre).name),
+                    Mathf.Min(CubeSave.GroupStarHalves(pre) / 2, rule.groupStars));
+            if (levels.Length == 0) return stars;
+            return stars + "\n" + Loc.F("or beat level {0} of {1}", rule.cleared, Loc.T(GameData.Group(pre).name));
+        }
+
         void ShowLevels(int group)
         {
+            var from = _state;
             QuitAttempt();
             _state = State.Levels;
             _group = group;
@@ -511,11 +556,14 @@ namespace CircuitCube.Game
             int unlocked = CubeSave.Unlocked(group);
             int total = Mathf.Max(1, info.levelCount);
             lv.Subtitle.text = Loc.T(info.blurb);   // hidden in the V2 layout; kept for older prefabs
-            lv.StarsLabel.text = LevelScore.StarText(CubeSave.TotalStarHalves);
+            lv.StarsLabel.text = LevelScore.WholeStarText(CubeSave.TotalStarHalves);
             int beaten = CubeSave.Beaten(group), groupHalves = 0;
             for (int l = 1; l <= beaten; l++) groupHalves += LevelScore.HalfStars(CubeSave.Points(group, l));
-            lv.ProgressValue.text = (info.endless ? beaten.ToString() : Mathf.Min(beaten, total) + " / " + total) + "  ·  " + LevelScore.StarText(groupHalves) + " " + Loc.T(groupHalves == 2 ? "star" : "stars");
+            lv.ProgressValue.text = (info.endless ? beaten.ToString() : Mathf.Min(beaten, total) + " / " + total) + "  ·  " + LevelScore.WholeStarText(groupHalves) + " " + Loc.T(groupHalves / 2 == 1 ? "star" : "stars");
             lv.ProgressFill.anchorMax = new Vector2(info.endless ? 1f : Mathf.Clamp01(beaten / (float)total), lv.ProgressFill.anchorMax.y);
+            // which shape players pick: "shapes" = chosen on the Shapes screen, "won"/"play" = back from a level
+            GameAnalytics.Log("shape_open", ("shape", info.id), ("beaten", beaten), ("stars_total", CubeSave.TotalStarHalves / 2),
+                ("from", from == State.Shapes ? "shapes" : from == State.Won ? "won" : from == State.Playing ? "play" : "other"));
             int next = 0;
             int count = info.endless ? Mathf.Max(total, ((unlocked + 11) / 4 + 1) * 4) : total;
             for (int l = 1; l <= count; l++)
@@ -1168,8 +1216,10 @@ namespace CircuitCube.Game
             _attempt.Close();   // finished: no level_quit for this attempt
             if (real) GameAnalytics.Log("level_complete", LevelParams(("moves", _moves),
                 ("par", _level.Par), ("waste", LevelScore.Waste(_moves, MinTaps())), ("stars", LevelScore.WholeStars(points)), ("expert", LevelScore.IsExpert(points)),
-                ("hints", _hintsUsed), ("undos", _undosUsed), ("seconds", Mathf.RoundToInt(_playSeconds))));
-            if (unlocksNext) GameAnalytics.Log("shape_unlocked", ("shape", GameData.Group(newGroup).id));
+                ("hints", _hintsUsed), ("undos", _undosUsed), ("seconds", Mathf.RoundToInt(_playSeconds)), ("stars_total", CubeSave.TotalStarHalves / 2)));
+            if (unlocksNext) GameAnalytics.Log("shape_unlocked", ("shape", GameData.Group(newGroup).id), ("stars_total", CubeSave.TotalStarHalves / 2),
+                ("levels_total", TotalBeaten()));
+            if (real) SetShapeProperties();
             _board.Celebrate();
             GameAudio.Play(Sfx.Win);
             GameAudio.Duck(3f);

@@ -150,5 +150,11 @@ namespace CircuitCube.Core
 
         /// <summary>A star count given in halves, as players read it: "12", "12½".</summary>
         public static string StarText(int halves) => (halves / 2).ToString() + (halves % 2 == 1 ? "½" : "");
+
+        /// <summary>
+        /// A star count given in halves, in whole stars with the half left out ("12½" reads "12"), so a count never looks
+        /// higher than what the unlock rules accept. Every star count outside the level result card uses this.
+        /// </summary>
+        public static string WholeStarText(int halves) => (Math.Max(0, halves) / 2).ToString();
     }
 }

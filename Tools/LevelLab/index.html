@@ -417,7 +417,9 @@ let gDraft=null,rDraft=null;
 const jeq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 function gDirty(){return !!gDraft&&(!jeq(gDraft.manifest,MANIFEST)||!jeq(gDraft.groups,GROUPS))}
 function parLine(g){const r=Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}),n=wasteOf(r,g);return `Expert with up to ${n} wasted move${n===1?"":"s"}${g&&g.wasteAllowed!=null&&g.wasteAllowed>=0?" (this group)":" (rule)"}`}
-function unlockText(u){return !u||!u.group?"Open from the start.":`Opens after ${u.cleared} levels of group ${u.group}.`}
+// 1.4.2+: stars = total stars on every group; the level rule stays as a second way in (and is all that older apps read)
+function unlockText(u){if(!u||(!u.group&&!(u.stars>0)))return "Open from the start.";const lv=u.group&&u.cleared>0?`${u.cleared} levels of group ${u.group}`:"";
+  return u.stars>0?`Opens at ${u.stars} stars in total${u.groupStars>0?` (${u.groupStars} of them in ${u.group})`:""}${lv?` or after ${lv}`:""} (apps before 1.4.2: ${lv||"open"}).`:`Opens after ${lv||"0 levels of group "+u.group}.`}
 function cfgOnData(){if(!gDirty())gDraft=null;rDraft=null;if(!$("#viewGroups").hidden)cfgRender()}
 function cfgRender(){
   if(!MANIFEST){$("#cGroupCards").innerHTML='<div class="empty">No data yet.</div>';return}
@@ -435,6 +437,8 @@ function cfgRender(){
         <label class="f" for="cgi-${i}">Icon<select id="cgi-${i}" data-f="icon">${ICONS.map(x=>`<option${g.icon===x?" selected":""}>${x}</option>`).join("")}${ICONS.includes(g.icon)?"":`<option selected>${esc(g.icon||"")}</option>`}</select></label>
         <label class="f" for="cgu-${i}">Unlock<select id="cgu-${i}" data-u="group">${opts}</select></label>
         <label class="f" for="cgc-${i}">Levels to clear<input id="cgc-${i}" type="number" min="0" data-u="cleared" value="${u&&u.group?u.cleared:0}" ${u&&u.group?"":"disabled"}></label>
+        <label class="f" for="cgs-${i}">Stars to unlock (total, 0 = levels only)<input id="cgs-${i}" type="number" min="0" data-u="stars" value="${u&&u.stars||0}" ${u&&u.group?"":"disabled"}></label>
+        <label class="f" for="cgp-${i}">Of them in that group<input id="cgp-${i}" type="number" min="0" data-u="groupStars" value="${u&&u.groupStars||0}" ${u&&u.group?"":"disabled"}></label>
         <label class="f" for="cgw-${i}">Wasted moves allowed (empty = rule)<input id="cgw-${i}" type="number" min="0" data-f="wasteAllowed" data-n="1" value="${g.wasteAllowed!=null&&g.wasteAllowed>=0?g.wasteAllowed:""}" placeholder="${MANIFEST.rules?.wasteAllowed??3}"></label>
         <span class="note c-par" style="margin:0;align-self:end">${parLine(g)}</span>
         <label class="f wide" for="cgb-${i}">Description<input id="cgb-${i}" type="text" data-f="blurb" value="${esc(g.blurb||"")}"></label>
@@ -461,7 +465,9 @@ $("#cGroupCards").addEventListener("input",e=>{
   const g=gDraft.groups[id]||(gDraft.groups[id]=groupDetail(id));const f=e.target.dataset.f,u=e.target.dataset.u;
   if(f&&e.target.dataset.n){const v=e.target.value.trim();if(v==="")delete g[f];else g[f]=Math.max(0,parseInt(v)||0);card.querySelector(".c-par").textContent=parLine(g)}
   else if(f)g[f]=e.target.type==="checkbox"?e.target.checked:e.target.value;
-  if(u==="group"){ref.unlock=e.target.value?{group:e.target.value,cleared:(ref.unlock&&ref.unlock.cleared)||10}:null;cfgRender();return}
+  if(u==="group"){ref.unlock=e.target.value?{group:e.target.value,cleared:(ref.unlock&&ref.unlock.cleared)||10,stars:(ref.unlock&&ref.unlock.stars)||0}:null;cfgRender();return}
+  if(u==="stars"&&ref.unlock)ref.unlock.stars=Math.max(0,parseInt(e.target.value)||0);
+  if(u==="groupStars"&&ref.unlock)ref.unlock.groupStars=Math.max(0,parseInt(e.target.value)||0);
   if(u==="cleared"&&ref.unlock)ref.unlock.cleared=Math.max(0,parseInt(e.target.value)||0);
   if(e.target.type==="checkbox")cfgRender();else{$("#cGroupsDirty").hidden=!gDirty();card.querySelector(".c-ul").textContent=unlockText(ref.unlock)}
 });

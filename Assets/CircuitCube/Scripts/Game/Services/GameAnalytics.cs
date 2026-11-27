@@ -20,6 +20,7 @@ namespace CircuitCube.Game
 
         const int MaxQueued = 50;
         static readonly List<(string name, Parameter[] args)> Queue = new List<(string, Parameter[])>();
+        static readonly Dictionary<string, string> PendingProps = new Dictionary<string, string>();
         static bool _initStarted, _ready, _failed;
 
         public static void Init()
@@ -41,6 +42,8 @@ namespace CircuitCube.Game
                         _ready = true;
                         foreach (var e in Queue) FirebaseAnalytics.LogEvent(e.name, e.args);
                         Queue.Clear();
+                        foreach (var kv in PendingProps) FirebaseAnalytics.SetUserProperty(kv.Key, kv.Value);
+                        PendingProps.Clear();
                     }
                     catch (Exception e) { Fail(e.Message); }
                 });
@@ -68,6 +71,16 @@ namespace CircuitCube.Game
                 return;
             }
             try { FirebaseAnalytics.LogEvent(name, ps); }
+            catch (Exception e) { Fail(e.Message); }
+        }
+
+        /// <summary>A user property (at most 36 characters), kept until Firebase is up.</summary>
+        public static void SetUserProperty(string name, string value)
+        {
+            if (EchoToConsole) Debug.Log("[Analytics] user property " + name + "=" + value);
+            if (_failed || Application.isEditor) return;
+            if (!_ready) { PendingProps[name] = value; return; }
+            try { FirebaseAnalytics.SetUserProperty(name, value); }
             catch (Exception e) { Fail(e.Message); }
         }
 

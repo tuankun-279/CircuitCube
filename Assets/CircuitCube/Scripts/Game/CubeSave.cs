@@ -181,19 +181,16 @@ namespace CircuitCube.Game
         public static int Unlocked(int group) => Beaten(group) + 1;
         public static int Beaten(int group) { var _ = Profile; return Prog(group).cleared; }
 
-        /// <summary>Opens by the manifest rule; once open, stays open even if the rule changes later.</summary>
+        /// <summary>Opens by the manifest rule (stars or levels, see <see cref="UnlockRule.Opens"/>); once open, stays open even if the rule changes later.</summary>
         public static bool GroupOpen(int group)
         {
             string id = GameData.GroupId(group);
             var e = Profile.groups.Find(x => x.id == id);
             if (e != null && e.unlocked) return true;
             var rule = GameData.Unlock(group);
-            bool open = rule.IsNone;
-            if (!open)
-            {
-                int pre = GameData.IndexOf(rule.group);
-                open = pre < 0 || Beaten(pre) >= rule.cleared;
-            }
+            int pre = GameData.IndexOf(rule.group);
+            bool open = rule.Opens(rule.stars > 0 ? TotalStarHalves : 0, pre < 0 ? -1 : Beaten(pre),
+                rule.groupStars > 0 && pre >= 0 ? GroupStarHalves(pre) : 0);
             if (open)
             {
                 if (e == null) Profile.groups.Add(e = new GroupUnlock { id = id });
@@ -211,6 +208,20 @@ namespace CircuitCube.Game
             var c = Chunk(GameData.GroupId(group), (serial - 1) / StarChunkSize);
             int i = (serial - 1) % StarChunkSize;
             return i < c.points.Length ? c.points[i] - '0' : 0;
+        }
+
+        /// <summary>Stars won in one group, counted in halves.</summary>
+        public static int GroupStarHalves(int group)
+        {
+            int sum = 0;
+            string dir = Path.Combine(RootDir, "groups", GameData.GroupId(group));
+            if (!Directory.Exists(dir)) return 0;
+            foreach (var f in Directory.GetFiles(dir, "stars-*.json"))
+            {
+                if (!int.TryParse(Path.GetFileNameWithoutExtension(f).Substring(6), out int k)) continue;
+                foreach (char ch in Chunk(GameData.GroupId(group), k).points) sum += LevelScore.HalfStars(ch - '0');
+            }
+            return sum;
         }
 
         /// <summary>Stars of every level won, counted in halves (a 5-point win is 2½ stars).</summary>
