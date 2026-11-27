@@ -47,6 +47,16 @@ namespace CircuitCube.Tests
         }
 
         [Test]
+        public void StarsInThePreviousShapeAreNeeded()
+        {
+            var r = new UnlockRule { group = "octa", cleared = 70, stars = 220, groupStars = 30 };
+            Assert.IsFalse(r.Opens(1000, 5, 59), "enough stars in total, too few in the previous shape");
+            Assert.IsTrue(r.Opens(440, 25, 60), "220 in total, 30 of them in the previous shape");
+            Assert.IsTrue(r.Opens(0, 70, 0), "the level rule still opens it");
+            Assert.IsTrue(new UnlockRule { group = "octa", stars = 220, groupStars = 30 }.Opens(440, -1, 0), "previous shape gone: total decides");
+        }
+
+        [Test]
         public void OldManifestsReadWithoutStars()
         {
             var r = JsonUtility.FromJson<UnlockRule>("{\"group\":\"cube\",\"cleared\":100}");

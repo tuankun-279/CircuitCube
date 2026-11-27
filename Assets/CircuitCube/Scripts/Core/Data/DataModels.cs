@@ -21,14 +21,15 @@ namespace CircuitCube.Core
         public string group;   // empty (and no stars) = open from the start
         public int cleared;
         public int stars;      // total stars needed (0 = the level rule only)
+        public int groupStars; // with stars: at least this many of them won in <see cref="group"/>, so no shape is skipped
         public bool IsNone => string.IsNullOrEmpty(group) && stars <= 0;
 
-        /// <summary>Open with this many star halves on every group and this many levels beaten in <see cref="group"/>
-        /// (-1 when that group is not in the game).</summary>
-        public bool Opens(int starHalves, int groupBeaten)
+        /// <summary>Open with this many star halves on every group, this many levels beaten in <see cref="group"/>
+        /// (-1 when that group is not in the game) and this many star halves won in it.</summary>
+        public bool Opens(int starHalves, int groupBeaten, int groupStarHalves = 0)
         {
             if (IsNone) return true;
-            if (stars > 0 && starHalves >= stars * 2) return true;
+            if (stars > 0 && starHalves >= stars * 2 && (groupStars <= 0 || groupBeaten < 0 || groupStarHalves >= groupStars * 2)) return true;
             if (string.IsNullOrEmpty(group)) return false;
             if (groupBeaten < 0) return stars <= 0;   // prerequisite gone: open, unless stars decide
             return (stars <= 0 || cleared > 0) && groupBeaten >= cleared;

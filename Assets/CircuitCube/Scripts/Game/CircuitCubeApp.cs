@@ -529,6 +529,9 @@ namespace CircuitCube.Game
             string levels = pre >= 0 && rule.cleared > 0 ? Loc.F("Beat level {0} of {1}", rule.cleared, Loc.T(GameData.Group(pre).name)) : "";
             if (rule.stars <= 0) return levels;
             string stars = Loc.F("Collect {0} stars ({1} / {0})", rule.stars, LevelScore.StarText(Mathf.Min(starHalves, rule.stars * 2)));
+            if (rule.groupStars > 0 && pre >= 0)
+                stars += "\n" + Loc.F("{0} of them in {1} ({2} / {0})", rule.groupStars, Loc.T(GameData.Group(pre).name),
+                    LevelScore.StarText(Mathf.Min(CubeSave.GroupStarHalves(pre), rule.groupStars * 2)));
             if (levels.Length == 0) return stars;
             return stars + "\n" + Loc.F("or beat level {0} of {1}", rule.cleared, Loc.T(GameData.Group(pre).name));
         }

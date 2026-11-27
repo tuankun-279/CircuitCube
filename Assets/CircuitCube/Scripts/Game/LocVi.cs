@@ -44,6 +44,7 @@ namespace CircuitCube.Game
             { "Restart now", "Khởi động lại" },
             { "Beat level {0} of {1}", "Qua màn {0} của {1}" },
             { "Collect {0} stars ({1} / {0})", "Thu thập {0} sao ({1} / {0})" },
+            { "{0} of them in {1} ({2} / {0})", "trong đó {0} sao ở {1} ({2} / {0})" },
             { "or beat level {0} of {1}", "hoặc qua màn {0} của {1}" },
             { "NEW SHAPE UNLOCKED", "MỞ KHOÁ KHỐI MỚI" },
             { "More levels need the internet", "Cần mạng để có thêm màn" },
