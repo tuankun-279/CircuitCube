@@ -1,6 +1,6 @@
 # Circuit Cube – Privacy Policy
 
-*Last updated: 25 November 2026*
+*Last updated: 27 November 2026*
 
 **English** · [Tiếng Việt](#tiếng-việt)
 
@@ -16,7 +16,7 @@ If you sign in to **Google Play Games**, the game also saves your progress (leve
 
 ## Leaderboards (Unity Gaming Services)
 
-The game has leaderboards: a weekly challenge and one board per shape. To run them, the game signs in to **Unity Gaming Services** (by Unity Technologies) with your Play Games account, or with an anonymous ID if you are not signed in to Play Games. Unity then stores a player ID, the player name shown on the boards (a generated name, or one you choose), and your results: for each leaderboard level, the tiles you turned in order, the number of moves and the time. Your player name, rank, moves and time are shown to other players on the boards. To count how many people play each day, the game also records once a day with Unity that your player ID opened the game; past days are kept. No email, contact or advertising ID is sent. To have your leaderboard data deleted, write to the contact address below with your player name.
+The game has leaderboards: a weekly challenge and one board per shape. To run them, the game signs in to **Unity Gaming Services** (by Unity Technologies) with your Play Games account, or with an anonymous ID if you are not signed in to Play Games. Unity then stores a player ID, the player name shown on the boards (a generated name, or one you choose), and your results: for each leaderboard level, the tiles you turned in order, the number of moves and the time. Your player name, rank, moves and time are shown to other players on the boards. To count how many people play each day, the game also records once a day with Unity that your player ID opened the game; past days are kept. No email, contact or advertising ID is sent. To have your leaderboard data deleted, write to the contact address below with your player name. From version 1.5.0 you pick your player name yourself (you can change it in Settings), other players can report a name that breaks the [Terms](TERMS.md), and the developer can reset a reported name. The game also tells the server which kind of install it runs from (for example installed from Google Play or a test build); this is used only to count real players and contains no personal data.
 
 ## Advertising (Google AdMob)
 
@@ -59,6 +59,7 @@ The game is not directed at children under 13 and does not knowingly collect per
 
 - **Cloud save:** delete it yourself in the Google Play Games app, or ask us (below) and we will tell you how.
 - **Analytics and crash reports:** these are not linked to your name or account. Analytics data is kept by Firebase for 2 months and crash reports for 90 days, then deleted automatically. To ask for earlier deletion, open an issue (below) with the subject "Delete my data – Circuit Cube"; we answer within 30 days.
+- **Leaderboard data** (player ID, name, results, daily check-ins): open an issue (below) with the subject "Delete my data – Circuit Cube" and your player name; we delete it within 30 days. You can also change your name to a different one in Settings at any time.
 - **Advertising data** is held by Google: reset or delete your advertising ID in Android settings, and see <https://policies.google.com/technologies/partner-sites>.
 
 ## Changes
@@ -73,7 +74,7 @@ Questions or requests: open an issue at <https://github.com/tuankun-279/CircuitC
 
 ## Tiếng Việt
 
-*Cập nhật lần cuối: 25/11/2026*
+*Cập nhật lần cuối: 27/11/2026*
 
 Circuit Cube ("trò chơi") là trò chơi giải đố trên Android do một nhà phát triển độc lập (lokikun) làm. Trang này giải thích trò chơi dùng những dữ liệu gì và vì sao.
 
@@ -87,7 +88,7 @@ Nếu bạn đăng nhập **Google Play Games**, trò chơi lưu thêm tiến tr
 
 ### Bảng xếp hạng (Unity Gaming Services)
 
-Trò chơi có bảng xếp hạng: thử thách hằng tuần và một bảng cho mỗi hình khối. Để làm việc này, trò chơi đăng nhập **Unity Gaming Services** (của Unity Technologies) bằng tài khoản Play Games của bạn, hoặc bằng một mã ẩn danh nếu bạn không đăng nhập Play Games. Unity lưu mã người chơi, tên hiện trên bảng (tên tự tạo, hoặc tên bạn chọn) và kết quả của bạn: với mỗi level có xếp hạng là thứ tự các ô đã xoay, số nước và thời gian. Tên, hạng, số nước và thời gian của bạn được hiện cho người chơi khác trên bảng. Để đếm số người chơi mỗi ngày, trò chơi còn ghi với Unity mỗi ngày một lần rằng mã người chơi của bạn đã mở trò chơi; dữ liệu các ngày trước được giữ lại. Trò chơi không gửi email, danh bạ hay mã quảng cáo. Muốn xóa dữ liệu bảng xếp hạng, hãy viết cho địa chỉ liên hệ bên dưới kèm tên người chơi của bạn.
+Trò chơi có bảng xếp hạng: thử thách hằng tuần và một bảng cho mỗi hình khối. Để làm việc này, trò chơi đăng nhập **Unity Gaming Services** (của Unity Technologies) bằng tài khoản Play Games của bạn, hoặc bằng một mã ẩn danh nếu bạn không đăng nhập Play Games. Unity lưu mã người chơi, tên hiện trên bảng (tên tự tạo, hoặc tên bạn chọn) và kết quả của bạn: với mỗi level có xếp hạng là thứ tự các ô đã xoay, số nước và thời gian. Tên, hạng, số nước và thời gian của bạn được hiện cho người chơi khác trên bảng. Để đếm số người chơi mỗi ngày, trò chơi còn ghi với Unity mỗi ngày một lần rằng mã người chơi của bạn đã mở trò chơi; dữ liệu các ngày trước được giữ lại. Trò chơi không gửi email, danh bạ hay mã quảng cáo. Muốn xóa dữ liệu bảng xếp hạng, hãy viết cho địa chỉ liên hệ bên dưới kèm tên người chơi của bạn. Từ phiên bản 1.5.0, bạn tự chọn tên người chơi (có thể đổi trong Cài đặt), người chơi khác có thể báo cáo tên vi phạm [Điều khoản](TERMS.md), và nhà phát triển có thể đặt lại tên bị báo cáo. Trò chơi cũng báo cho máy chủ loại bản cài (ví dụ cài từ Google Play hay bản thử nghiệm); thông tin này chỉ dùng để đếm người chơi thật và không chứa dữ liệu cá nhân.
 
 ### Quảng cáo (Google AdMob)
 
@@ -130,6 +131,7 @@ Trò chơi không hướng tới trẻ em dưới 13 tuổi và không cố ý t
 
 - **Bản lưu đám mây:** tự xóa trong ứng dụng Google Play Games, hoặc liên hệ (bên dưới) để được hướng dẫn.
 - **Dữ liệu phân tích và báo lỗi:** không gắn với tên hay tài khoản của bạn. Firebase giữ dữ liệu phân tích 2 tháng và báo lỗi 90 ngày rồi tự xóa. Muốn xóa sớm hơn, tạo issue (bên dưới) với tiêu đề "Delete my data – Circuit Cube"; chúng tôi trả lời trong 30 ngày.
+- **Dữ liệu bảng xếp hạng** (mã người chơi, tên, kết quả, lượt vào hằng ngày): tạo issue (bên dưới) với tiêu đề "Delete my data – Circuit Cube" kèm tên người chơi; chúng tôi xóa trong 30 ngày. Bạn cũng có thể đổi sang tên khác trong Cài đặt bất cứ lúc nào.
 - **Dữ liệu quảng cáo** do Google giữ: đặt lại hoặc xóa mã quảng cáo trong cài đặt Android, xem thêm <https://policies.google.com/technologies/partner-sites>.
 
 ### Thay đổi
