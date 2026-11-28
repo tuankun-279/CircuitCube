@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Closed Test Board</title>
+<style>
+:root{--bg:#F4F6FA;--panel:#fff;--line:#D7DDE9;--fg:#18203A;--muted:#626C88;--accent:#1E9AAA;--ok:#138A5C;--warn:#B76E00}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A0D15;--panel:#131826;--line:#262E46;--fg:#E3E8F5;--muted:#8A93AD;--accent:#46B8C6;--ok:#3DC99A;--warn:#E8A23A}}
+:root[data-theme="dark"]{--bg:#0A0D15;--panel:#131826;--line:#262E46;--fg:#E3E8F5;--muted:#8A93AD;--accent:#46B8C6;--ok:#3DC99A;--warn:#E8A23A}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
+main{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+h1{font-size:20px;margin:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile .n{font:600 28px ui-monospace,Menlo,Consolas,monospace}
+.tile .l{color:var(--muted);font-size:12.5px}
+.bars{display:flex;align-items:flex-end;gap:3px;height:160px;border-bottom:1px solid var(--line);overflow-x:auto}
+.bar{flex:1 0 14px;background:var(--accent);border-radius:3px 3px 0 0;position:relative}
+.bar.goal{background:var(--ok)}
+.goalline{position:relative;height:0;border-top:1px dashed var(--warn)}
+.note{color:var(--muted);font-size:12.5px}
+textarea{width:100%;min-height:90px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;font:12px ui-monospace,monospace;padding:8px}
+button{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:8px;padding:7px 12px;font:500 13px system-ui;cursor:pointer}
+</style>
+</head>
+<body>
+<main>
+  <h1>Closed test · real devices</h1>
+  <p class="note">Paste the output of <code>players_sync.py closed</code> (or <code>all</code>) below, or open the JSON file. Only Google Play installs count; Editor, development, test-lab and sideloaded builds are left out. Google Play asks for at least 12 testers opted in for 14 days in a row before production access.</p>
+  <div class="panel"><textarea id="src" placeholder='{"closed": {...}}'></textarea>
+    <p><input type="file" id="file" accept=".json,application/json"> <button type="button" id="show">Show</button></p></div>
+  <div class="panel tiles" id="tiles"></div>
+  <div class="panel"><strong>Testers per day</strong> <span class="note" id="legend"></span>
+    <div id="chart" style="position:relative;margin-top:10px"></div></div>
+</main>
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  function tile(n,l){return `<div class="tile"><div class="n">${n}</div><div class="l">${l}</div></div>`}
+  function render(text){
+    let d;try{d=JSON.parse(text)}catch(e){$("#tiles").innerHTML='<span class="note">Not JSON.</span>';return}
+    const c=d.closed||d;const goal=c.goal||12,per=c.perDay||{};
+    $("#tiles").innerHTML=tile(c.testersToday??"–","testers today")+tile(`${c.streakDays??0} / 14`,`days in a row with ${goal}+ testers`)+
+      tile(c.streak??"–","testers active on 14+ days")+tile(c.d1==null?"–":c.d1+" %","D1: back the next day")+tile(c.d7==null?"–":c.d7+" %","D7: back a week later");
+    const days=Object.keys(per).sort(),mx=Math.max(goal,...days.map(k=>per[k]));
+    $("#legend").textContent=days.length?`${days[0]} to ${days[days.length-1]} · green = goal reached`:"no days";
+    $("#chart").innerHTML=`<div class="bars">${days.map(k=>`<div class="bar${per[k]>=goal?" goal":""}" title="${k}: ${per[k]}" style="height:${Math.round(100*per[k]/mx)}%"></div>`).join("")}</div>`+
+      `<div class="goalline" style="top:-${Math.round(160*goal/mx)}px" title="goal ${goal}"></div>`;
+  }
+  $("#show").onclick=()=>render($("#src").value);
+  $("#file").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{$("#src").value=t;render(t)})};
+})();
+</script>
+</body>
+</html>

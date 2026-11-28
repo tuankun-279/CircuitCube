@@ -13,9 +13,11 @@
         "Google.Play.Review",
         "Google.Play.Games",
         "Unity.Services.Core",
+        "Unity.Services.Core.Environments",
         "Unity.Services.Authentication",
         "Unity.Services.CloudCode",
-        "Unity.Services.Leaderboards"
+        "Unity.Services.Leaderboards",
+        "Studio.PlayerTracking"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

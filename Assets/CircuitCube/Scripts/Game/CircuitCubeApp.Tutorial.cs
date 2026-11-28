@@ -223,6 +223,8 @@ namespace CircuitCube.Game
             ClearNotes();
             if (UI.Tutorial != null) { UI.Tutorial.Clear(); UI.Tutorial.gameObject.SetActive(false); }
             GameAnalytics.Log("tutorial_step", ("step", "ready"), ("action", "done"));
+            // a new player picks a name for the boards once, right after the tutorial
+            if (AskNameAfterTutorial(() => StartLevel(0, 1))) return;
             StartLevel(0, 1);
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Firebase;
 using Firebase.Analytics;
 using Firebase.Extensions;
+using Studio.Tracking;
 using UnityEngine;
 
 namespace CircuitCube.Game
@@ -12,6 +13,9 @@ namespace CircuitCube.Game
     /// config (google-services.json) or in the editor, events only go to the console when <see cref="EchoToConsole"/>
     /// is on, and the game carries on as normal. Consent: Analytics reads the choice the player made in Google's
     /// consent form (UMP writes it in the IAB TCF format that the Analytics SDK reads by itself).
+    /// Every event carries the build channel (play, sideload, dev, testlab: <see cref="BuildChannel"/>) so reports
+    /// can keep only real players; the user property build_channel says the same, and app_launch adds the version.
+    /// No personal data is added.
     /// </summary>
     public static class GameAnalytics
     {
@@ -27,6 +31,8 @@ namespace CircuitCube.Game
         {
             if (_initStarted || Application.isEditor) return;   // the editor has no mobile Analytics backend
             _initStarted = true;
+            SetUserProperty("build_channel", BuildChannel.Current);
+            Log("app_launch", ("version", Application.version), ("installer", BuildChannel.Installer.Length > 36 ? BuildChannel.Installer.Substring(0, 36) : BuildChannel.Installer));
             try
             {
                 FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
@@ -63,8 +69,9 @@ namespace CircuitCube.Game
         {
             if (EchoToConsole) Debug.Log("[Analytics] " + name + Describe(args));
             if (_failed || Application.isEditor) return;
-            var ps = new Parameter[args.Length];
+            var ps = new Parameter[args.Length + 1];
             for (int i = 0; i < args.Length; i++) ps[i] = ToParameter(args[i].key, args[i].value);
+            ps[args.Length] = new Parameter("channel", BuildChannel.Current);
             if (!_ready)
             {
                 if (Queue.Count < MaxQueued) Queue.Add((name, ps));

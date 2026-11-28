@@ -23,6 +23,10 @@
 
   <ItemGroup>
     <Compile Include="../../../Assets/CircuitCube/Scripts/Core/**/*.cs" LinkBase="GameCore" />
+    <!-- the channel rules of the studio tracking package (plain C#), so the server counts players like the game -->
+    <Compile Include="../../../Packages/com.studio.player-tracking/Runtime/ChannelRules.cs" LinkBase="Tracking" />
+    <!-- the name word lists, read the same way as the game reads them -->
+    <EmbeddedResource Include="../../../Assets/CircuitCube/Resources/NameRules.txt" LogicalName="NameRules.txt" />
   </ItemGroup>
 
 </Project>

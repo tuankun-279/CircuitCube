@@ -36,6 +36,11 @@ namespace CircuitCube.UI
         [Tooltip("App version line. Seven taps show this device's code for the ad tester list and copy it.")]
         public Button VersionButton;
         public TMP_Text VersionLabel;
+        [Tooltip("1.5.0: the name on the boards, the renames left and the Rename button.")]
+        public TMP_Text NameValue, RenameNote;
+        public Button Rename;
+        [Tooltip("1.5.0: links to TERMS.md and to the delete section of PRIVACY.md.")]
+        public Button Terms, DeleteData;
 
         const int TapsForDeviceCode = 7;
         int _versionTaps;

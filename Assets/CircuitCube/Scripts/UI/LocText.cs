@@ -24,13 +24,19 @@ namespace CircuitCube.UI
             Apply();
         }
 
+        // Shown again: translate again. A label that got the English at start-up (its first Apply came before the
+        // saved language was known, or failed) is put right the next time its screen opens.
+        void OnEnable() { if (_text != null) Apply(); }
+
         void OnDestroy() => Loc.Changed -= Apply;
 
         void Apply()
         {
-            if (_text == null || _text.text != _shown) return;   // code wrote its own text since
+            if (_text == null) return;
+            string now = _text.text;
+            if (now != _shown && now != _source) return;   // code wrote its own text since
             _shown = Loc.T(_source);
-            _text.text = _shown;
+            if (now != _shown) _text.text = _shown;
         }
     }
 }

@@ -26,7 +26,16 @@ namespace CircuitCube.Game
         {
             get
             {
-                if (_current == null) Apply(Pick(CubeSave.Settings.language));
+                if (_current != null) return _current;
+                string saved;
+                try { saved = CubeSave.Settings.language; }
+                catch (Exception e)
+                {
+                    // the save is not readable yet: answer with the phone's language, ask the save again next time
+                    Debug.LogWarning("[Loc] saved language not read yet: " + e.Message);
+                    return Pick("");
+                }
+                Apply(Pick(saved));
                 return _current;
             }
         }
@@ -60,7 +69,8 @@ namespace CircuitCube.Game
         public static string T(string english)
         {
             if (string.IsNullOrEmpty(english)) return english;
-            if (_current == null) _ = Current;
+            if (_current == null && Current != "vi") return english;
+            if (_current == null) return LocVi.Table.TryGetValue(english, out var early) ? early : english;
             return _table != null && _table.TryGetValue(english, out var t) ? t : english;
         }
 

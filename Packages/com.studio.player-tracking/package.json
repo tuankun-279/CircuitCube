@@ -1,0 +1,8 @@
+{
+  "name": "com.studio.player-tracking",
+  "displayName": "Studio Player Tracking",
+  "version": "1.0.0",
+  "unity": "6000.0",
+  "description": "Tells real store installs from Editor, development, test-lab and sideloaded builds, picks the matching Unity Gaming Services environment, and ships the server rule, SQL and closed-test board that count only real players.",
+  "author": { "name": "Studio" }
+}

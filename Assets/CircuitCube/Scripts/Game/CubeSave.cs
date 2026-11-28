@@ -32,6 +32,10 @@ namespace CircuitCube.Game
         public bool seenHowTo, seenMix;
         /// <summary>First-time tutorial steps done: 1 tap a tile, 2 spin the shape, 3 use a hint (3 = finished or skipped).</summary>
         public int tutorial;
+        /// <summary>1.5.0 name sheet: 0 not decided yet, 1 a new player (asked after the tutorial), 2 a player from before 1.5.0.</summary>
+        public int nameAsk;
+        /// <summary>A name typed while offline, sent once the boards are reachable ("" = none).</summary>
+        public string pendingName = "";
         /// <summary>Later lessons seen, as bits: see CubeSave.TipColours and TipMix.</summary>
         public int tips;
         /// <summary>Levels with a mixed colour the player has won (the HUD spells out the mixes for the first few).</summary>
@@ -352,6 +356,8 @@ namespace CircuitCube.Game
         public static bool SeenMix { get => Profile.seenMix; set { Profile.seenMix = value; SaveProfile(); } }
         public static bool SeenHowTo { get => Profile.seenHowTo; set { Profile.seenHowTo = value; SaveProfile(); } }
         public static int TutorialStep { get => Profile.tutorial; set { Profile.tutorial = value; SaveProfile(); } }
+        public static int NameAsk { get => Profile.nameAsk; set { Profile.nameAsk = value; SaveProfile(); } }
+        public static string PendingName { get => Profile.pendingName ?? ""; set { Profile.pendingName = value ?? ""; SaveProfile(); } }
         public static int Tips { get => Profile.tips; set { Profile.tips = value; SaveProfile(); } }
         public static int MixWins { get => Profile.mixWins; set { Profile.mixWins = value; SaveProfile(); } }
         /// <summary>Bit in <see cref="Tips"/>: the "each lamp needs its own colour" lesson.</summary>

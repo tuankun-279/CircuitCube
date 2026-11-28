@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using CircuitCube.Core;
+using Studio.Tracking;
 using UnityEngine;
 #if CC_UGS
 using System.Threading.Tasks;
 using Unity.Services.Authentication;
 using Unity.Services.CloudCode;
 using Unity.Services.Core;
+using Unity.Services.Core.Environments;
 using Unity.Services.Leaderboards;
 #endif
 #if CC_UGS && CC_PLAYGAMES && UNITY_ANDROID && !UNITY_EDITOR
@@ -21,6 +23,7 @@ namespace CircuitCube.Game
     {
         public int Rank;        // 1 = first
         public string Name;
+        public string PlayerId; // for reporting a name
         public double Score;
         public bool Me;
     }
@@ -47,6 +50,17 @@ namespace CircuitCube.Game
         public int experts;     // shape boards: Expert levels counted now
         public long moves;      // shape boards: total moves of their best runs
         public long tenths;     // shape boards: total of their best times
+    }
+
+    /// <summary>What the server answered about the player's name (Cloud Code ClaimName / NameState).</summary>
+    [Serializable] public class NameReply
+    {
+        public bool ok;
+        public string error = "";   // name, reserved, empty, no_renames, offline
+        public string name = "";
+        public int renamesLeft;
+        public bool named;
+        public bool reset;
     }
 
     /// <summary>
@@ -89,6 +103,15 @@ namespace CircuitCube.Game
 
         public static bool SignedIn { get; private set; }
         public static string PlayerName { get; private set; } = "";
+
+        /// <summary>The services environment this build signs in to: production only for Google Play installs.</summary>
+        public static string Environment => BuildChannel.ServicesEnvironment;
+
+        /// <summary>The name state from the server once signed in (null before, or offline).</summary>
+        public static NameReply Name { get; private set; }
+
+        /// <summary>Raised when <see cref="Name"/> arrives or changes.</summary>
+        public static event Action NameChanged;
 
         /// <summary>A win was ranked: the board and the server's answer (for the result card).</summary>
         public static event Action<RankReply> Posted;
@@ -163,15 +186,42 @@ namespace CircuitCube.Game
 #endif
         }
 
-        /// <summary>Changes the name shown on the boards (the service adds a #1234 tag).</summary>
-        public static void Rename(string name, Action<bool> done)
+        /// <summary>
+        /// Changes the name shown on the boards (the service adds a #1234 tag). The server checks the name and the
+        /// renames left first (Cloud Code ClaimName); first = the name sheet right after the tutorial.
+        /// </summary>
+        public static void Rename(string name, bool first, Action<NameReply> done)
         {
 #if CC_UGS
-            if (!SignedIn || string.IsNullOrWhiteSpace(name)) { done?.Invoke(false); return; }
-            RenameAsync(NameFilter.Clean(name), done);
+            if (!SignedIn) { done?.Invoke(new NameReply { error = "offline" }); return; }
+            RenameAsync(name, first, done);
+#else
+            done?.Invoke(new NameReply { error = "offline" });
+#endif
+        }
+
+        /// <summary>Reports another player's name on a board; the team reads reports in Level Lab (Players).</summary>
+        public static void ReportName(string playerId, string name, string board, Action<bool> done)
+        {
+#if CC_UGS
+            if (!SignedIn || string.IsNullOrEmpty(playerId)) { done?.Invoke(false); return; }
+            ReportAsync(playerId, name, board, done);
 #else
             done?.Invoke(false);
 #endif
+        }
+
+        /// <summary>The player's own id on the services ("" before sign-in).</summary>
+        public static string PlayerId
+        {
+            get
+            {
+#if CC_UGS
+                return SignedIn ? AuthenticationService.Instance.PlayerId ?? "" : "";
+#else
+                return "";
+#endif
+            }
         }
 
 #if CC_UGS
@@ -180,17 +230,29 @@ namespace CircuitCube.Game
             _signingIn = true;
             try
             {
-                if (UnityServices.State != ServicesInitializationState.Initialized) await UnityServices.InitializeAsync();
+                if (UnityServices.State != ServicesInitializationState.Initialized)
+                {
+                    // only Google Play installs use production; the Editor and every test build use development
+                    var options = new InitializationOptions();
+                    options.SetEnvironmentName(Environment);
+                    await UnityServices.InitializeAsync(options);
+                }
                 var auth = AuthenticationService.Instance;
                 if (!auth.IsSignedIn)
                 {
                     string code = await PlayGamesCode();
-                    if (!string.IsNullOrEmpty(code)) await auth.SignInWithGooglePlayGamesAsync(code);
-                    else await auth.SignInAnonymouslyAsync();
+                    bool done = false;
+                    if (!string.IsNullOrEmpty(code))
+                    {
+                        try { await auth.SignInWithGooglePlayGamesAsync(code); done = true; }
+                        catch (Exception e) { Debug.LogWarning("[Ranks] Play Games sign-in refused, anonymous instead: " + e.Message); }
+                    }
+                    if (!done) await auth.SignInAnonymouslyAsync();
                 }
                 SignedIn = auth.IsSignedIn;
                 PlayerName = await auth.GetPlayerNameAsync() ?? "";
-                GameAnalytics.Log("ranks_signin", ("ok", SignedIn));
+                GameAnalytics.Log("ranks_signin", ("ok", SignedIn), ("env", Environment));
+                if (SignedIn) LoadNameState();
             }
             catch (Exception e)
             {
@@ -224,7 +286,8 @@ namespace CircuitCube.Game
             var day = SaigonToday;
             try
             {
-                var reply = await CloudCodeService.Instance.CallModuleEndpointAsync<RankReply>(Module, "CheckIn", new Dictionary<string, object>());
+                var args = new Dictionary<string, object> { { "channel", BuildChannel.Current }, { "version", Application.version } };
+                var reply = await CloudCodeService.Instance.CallModuleEndpointAsync<RankReply>(Module, "DailyCheckIn", args);
                 _checkedDay = day;
                 if (reply != null) Debug.Log("[Ranks] players today: " + reply.players);
             }
@@ -269,11 +332,11 @@ namespace CircuitCube.Game
                 page.Players = top.Total;
                 string me = AuthenticationService.Instance.PlayerId;
                 foreach (var e in top.Results)
-                    page.Top.Add(new BoardRow { Rank = e.Rank + 1, Name = e.PlayerName, Score = e.Score, Me = e.PlayerId == me });
+                    page.Top.Add(new BoardRow { Rank = e.Rank + 1, Name = e.PlayerName, PlayerId = e.PlayerId, Score = e.Score, Me = e.PlayerId == me });
                 try
                 {
                     var mine = await lb.GetPlayerScoreAsync(board);
-                    page.Mine = new BoardRow { Rank = mine.Rank + 1, Name = mine.PlayerName, Score = mine.Score, Me = true };
+                    page.Mine = new BoardRow { Rank = mine.Rank + 1, Name = mine.PlayerName, PlayerId = mine.PlayerId, Score = mine.Score, Me = true };
                 }
                 catch (Exception) { page.Mine = null; }   // no score on this board yet
                 page.Ok = true;
@@ -282,49 +345,80 @@ namespace CircuitCube.Game
             done?.Invoke(page);
         }
 
-        static async void RenameAsync(string name, Action<bool> done)
+        static async void RenameAsync(string name, bool first, Action<NameReply> done)
+        {
+            NameReply reply;
+            try
+            {
+                var args = new Dictionary<string, object> { { "name", name ?? "" }, { "first", first } };
+                reply = await CloudCodeService.Instance.CallModuleEndpointAsync<NameReply>(Module, "ClaimName", args) ?? new NameReply { error = "offline" };
+                if (reply.ok)
+                {
+                    PlayerName = await AuthenticationService.Instance.UpdatePlayerNameAsync(reply.name);
+                    Name = reply;
+                    NameChanged?.Invoke();
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Ranks] rename: " + e.Message);
+                reply = new NameReply { error = "offline" };
+            }
+            done?.Invoke(reply);
+        }
+
+        /// <summary>Reads what the player may do with their name. After a reset by the team, the game shows the
+        /// default name at once and asks for a new one (<see cref="NameChanged"/>).</summary>
+        static async void LoadNameState()
+        {
+            try
+            {
+                var reply = await CloudCodeService.Instance.CallModuleEndpointAsync<NameReply>(Module, "NameState", new Dictionary<string, object>());
+                if (reply == null || !reply.ok) return;
+                if (reply.reset && !PlayerName.StartsWith(NameRules.Fallback + "#", StringComparison.Ordinal))
+                    PlayerName = await AuthenticationService.Instance.UpdatePlayerNameAsync(NameRules.Fallback);
+                Name = reply;
+                NameChanged?.Invoke();
+            }
+            catch (Exception e) { Debug.LogWarning("[Ranks] name state: " + e.Message); }
+        }
+
+        static async void ReportAsync(string playerId, string name, string board, Action<bool> done)
         {
             bool ok = false;
-            try { PlayerName = await AuthenticationService.Instance.UpdatePlayerNameAsync(name); ok = true; }
-            catch (Exception e) { Debug.LogWarning("[Ranks] rename: " + e.Message); }
+            try
+            {
+                var args = new Dictionary<string, object> { { "player", playerId }, { "name", name ?? "" }, { "board", board ?? "" } };
+                var reply = await CloudCodeService.Instance.CallModuleEndpointAsync<RankReply>(Module, "ReportName", args);
+                ok = reply != null && reply.ok;
+                if (reply != null && !reply.ok) Debug.LogWarning("[Ranks] report refused: " + reply.error);
+            }
+            catch (Exception e) { Debug.LogWarning("[Ranks] report: " + e.Message); }
             done?.Invoke(ok);
         }
 #endif
     }
 
-    /// <summary>Player names for the boards: letters, digits and _ only, at most 20, with a short list of words blocked.</summary>
+    /// <summary>The name rules of the game (Resources/NameRules.txt, the same file the server checks with).</summary>
     public static class NameFilter
     {
-        // anywhere in the name
-        static readonly string[] BlockedParts = { "fuck", "shit", "bitch", "cunt", "nigg", "porn" };
-        // only as a whole word (short Vietnamese words also sit inside harmless names)
-        static readonly string[] BlockedWords = { "dick", "fag", "sex", "dit", "lon", "cac", "buoi", "dm", "dmm", "vcl", "vl", "dcm", "clm", "cl" };
+        static NameRules _rules;
 
-        public static string Clean(string name)
+        public static NameRules Rules
         {
-            var sb = new System.Text.StringBuilder();
-            foreach (char c in (name ?? "").Trim())
+            get
             {
-                if (sb.Length >= 20) break;
-                if (char.IsLetterOrDigit(c) || c == '_') sb.Append(c);
-                else if (c == ' ' && sb.Length > 0 && sb[sb.Length - 1] != '_') sb.Append('_');
+                if (_rules == null)
+                {
+                    var file = Resources.Load<TextAsset>("NameRules");
+                    if (file == null) Debug.LogWarning("[Names] Resources/NameRules.txt is missing: names are not checked");
+                    _rules = NameRules.Parse(file != null ? file.text : "");
+                }
+                return _rules;
             }
-            string s = sb.ToString().Trim('_');
-            string folded = Fold(s);
-            foreach (var w in BlockedParts) if (folded.Contains(w)) return "Player";
-            foreach (var part in folded.Split('_'))
-                foreach (var w in BlockedWords) if (part == w) return "Player";
-            return s.Length == 0 ? "Player" : s;
         }
 
-        /// <summary>Lower case without Vietnamese marks, so "Đ" and "đ" read as "d".</summary>
-        static string Fold(string s)
-        {
-            var d = s.ToLowerInvariant().Replace('đ', 'd').Normalize(System.Text.NormalizationForm.FormD);
-            var sb = new System.Text.StringBuilder();
-            foreach (char c in d)
-                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark) sb.Append(c);
-            return sb.ToString();
-        }
+        public static string Clean(string name) => Rules.Clean(name);
+        public static NameVerdict Check(string name, out string clean) => Rules.Check(name, out clean);
     }
 }

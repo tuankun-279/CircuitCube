@@ -25,5 +25,7 @@ namespace CircuitCube.UI
         [Tooltip("All-time columns.")]
         public GameObject AllColumns;
         public TMP_Text AllName, AllExpert, AllMoves, AllTime;
+        [Tooltip("Long press on the row: report the name (not on the player's own row).")]
+        public LongPress Press;
     }
 }

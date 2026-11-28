@@ -103,6 +103,12 @@
       },
       "url": "https://package.openupm.com"
     },
+    "com.studio.player-tracking": {
+      "version": "file:com.studio.player-tracking",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.unity.2d.animation": {
       "version": "10.2.2",
       "depth": 1,

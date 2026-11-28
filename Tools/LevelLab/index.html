@@ -99,6 +99,7 @@ table.bt th{color:var(--muted);font-weight:600}
   <div class="seg" role="tablist" aria-label="Area">
     <button type="button" data-view="groups" class="on">Rules &amp; groups</button>
     <button type="button" data-view="auto">Auto levels</button>
+    <button type="button" data-view="players">Players</button>
   </div>
   <button class="btn primary" id="btnPublish" type="button" title="Send the saved rules, groups and released levels to the game now: commits content/ to GitHub, players download it on their next start (no new app build)">Publish to game</button>
 </div>
@@ -131,6 +132,24 @@ table.bt th{color:var(--muted);font-weight:600}
         <div class="panel"><h2>Difficulty and amount</h2><div class="c-form" id="aForm"></div></div>
         <div class="panel"><h2>Queue and releases</h2><div id="aQueue"></div></div>
         <div class="panel"><h2>Monthly report</h2><div id="aReport"><div class="empty">No report yet: the first one comes with the next monthly batch.</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="viewPlayers" hidden>
+  <div class="c-wrap">
+    <p class="note" style="margin:0">Real devices only: Google Play installs (build channel <b>play</b>). The Editor, development builds, test-lab robots and APKs copied from the PC are counted apart and never here. Today comes from the game servers (UGS <code>daily_players</code>); past days come from Firebase (BigQuery export), written here once a day by the players sync on the PC. Nothing on this page is sent to the game.</p>
+    <div class="c-cols">
+      <div class="stack">
+        <div class="panel"><h2>Real devices per day</h2><div id="pToday"></div><div id="pDaily"><div class="empty">No days yet: the first sync writes them.</div></div></div>
+        <div class="panel"><h2>Name reports</h2><div class="row" style="margin-bottom:8px"><div class="seg" id="pFilter"><button type="button" data-f="open" class="on">Open</button><button type="button" data-f="all">All</button></div></div><div id="pReports"><div class="empty">No reports.</div></div>
+          <p class="note"><b>Reset name</b> asks the next players sync to reset that player's name on the game servers: the player then sees the default name and picks a new one. <b>Keep</b> closes the report without a change.</p></div>
+      </div>
+      <div class="stack">
+        <div class="panel"><h2>Closed test</h2><div id="pClosed"><div class="empty">No closed-test numbers yet.</div></div>
+          <p class="note">Google Play asks for at least 12 testers opted in for 14 days in a row before production. Opt-ins are only in Play Console; this counts testers who opened the game (real devices).</p></div>
+        <div class="panel"><h2>Last sync</h2><div id="pSync" class="note">Never.</div></div>
       </div>
     </div>
   </div>
@@ -697,12 +716,53 @@ let pubRetrying=false;
 $("#btnPublish").onclick=()=>startPublish(false);
 setInterval(renderPublish,30000);
 
+/* ================= players: real devices, closed test, name reports ================= */
+// Written by Tools/LevelLab/players_sync.py through the players sync task (never by the game):
+//   players/today        {day, players, testers, at}        UGS daily_players (play) and daily_players_dev (tests)
+//   players/closedtest   {day, goal, days, testersToday, streak, streakDays, d1, d7, at}
+//   players/sync         {at, ok, note}
+//   players_daily/<day>  {day, players, newPlayers, d1, d7}  Firebase BigQuery, channel play only
+//   name_reports/<id>    {player, name, board, at, status: open | reset_requested | reset | kept}
+// This page only changes the status of a report (a request the sync carries out).
+let P_TODAY=null,P_CLOSED=null,P_SYNC=null,P_DAILY={},P_REPORTS={},pFilter="open";
+const fmtAt=t=>t?new Date(t).toLocaleString():"";
+function playersRender(){
+  const t=P_TODAY;
+  $("#pToday").innerHTML=t?`<div class="row" style="gap:18px;margin-bottom:8px"><div><div class="note" style="margin:0">Today (${esc(t.day||"")})</div><div style="font:600 28px var(--mono)">${t.players|0}</div><div class="note" style="margin:0">real devices</div></div><div><div class="note" style="margin:0">Test devices</div><div style="font:600 20px var(--mono);color:var(--muted)">${t.testers|0}</div><div class="note" style="margin:0">not counted</div></div></div>`:"";
+  const days=Object.values(P_DAILY).sort((a,b)=>String(b.day).localeCompare(String(a.day))).slice(0,60);
+  if(days.length){const mx=Math.max(1,...days.map(d=>d.players|0));
+    $("#pDaily").innerHTML=`<div class="btwrap" style="max-height:420px"><table class="bt"><thead><tr><th>Day</th><th>Real devices</th><th></th><th>New</th><th>D1 %</th><th>D7 %</th></tr></thead><tbody>${days.map(d=>`<tr><td>${esc(d.day)}</td><td>${d.players|0}</td><td style="width:40%"><div style="height:8px;border-radius:4px;background:var(--accent);width:${Math.round(100*(d.players|0)/mx)}%"></div></td><td>${d.newPlayers|0}</td><td>${d.d1==null?"–":d.d1}</td><td>${d.d7==null?"–":d.d7}</td></tr>`).join("")}</tbody></table></div>`}
+  const c=P_CLOSED;
+  $("#pClosed").innerHTML=c?`<div class="grid2"><div><div class="note" style="margin:0">Testers today</div><div style="font:600 22px var(--mono)">${c.testersToday|0}</div></div>
+    <div><div class="note" style="margin:0">Days in a row with ${c.goal||12}+ testers</div><div style="font:600 22px var(--mono);color:${(c.streakDays|0)>=14?"var(--ok)":"var(--fg)"}">${c.streakDays|0} / 14</div></div>
+    <div><div class="note" style="margin:0">D1 (came back next day)</div><div style="font:600 18px var(--mono)">${c.d1==null?"–":c.d1+" %"}</div></div>
+    <div><div class="note" style="margin:0">D7</div><div style="font:600 18px var(--mono)">${c.d7==null?"–":c.d7+" %"}</div></div></div>
+    <p class="note">Since ${esc(c.since||"")}: ${c.days|0} days, ${c.streak|0} testers active on 14+ days.</p>`:'<div class="empty">No closed-test numbers yet.</div>';
+  $("#pSync").textContent=P_SYNC?`${fmtAt(P_SYNC.at)} · ${P_SYNC.ok?"ok":"failed"}${P_SYNC.note?" · "+P_SYNC.note:""}`:"Never.";
+  const reps=Object.entries(P_REPORTS).map(([id,r])=>Object.assign({id},r)).filter(r=>pFilter==="all"||!r.status||r.status==="open").sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  // the same player reported by several people shows once, with the count
+  const by={};reps.forEach(r=>{(by[r.player]=by[r.player]||[]).push(r)});
+  $("#pReports").innerHTML=reps.length?`<div class="btwrap" style="max-height:520px"><table class="bt"><thead><tr><th>Name</th><th>Reports</th><th>Board</th><th>Last</th><th>Status</th><th></th></tr></thead><tbody>${Object.values(by).map(list=>{const r=list[0],st=r.status||"open";
+    return `<tr><td><b>${esc(r.name||"?")}</b><div class="note" style="margin:0;font-family:var(--mono)">${esc(String(r.player).slice(0,12))}…</div></td><td>${list.length}</td><td>${esc(r.board||"")}</td><td>${esc(fmtAt(r.at))}</td><td><span class="c-pill ${st==="open"?"warn":st==="reset"?"ok":""}">${esc(st.replace("_"," "))}</span></td>
+    <td>${st==="open"?`<button class="btn sm danger" type="button" data-rs="${esc(r.player)}">Reset name</button> <button class="btn sm" type="button" data-rk="${esc(r.player)}">Keep</button>`:""}</td></tr>`}).join("")}</tbody></table></div>`:'<div class="empty">No reports.</div>';
+}
+async function setReports(player,status){
+  if(!DB||!canWrite)return toast("Not saved: no write permission.");
+  const list=Object.entries(P_REPORTS).filter(([,r])=>r.player===player&&(!r.status||r.status==="open"));
+  try{for(const [id,r] of list)await DB.doc("name_reports/"+id).set(Object.assign({},r,{status,decidedAt:new Date().toISOString()}));
+    toast(status==="reset_requested"?"Reset requested: the next players sync resets this name.":"Report closed, name kept.")}catch(e){toast("Save failed: "+(e.message||e.code))}
+}
+$("#pReports").addEventListener("click",e=>{const r=e.target.closest("button[data-rs]"),k=e.target.closest("button[data-rk]");
+  if(r)setReports(r.dataset.rs,"reset_requested");else if(k)setReports(k.dataset.rk,"kept")});
+$("#pFilter").addEventListener("click",e=>{const b=e.target.closest("button[data-f]");if(!b)return;pFilter=b.dataset.f;
+  document.querySelectorAll("#pFilter button").forEach(x=>x.classList.toggle("on",x===b));playersRender()});
+
 /* ================= views ================= */
-const VIEWS=["groups","auto"];
+const VIEWS=["groups","auto","players"];
 function showView(v){if(!VIEWS.includes(v))v="groups";
-  $("#viewGroups").hidden=v!=="groups";$("#viewAuto").hidden=v!=="auto";
+  $("#viewGroups").hidden=v!=="groups";$("#viewAuto").hidden=v!=="auto";$("#viewPlayers").hidden=v!=="players";
   document.querySelectorAll(".top .seg button").forEach(b=>b.classList.toggle("on",b.dataset.view===v));
-  if(v==="groups")cfgRender();if(v==="auto")autoRender()}
+  if(v==="groups")cfgRender();if(v==="auto")autoRender();if(v==="players")playersRender()}
 document.querySelectorAll(".top .seg button").forEach(b=>b.onclick=()=>{location.hash=b.dataset.view});
 addEventListener("hashchange",()=>showView(location.hash.slice(1)));
 function onData(){cfgOnData();if(!aDirty())aDraft=null;if(!$("#viewAuto").hidden)autoRender()}
@@ -718,6 +778,12 @@ async function connect(){
   db.doc("autofill/config").onSnapshot(s=>{AUTO=s.exists?s.data():null;onData()},()=>{});
   db.doc("autofill/report").onSnapshot(s=>{REPORT=s.exists?s.data():null;renderReport()},()=>{});
   db.doc("autofill/queue").onSnapshot(s=>{QUEUE=s.exists?s.data():null;if(!$("#viewAuto").hidden)renderQueue()},()=>{});
+  const pr=()=>{if(!$("#viewPlayers").hidden)playersRender()};
+  db.doc("players/today").onSnapshot(s=>{P_TODAY=s.exists?s.data():null;pr()},()=>{});
+  db.doc("players/closedtest").onSnapshot(s=>{P_CLOSED=s.exists?s.data():null;pr()},()=>{});
+  db.doc("players/sync").onSnapshot(s=>{P_SYNC=s.exists?s.data():null;pr()},()=>{});
+  db.collection("players_daily").onSnapshot(q=>{P_DAILY={};q.docs.forEach(d=>P_DAILY[d.id]=d.data());pr()},()=>{});
+  db.collection("name_reports").onSnapshot(q=>{P_REPORTS={};q.docs.forEach(d=>P_REPORTS[d.id]=d.data());pr()},()=>{});
   db.doc("meta/manifest").onSnapshot(s=>{got=true;clearTimeout(timer);
     if(!s.exists){MANIFEST=null;setStatus("The data store is empty.");return}
     MANIFEST=s.data();status();onData()},e=>setStatus("Lost the data connection ("+e.code+")."));

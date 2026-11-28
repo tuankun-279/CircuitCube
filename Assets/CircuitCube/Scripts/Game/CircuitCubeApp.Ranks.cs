@@ -102,6 +102,7 @@ namespace CircuitCube.Game
                 n.NotNow.onClick.AddListener(CloseNameSheet);
                 n.Save.onClick.AddListener(SaveName);
             }
+            WireNames();
         }
 
         void WireDock(ShapeDock dock, Action<int> pick)
@@ -235,6 +236,7 @@ namespace CircuitCube.Game
             v.Rank.text = rank <= 0 ? "–" : pinned ? "#" + rank : rank.ToString();
             string name = row != null ? NameWithTag(row.Name, me) : NameWithTag(Ranks.PlayerName.Length > 0 ? Ranks.PlayerName : RanksDebug.On ? RanksDebug.MyName : Loc.T("Player"), true);
             if (allTime) v.AllName.text = name; else v.WeekName.text = name;
+            if (!pinned) KeepRow(v, row, me);
             v.WeekColumns.SetActive(!allTime);
             v.AllColumns.SetActive(allTime);
             if (allTime)
@@ -317,6 +319,7 @@ namespace CircuitCube.Game
             string gid = GameData.GroupId(g);
             string board = week ? (_boardTab == 0 ? RankScore.WeeklyTotalBoard(gid) : RankScore.WeeklyBoard(gid, _boardTab)) : RankScore.ShapeBoard(gid);
             int token = ++_boardToken;
+            _reportBoard = board;
             Page(board, g, page =>
             {
                 if (token != _boardToken || UI.Boards == null || !UI.Boards.gameObject.activeSelf) return;
@@ -738,18 +741,68 @@ namespace CircuitCube.Game
 
         // ---------------- Name ----------------
 
-        void OpenNameSheet()
+        public const string TermsUrl = "https://github.com/tuankun-279/CircuitCube/blob/main/TERMS.md";
+        public const string DeleteDataUrl = "https://github.com/tuankun-279/CircuitCube/blob/main/PRIVACY.md#delete-your-data";
+
+        bool _nameFirst;          // the sheet after the tutorial (free name, first = true on the server)
+        Action _afterName;        // what comes after the sheet (the first level after the tutorial)
+        bool _nameSending;
+        BoardRow _reportRow;
+        string _reportBoard = "";
+        readonly Dictionary<BoardRowView, BoardRow> _rowData = new Dictionary<BoardRowView, BoardRow>();
+
+        void WireNames()
+        {
+            var n = UI.NameSheet;
+            if (n != null && n.Terms != null) n.Terms.onClick.AddListener(() => Application.OpenURL(TermsUrl));
+            var st = UI.Settings;
+            if (st.Rename != null) st.Rename.onClick.AddListener(() => OpenNameSheet(false));
+            if (st.Terms != null) st.Terms.onClick.AddListener(() => Application.OpenURL(TermsUrl));
+            if (st.DeleteData != null) st.DeleteData.onClick.AddListener(() => Application.OpenURL(DeleteDataUrl));
+            var r = UI.Report;
+            if (r != null)
+            {
+                r.Cancel.onClick.AddListener(CloseReport);
+                r.Report.onClick.AddListener(SendReport);
+            }
+            Ranks.NameChanged += OnNameState;
+            // players from before 1.5.0 already have a name: they are not asked after a tutorial they finished long ago
+            if (CubeSave.NameAsk == 0 && CubeSave.TutorialStep >= FtueDone) CubeSave.NameAsk = 2;
+        }
+
+        /// <summary>After the tutorial of a new player: opens the name sheet once and runs <paramref name="then"/> when it closes.</summary>
+        bool AskNameAfterTutorial(Action then)
+        {
+            if (UI.NameSheet == null || CubeSave.NameAsk != 0 || !Ranks.Available) return false;
+            if (CubeSave.Beaten(0) > 0) { CubeSave.NameAsk = 2; return false; }   // a player from before 1.5.0 replaying the tutorial
+            CubeSave.NameAsk = 1;
+            _afterName = then;
+            OpenNameSheet(true);
+            GameAnalytics.Log("name_sheet", ("from", "tutorial"));
+            return true;
+        }
+
+        void OpenNameSheet() => OpenNameSheet(false);
+
+        void OpenNameSheet(bool first)
         {
             var n = UI.NameSheet;
             if (n == null) return;
+            if (!first && !RanksDebug.On && Ranks.Name != null && Ranks.Name.renamesLeft <= 0)
+            {
+                ShowTip(Loc.T("No renames left"), Loc.T("You have used your free rename."), Loc.T("OK"), null);
+                return;
+            }
+            _nameFirst = first;
             string full = Ranks.PlayerName.Length > 0 ? Ranks.PlayerName : RanksDebug.On ? RanksDebug.MyName : "";
             RankText.SplitTag(full, out var name, out var tag);
+            if (first || name == NameRules.Fallback) name = "";
             string note = CloudSave.SignedIn || RanksDebug.On
                 ? Loc.T("Signed in with Google Play Games. Your rank follows you to a new phone.")
                 : Loc.T("Not signed in to Google Play Games: your name and rank stay on this phone.");
             GameAudio.Play(Sfx.PanelOpen);
             UI.Dim.SetActive(true);
-            n.Open(name, tag, note);
+            n.Open(name, tag, note, Loc.T(first ? "Your name on the boards" : "Rename"));
             n.transform.SetAsLastSibling();
         }
 
@@ -757,20 +810,149 @@ namespace CircuitCube.Game
         {
             if (UI.NameSheet == null || !UI.NameSheet.gameObject.activeSelf) return;
             UI.NameSheet.gameObject.SetActive(false);
-            if (UI.Boards == null || !UI.Boards.gameObject.activeSelf) UI.Dim.SetActive(false);
+            if ((UI.Boards == null || !UI.Boards.gameObject.activeSelf) && !UI.Settings.gameObject.activeSelf) UI.Dim.SetActive(false);
+            var then = _afterName; _afterName = null;
+            then?.Invoke();
         }
 
         void SaveName()
         {
-            string name = NameFilter.Clean(UI.NameSheet.Input.text);
-            CloseNameSheet();
-            if (RanksDebug.On) return;
-            Ranks.Rename(name, ok =>
+            var n = UI.NameSheet;
+            var verdict = NameFilter.Check(n.Input.text, out var clean);
+            if (verdict != NameVerdict.Ok) { n.ShowError(NameError(verdict == NameVerdict.Reserved ? "reserved" : verdict == NameVerdict.Empty ? "empty" : "name")); return; }
+            if (RanksDebug.On) { CloseNameSheet(); return; }
+            if (!Ranks.SignedIn)
+            {
+                if (_nameFirst)
+                {
+                    // offline right after the tutorial: the name goes up as soon as the boards are reachable
+                    CubeSave.PendingName = clean;
+                    CloseNameSheet();
+                    return;
+                }
+                n.ShowError(NameError("offline"));
+                return;
+            }
+            if (_nameSending) return;
+            _nameSending = true;
+            n.Save.interactable = false;
+            bool first = _nameFirst;
+            Ranks.Rename(clean, first, reply =>
+            {
+                _nameSending = false;
+                if (this == null) return;
+                if (n != null) n.Save.interactable = true;
+                GameAnalytics.Log("name_set", ("first", first), ("ok", reply.ok), ("error", reply.error ?? ""));
+                if (!reply.ok) { n.ShowError(NameError(reply.error)); return; }
+                _pages.Clear();
+                CloseNameSheet();
+                if (UI.Boards != null && UI.Boards.gameObject.activeSelf) FillBoards();
+                if (UI.Settings.gameObject.activeSelf) FillSettingsName();
+            });
+        }
+
+        static string NameError(string code)
+        {
+            switch (code)
+            {
+                case "reserved": return Loc.T("That name looks like the game's team. Try another.");
+                case "empty": return Loc.T("Type a name first.");
+                case "no_renames": return Loc.T("You have used your free rename.");
+                case "offline": return Loc.T("Can't reach the boards right now. Try again when you're back online.");
+                default: return Loc.T("This name isn't allowed. Try another.");
+            }
+        }
+
+        /// <summary>Sends a name typed offline after the tutorial once the boards are reachable.</summary>
+        void TickNames()
+        {
+            if (_nameSending || !Ranks.SignedIn || Ranks.Name == null) return;
+            string pending = CubeSave.PendingName;
+            if (pending.Length == 0) return;
+            _nameSending = true;
+            Ranks.Rename(pending, true, reply =>
+            {
+                _nameSending = false;
+                // sent, or refused for good: either way it is not sent again (offline keeps it for later)
+                if (reply.ok || reply.error != "offline") CubeSave.PendingName = "";
+            });
+        }
+
+        /// <summary>The server's answer about the name arrived: a reset by the team asks for a new name.</summary>
+        void OnNameState()
+        {
+            if (this == null) return;
+            if (UI.Settings.gameObject.activeSelf) FillSettingsName();
+            var s = Ranks.Name;
+            if (s != null && s.reset && _state == State.Home && !CardOpen && UI.NameSheet != null)
+            {
+                ShowTip(Loc.T("Choose a new name"), Loc.T("Your name was reset after a report. Pick a new one for the boards."), Loc.T("OK"), () => OpenNameSheet(false));
+            }
+        }
+
+        void FillSettingsName()
+        {
+            var st = UI.Settings;
+            if (st.NameValue == null) return;
+            bool on = Ranks.Available && (Ranks.SignedIn || RanksDebug.On);
+            string full = Ranks.PlayerName.Length > 0 ? Ranks.PlayerName : RanksDebug.On ? RanksDebug.MyName : Loc.T("Player");
+            RankText.SplitTag(full, out var name, out var tag);
+            st.NameValue.text = name + (tag.Length > 0 ? " <color=" + MutedHex() + ">" + tag + "</color>" : "");
+            int left = RanksDebug.On ? 1 : Ranks.Name != null ? Ranks.Name.renamesLeft : 0;
+            st.RenameNote.text = !on ? Loc.T("Offline")
+                : Ranks.Name == null && !RanksDebug.On ? Loc.T("Loading...")
+                : left == 1 ? Loc.T("1 free rename left") : left > 1 ? Loc.F("{0} free renames left", left) : Loc.T("No renames left");
+            st.Rename.interactable = on && (RanksDebug.On || (Ranks.Name != null && left > 0));
+        }
+
+        string MutedHex()
+        {
+            ThemeHex();
+            return _mutedHex;
+        }
+
+        // ---------------- Report a name ----------------
+
+        /// <summary>Hooks the long press of a board row once and keeps the row it shows now.</summary>
+        void KeepRow(BoardRowView v, BoardRow row, bool me)
+        {
+            if (v.Press == null) return;
+            if (!_rowData.ContainsKey(v))
+                v.Press.Pressed += () => { if (_rowData.TryGetValue(v, out var r) && r != null) OpenReport(r); };
+            _rowData[v] = me || row == null || string.IsNullOrEmpty(row.PlayerId) ? null : row;
+        }
+
+        void OpenReport(BoardRow row)
+        {
+            var r = UI.Report;
+            if (r == null || row == null) return;
+            _reportRow = row;
+            r.PlayerName.text = row.Name ?? "";
+            Haptics.Play(Haptics.Kind.Turn);
+            GameAudio.Play(Sfx.PanelOpen);
+            r.gameObject.SetActive(true);
+            r.transform.SetAsLastSibling();
+        }
+
+        void CloseReport()
+        {
+            if (UI.Report == null || !UI.Report.gameObject.activeSelf) return;
+            UI.Report.gameObject.SetActive(false);
+            _reportRow = null;
+        }
+
+        void SendReport()
+        {
+            var row = _reportRow;
+            CloseReport();
+            if (row == null) return;
+            GameAnalytics.Log("name_report", ("board", _reportBoard));
+            if (RanksDebug.On) { ShowTip(Loc.T("Thanks for the report"), Loc.T("Our team will check this name."), Loc.T("OK"), null); return; }
+            Ranks.ReportName(row.PlayerId, row.Name, _reportBoard, ok =>
             {
                 if (this == null) return;
-                _pages.Clear();
-                if (UI.Boards != null && UI.Boards.gameObject.activeSelf) FillBoards();
-                if (!ok) ShowTip(Loc.T("Name not saved"), Loc.T("Can't reach the boards right now. Try again when you're back online."), Loc.T("OK"), null);
+                if (ok) ShowTip(Loc.T("Thanks for the report"), Loc.T("Our team will check this name."), Loc.T("OK"), null);
+                else ShowTip(Loc.T("Report not sent"), Loc.T("Can't reach the boards right now. Try again when you're back online."), Loc.T("OK"), null);
             });
         }
 

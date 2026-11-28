@@ -354,6 +354,7 @@ namespace CircuitCube.Game
             if (UI.Boards != null) UI.Boards.gameObject.SetActive(false);
             if (UI.WeeklyResult != null) UI.WeeklyResult.gameObject.SetActive(false);
             if (UI.NameSheet != null) UI.NameSheet.gameObject.SetActive(false);
+            if (UI.Report != null) UI.Report.gameObject.SetActive(false);
             UI.Dim.SetActive(false);
             ResetCardRise();
             if (UI.Fx != null) UI.Fx.HideAll();
@@ -364,13 +365,15 @@ namespace CircuitCube.Game
         bool CardOpen => UI.Result.gameObject.activeSelf || UI.Tip.gameObject.activeSelf
                          || UI.Unlock.gameObject.activeSelf || UI.Settings.gameObject.activeSelf
                          || (UI.Boards != null && UI.Boards.gameObject.activeSelf) || (UI.WeeklyResult != null && UI.WeeklyResult.gameObject.activeSelf)
-                         || (UI.NameSheet != null && UI.NameSheet.gameObject.activeSelf);
+                         || (UI.NameSheet != null && UI.NameSheet.gameObject.activeSelf)
+                         || (UI.Report != null && UI.Report.gameObject.activeSelf);
 
         void OpenSettings(bool paused)
         {
             GameAudio.Play(Sfx.PanelOpen);
             UI.Dim.SetActive(true);
             UI.Settings.Open(paused);
+            FillSettingsName();
         }
 
         void CloseSettings()
@@ -583,6 +586,7 @@ namespace CircuitCube.Game
         {
             if (UI.Settings.gameObject.activeSelf) { CloseSettings(); return; }
             if (UI.Tip.gameObject.activeSelf) { CloseTip(); return; }
+            if (UI.Report != null && UI.Report.gameObject.activeSelf) { CloseReport(); return; }
             if (UI.NameSheet != null && UI.NameSheet.gameObject.activeSelf) { CloseNameSheet(); return; }
             if (UI.Boards != null && UI.Boards.gameObject.activeSelf) { CloseBoards(); return; }
             if (UI.WeeklyResult != null && UI.WeeklyResult.gameObject.activeSelf) { ShowWeekly(_weekGroup); return; }
@@ -1391,6 +1395,7 @@ namespace CircuitCube.Game
             AppUpdates.Tick();
             CloudSave.Tick();
             Ranks.Tick();
+            TickNames();
             TickContent();
             TickMascot();
             _tw.Tick(dt);

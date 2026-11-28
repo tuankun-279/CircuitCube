@@ -1,0 +1,9 @@
+{
+  "ugsProject": "<UGS_PROJECT_ID>",
+  "ugsEnvironmentId": "<UGS_ENV_ID_PRODUCTION>",
+  "module": "CircuitCubeRanks",
+  "gcpProject": "<GCP_PROJECT_ID>",
+  "dataset": "<BIGQUERY_DATASET>",
+  "since": "<CLOSED_TEST_FIRST_DAY>",
+  "goal": 12
+}

@@ -899,6 +899,9 @@ GameObject:
   - component: {fileID: 7955265005340338816}
   - component: {fileID: 4472853740800327280}
   - component: {fileID: 2894216992703008938}
+  - component: {fileID: 8226650289480654153}
+  - component: {fileID: 8401867580997110370}
+  - component: {fileID: 7083441347610396917}
   m_Layer: 0
   m_Name: BoardRow
   m_TagString: Untagged
@@ -977,6 +980,59 @@ MonoBehaviour:
   AllExpert: {fileID: 6407374016543067317}
   AllMoves: {fileID: 8468534611208303177}
   AllTime: {fileID: 4406926070938088692}
+  Press: {fileID: 7083441347610396917}
+--- !u!222 &8226650289480654153
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5681915407973076970}
+  m_CullTransparentMesh: 1
+--- !u!114 &8401867580997110370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5681915407973076970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7083441347610396917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5681915407973076970}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a7b387c0791c0429a434082f20b10c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Seconds: 0.55
+  Slop: 24
 --- !u!1 &5734224643331824710
 GameObject:
   m_ObjectHideFlags: 0

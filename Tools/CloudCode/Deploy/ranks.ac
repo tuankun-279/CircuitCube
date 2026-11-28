@@ -10,6 +10,17 @@
       "Principal": "Player",
       "Resource": "urn:ugs:leaderboards:/v1/projects/*/leaderboards/*/scores/players/*",
       "Version": "1.0.0"
+    },
+    {
+      "Sid": "PlayersCannotReadNameReports",
+      "Action": [
+        "Read",
+        "Write"
+      ],
+      "Effect": "Deny",
+      "Principal": "Player",
+      "Resource": "urn:ugs:cloud-save:/v1/data/projects/*/custom/name_reports/*",
+      "Version": "1.0.0"
     }
   ]
 }

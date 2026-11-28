@@ -1,0 +1,68 @@
+# Player names on the leaderboards: words a name may not use.
+# Read by the game (Resources/NameRules) and compiled into the Cloud Code module (Tools/CloudCode), so both check
+# names the same way. Lower case, no Vietnamese marks (the check folds "Đ" to "d" and drops accents first).
+# One word per line; "#" starts a comment. Add a language by adding its words under the sections below.
+#
+# [parts]    blocked anywhere in the name, even inside a longer word
+# [words]    blocked only as a whole word between "_" (short words that also sit inside harmless names)
+# [reserved] names that look like the team or the game, checked with "_" removed
+
+[parts]
+# English
+fuck
+shit
+bitch
+cunt
+nigg
+porn
+whore
+pussy
+asshole
+# Vietnamese
+ditme
+dit_me
+ditconme
+dcmm
+loz
+cailon
+caidit
+dmvl
+occho
+oc_cho
+
+[words]
+# English
+dick
+cock
+fag
+sex
+slut
+nazi
+hitler
+rape
+# Vietnamese
+dit
+lon
+cac
+buoi
+dm
+dmm
+dcm
+vcl
+vl
+clm
+cl
+deo
+cmm
+cc
+
+[reserved]
+admin
+administrator
+moderator
+circuitcube
+official
+developer
+gamemaster
+support
+system

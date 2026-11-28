@@ -65,3 +65,10 @@ Tools/CloudCode/Build/
 play-upload*.json
 *service-account*.json
 __pycache__/
+
+# Firebase config of the Android app: kept on the PC only (download it again from Firebase > Project settings)
+/Assets/google-services.json
+/Assets/google-services.json.meta
+
+# players sync settings of this PC (ids, closed-test start)
+/Tools/LevelLab/players_sync.local.json

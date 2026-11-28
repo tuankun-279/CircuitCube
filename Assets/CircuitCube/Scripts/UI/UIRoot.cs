@@ -27,5 +27,7 @@ namespace CircuitCube.UI
         public LeaderboardCard Boards;
         public WeeklyResultCard WeeklyResult;
         public NameSheet NameSheet;
+        [Tooltip("1.5.0: long press on a board row opens this to report the name.")]
+        public ReportSheet Report;
     }
 }

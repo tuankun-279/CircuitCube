@@ -3,6 +3,7 @@
     "rootNamespace": "CircuitCube.Tests",
     "references": [
         "CircuitCube",
+        "Studio.PlayerTracking",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

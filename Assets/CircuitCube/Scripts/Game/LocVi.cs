@@ -256,6 +256,27 @@ namespace CircuitCube.Game
             { "Not signed in to Google Play Games: your name and rank stay on this phone.", "Chưa đăng nhập Google Play Games: tên và hạng chỉ lưu trên điện thoại này." },
             { "Name not saved", "Chưa lưu được tên" },
             { "Can't reach the boards right now. Try again when you're back online.", "Chưa kết nối được bảng xếp hạng. Hãy thử lại khi có mạng." },
+            // 1.5.0 player names, reports, terms
+            { "Rename", "Đổi tên" },
+            { "No renames left", "Hết lượt đổi tên" },
+            { "1 free rename left", "Còn 1 lượt đổi tên miễn phí" },
+            { "{0} free renames left", "Còn {0} lượt đổi tên miễn phí" },
+            { "You have used your free rename.", "Bạn đã dùng lượt đổi tên miễn phí." },
+            { "That name looks like the game's team. Try another.", "Tên này giống tên đội ngũ của game. Hãy chọn tên khác." },
+            { "Type a name first.", "Hãy nhập tên trước." },
+            { "This name isn't allowed. Try another.", "Tên này không được dùng. Hãy chọn tên khác." },
+            { "Choose a new name", "Chọn tên mới" },
+            { "Your name was reset after a report. Pick a new one for the boards.", "Tên của bạn đã bị đặt lại sau một báo cáo. Hãy chọn tên mới cho bảng xếp hạng." },
+            { "By continuing you agree to the <u>Terms</u>", "Khi tiếp tục, bạn đồng ý với <u>Điều khoản</u>" },
+            { "Terms", "Điều khoản" },
+            { "Delete my data", "Xóa dữ liệu của tôi" },
+            { "Report this name?", "Báo cáo tên này?" },
+            { "Our team checks every report. A name that breaks the Terms is reset.", "Đội ngũ của game xem mọi báo cáo. Tên vi phạm Điều khoản sẽ bị đặt lại." },
+            { "Report", "Báo cáo" },
+            { "Cancel", "Hủy" },
+            { "Thanks for the report", "Cảm ơn bạn đã báo cáo" },
+            { "Our team will check this name.", "Đội ngũ của game sẽ xem tên này." },
+            { "Report not sent", "Chưa gửi được báo cáo" },
         };
     }
 }

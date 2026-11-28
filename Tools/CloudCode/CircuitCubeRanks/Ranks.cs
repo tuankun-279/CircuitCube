@@ -132,7 +132,7 @@ namespace CircuitCubeRanks
     /// Endpoints the game calls with CallModuleEndpointAsync("CircuitCubeRanks", ...). Players cannot write scores
     /// themselves (Deploy/ranks.ac denies it); only these functions post, with the service token.
     /// </summary>
-    public class Ranks
+    public partial class Ranks
     {
         const int MaxTaps = 5000;
         /// <summary>
@@ -236,8 +236,8 @@ namespace CircuitCubeRanks
         }
 
         /// <summary>
-        /// Counts the player once on today's board of unique players (Deploy/daily_players.lb, reset every day at
-        /// 00:00 Asia/Saigon). Called once per app launch after sign-in. Answers how many players are on it so far.
+        /// The check-in of builds before 1.5.0, which send no channel. They were all store installs, so they are
+        /// counted on today's board of unique players (Deploy/daily_players.lb, reset every day at 00:00 Asia/Saigon).
         /// </summary>
         [CloudCodeFunction("CheckIn")]
         public async Task<RankReply> CheckIn(IExecutionContext ctx)
