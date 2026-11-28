@@ -32,6 +32,6 @@ FEATURES
 • Leaderboards for every shape: collect Expert levels and see where you rank among players everywhere.
 • Stuck? Use a hint, or undo a move.
 • Dark and light themes, relaxing music and soft sounds.
-• Play offline. New level packs arrive automatically.
+• Play offline once your levels are downloaded. New level packs arrive automatically.
 
 Turn the tiles. Light every lamp.
