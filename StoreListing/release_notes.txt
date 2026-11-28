@@ -1,12 +1,18 @@
 Release notes for Play Console (paste each block into its language; max 500 characters each).
-1.4.1 (version code 8), since 1.4.0 (7).
+1.5.0 (version code 10), since 1.4.2 (9).
 
 <en-US>
-• Fixed: players signed in to Google Play Games could not reach the leaderboards or post scores.
-• Weekly Challenge: the clock keeps running when you restart, so solve it right the first time.
+• Pick your name for the leaderboards after the tutorial. Players from earlier versions keep their name and can rename once for free in Settings.
+• Names are checked: rude names and names that look like the game's team are not allowed.
+• Long-press a name on a leaderboard to report it. The team checks every report.
+• Settings now links to the Terms and to delete your data.
+• Fixed: some labels (Shapes, Progress) could stay in English in Vietnamese.
 </en-US>
 
 <vi-VN>
-• Sửa lỗi: người chơi đã đăng nhập Google Play Games không vào được bảng xếp hạng và không gửi được điểm.
-• Thử thách tuần: đồng hồ chạy tiếp khi chơi lại, hãy giải đúng ngay lần đầu.
+• Chọn tên của bạn cho bảng xếp hạng sau phần hướng dẫn. Người chơi từ phiên bản cũ giữ nguyên tên và được đổi tên miễn phí 1 lần trong Cài đặt.
+• Tên được kiểm tra: tên thô tục hoặc giống tên đội ngũ trò chơi sẽ không được chấp nhận.
+• Nhấn giữ một tên trên bảng xếp hạng để báo cáo; đội ngũ xem xét mọi báo cáo.
+• Cài đặt có liên kết tới Điều khoản và mục Xóa dữ liệu của tôi.
+• Sửa lỗi: một số nhãn (Khối, Tiến độ) vẫn hiện tiếng Anh khi chơi bằng tiếng Việt.
 </vi-VN>

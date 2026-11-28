@@ -1,0 +1,730 @@
+<title>Circuit Cube Level Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0F5; --panel:#FFFFFF; --inset:#F3F5F9; --line:#D7DDE9; --fg:#18203A; --muted:#626C88;
+  --accent:#1E9AAA; --accent-ink:#FFFFFF; --accent-soft:#DCF1F3;
+  --ok:#138A5C; --warn:#B76E00; --bad:#C2334B; --ok-soft:#DDF3EA; --warn-soft:#FBEFD9; --bad-soft:#F9E1E5;
+  --stage:#0B0E17;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A0D15; --panel:#131826; --inset:#0F1320; --line:#262E46; --fg:#E3E8F5; --muted:#8A93AD;
+  --accent:#46B8C6; --accent-ink:#071418; --accent-soft:#15313A; --ok:#3DC99A; --warn:#E8A23A; --bad:#FF6F86; --ok-soft:#10291F; --warn-soft:#2E2210; --bad-soft:#341620; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0A0D15; --panel:#131826; --inset:#0F1320; --line:#262E46; --fg:#E3E8F5; --muted:#8A93AD;
+  --accent:#46B8C6; --accent-ink:#071418; --accent-soft:#15313A; --ok:#3DC99A; --warn:#E8A23A; --bad:#FF6F86; --ok-soft:#10291F; --warn-soft:#2E2210; --bad-soft:#341620; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 var(--sans);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 28px}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;max-width:1500px;margin:0 auto 12px}
+.top h1{margin:0;font-size:19px;font-weight:700}
+.top .sp{flex:1}
+.dbs{font-size:12.5px;color:var(--muted)}
+.dbs b{color:var(--fg);font-weight:600}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;min-width:0}
+.panel h2{margin:0 0 8px;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.panel h3{margin:12px 0 6px;font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.stack{display:flex;flex-direction:column;gap:12px;min-width:0}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+input[type=text],input[type=number],select{background:var(--inset);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:13px var(--sans);min-width:0;width:100%}
+input[type=range]{accent-color:var(--accent);width:100%}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--fg);font:500 13px var(--sans);padding:7px 11px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.sm{padding:4px 8px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--panel);color:var(--muted);font:500 13px var(--sans);padding:7px 12px;cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.2)}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:13px;z-index:20;max-width:min(92vw,560px)}
+.note{font-size:12px;color:var(--muted);margin:6px 0 0}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+/* config views (groups & rules, checks) */
+.c-wrap{max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.c-cols{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:12px;align-items:start}
+@media (max-width:1000px){.c-cols{grid-template-columns:minmax(0,1fr)}}
+.c-banner{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;border-radius:10px;background:var(--warn-soft);color:var(--warn);font-weight:500}
+.c-banner .grow{margin-right:auto}
+.c-card{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+.c-card.off{background:var(--inset)}
+.c-ord{display:flex;flex-direction:column;align-items:center;gap:2px}
+.c-ord b{font:600 17px var(--mono);color:var(--muted)}
+.c-ord button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:6px}
+.c-ord button:hover:not(:disabled){background:var(--inset);color:var(--fg)}
+.c-ord button:disabled{opacity:.3;cursor:default}
+.c-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px 12px;min-width:0}
+.c-fields .wide{grid-column:1/-1}
+.c-title{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.c-title .gid{font:600 15px var(--mono)}
+.c-pill{display:inline-flex;align-items:center;font:500 11.5px var(--mono);padding:2px 8px;border-radius:999px;background:var(--inset);border:1px solid var(--line);color:var(--muted)}
+.c-pill.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.c-pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.c-pill.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.c-form{display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px 10px;align-items:center}
+.c-form label{font-size:12.5px;color:var(--muted)}
+.c-form input{max-width:110px}
+.c-form .c-help{font-size:11.5px;color:var(--muted);grid-column:2}
+table.c-score{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:12.5px}
+table.c-score th,table.c-score td{white-space:nowrap;padding:5px 6px;border-bottom:1px solid var(--line);text-align:center}
+table.c-score td:first-child,table.c-score th:first-child{text-align:left;color:var(--muted)}
+.c-pts{font:600 13px var(--mono)} .c-pts.top{color:var(--ok)}
+.c-modal{position:fixed;inset:0;z-index:40;background:rgba(10,13,21,.55);display:grid;place-items:center;padding:16px}
+.c-modal .panel{width:min(520px,100%);max-height:calc(100% - 32px);overflow:auto;display:flex;flex-direction:column;gap:10px}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.bsrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
+.bsrow .bp{display:flex;gap:4px}
+.bsrow .bp input{width:52px;padding:5px 6px}
+.bsrow button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px}
+.top .seg button{padding:6px 12px}
+table.bt{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+table.bt th,table.bt td{padding:4px 5px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+table.bt th{color:var(--muted);font-weight:600}
+.btwrap{max-height:280px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:9px}
+.empty{border:1px dashed var(--line);border-radius:12px;padding:14px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+<div class="top">
+  <h1>Circuit Cube · Level Lab</h1>
+  <span class="dbs" id="dbStatus">Connecting to data…</span>
+  <span class="sp"></span>
+  <div class="seg" role="tablist" aria-label="Area">
+    <button type="button" data-view="groups" class="on">Rules &amp; groups</button>
+    <button type="button" data-view="auto">Auto levels</button>
+  </div>
+  <button class="btn primary" id="btnPublish" type="button" title="Send the saved rules, groups and released levels to the game now: commits content/ to GitHub, players download it on their next start (no new app build)">Publish to game</button>
+</div>
+<div class="top" style="margin-top:-6px"><span class="dbs" id="pubStatus"></span></div>
+
+<section id="viewGroups">
+  <div class="c-wrap">
+    <p class="note" style="margin:0">Everything here reaches players over the network on their next start, with no new app build: saving rules or groups publishes to the game by itself (a failed publish is retried once). <b>Publish to game</b> sends everything again by hand.</p>
+    <div id="cGroupsDirty" class="c-banner" hidden><span class="grow">Unsaved group changes.</span><button class="btn" type="button" id="cGroupsRevert">Discard changes</button><button class="btn primary" type="button" id="cGroupsSave">Save groups</button></div>
+    <div class="c-cols">
+      <div class="stack" id="cGroupCards"></div>
+      <div class="stack">
+        <div class="panel"><h2>Game rules</h2><div class="c-form" id="cRulesForm"></div><div class="row" style="margin-top:10px"><button class="btn primary" type="button" id="cRulesSave" disabled>Save rules</button></div></div>
+        <div class="panel"><h2>Points under the current rules</h2><table class="c-score" id="cScore"></table><p class="note">The top row with 0 hints is Expert when no undo was used either. Wasted moves = moves past the fewest taps to the player's own finished board. Stars shown = points ÷ 2.</p></div>
+        <div class="panel"><h2>Add group</h2><div class="grid2"><label class="f" for="cNgId">Id<input id="cNgId" type="text" placeholder="octa" autocomplete="off"></label><label class="f" for="cNgName">Name<input id="cNgName" type="text" placeholder="Octahedron" autocomplete="off"></label></div>
+          <div class="row" style="margin-top:8px"><button class="btn" type="button" id="cAddGroup">Add group (hidden)</button></div>
+          <p class="note">A new group starts hidden. Give it shapes under Auto levels, wait for (or run) a monthly batch, then enable it here.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="viewAuto" hidden>
+  <div class="c-wrap">
+    <p class="note" style="margin:0">Levels are made by AI only. On day 1 of each month (08:56 Vietnam time) a scheduled task generates each enabled group's new levels and its weekly challenge sets from the settings below, checks and play-tests every one, and queues them. Every Thursday at 07:06 a share of the queue is released and published, so players get new levels each week without an app update.</p>
+    <div id="aDirty" class="c-banner" hidden><span class="grow">Unsaved auto-level settings.</span><button class="btn" type="button" id="aRevert">Discard changes</button><button class="btn primary" type="button" id="aSave">Save settings</button></div>
+    <div class="c-cols">
+      <div class="stack" id="aGroupCards"></div>
+      <div class="stack">
+        <div class="panel"><h2>Difficulty and amount</h2><div class="c-form" id="aForm"></div></div>
+        <div class="panel"><h2>Queue and releases</h2><div id="aQueue"></div></div>
+        <div class="panel"><h2>Monthly report</h2><div id="aReport"><div class="empty">No report yet: the first one comes with the next monthly batch.</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="c-modal" id="pubAlert" hidden>
+  <div class="panel" role="alertdialog" aria-modal="true" aria-labelledby="pubAlertTitle" aria-describedby="pubAlertBody">
+    <h2 id="pubAlertTitle" style="margin:0;font-size:16px;letter-spacing:0;text-transform:none"></h2>
+    <div id="pubAlertBody" style="font-size:13.5px"></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn primary" type="button" id="pubAlertOk">OK</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad4=n=>String(n).padStart(4,"0");
+function toast(t){const e=$("#toast");e.textContent=t;e.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>e.hidden=true,3200)}
+function fnv(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h>>>0}
+
+/* ================= game rules, ported from the Unity code ================= */
+// mulberry32, identical to CubeRng.cs
+function Rng(seed){let s=seed>>>0;const o={next(){s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1)>>>0;t=(t^((t+Math.imul(t^(t>>>7),t|61))>>>0))>>>0;return ((t^(t>>>14))>>>0)/4294967296},range(n){return Math.floor(o.next()*n)},shuffle(a){for(let i=a.length-1;i>0;i--){const j=o.range(i+1);[a[i],a[j]]=[a[j],a[i]]}}};return o}
+const rotCW=(m,p=4)=>((m<<1)&((1<<p)-1))|(m>>(p-1));
+const rotN=(m,t,p=4)=>{t=((t%p)+p)%p;while(t-->0)m=rotCW(m,p);return m};
+const bits=m=>{let c=0;while(m){c+=m&1;m>>=1}return c};
+const pop3=v=>(v&1)+((v>>1)&1)+((v>>2)&1);
+const taps=(sol,rot,p=4)=>{for(let k=0;k<p;k++)if(rotN(sol,rot+k,p)===sol)return k;return 0};
+// Vec3i helpers (doubled coordinates, like ShapeTopology.cs)
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]], sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]], mul=(a,s)=>[a[0]*s,a[1]*s,a[2]*s], neg=a=>[-a[0],-a[1],-a[2]];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const eq=(a,b)=>a[0]===b[0]&&a[1]===b[1]&&a[2]===b[2];
+const key=v=>((v[0]+512)*1024+(v[1]+512))*1024+(v[2]+512);
+const NORMALS=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+const uFor=n=>n[0]!==0?[0,1,0]:[1,0,0];
+const faceOf=n=>n[0]>0?0:n[0]<0?1:n[1]>0?2:n[1]<0?3:n[2]>0?4:5;
+const half=v=>v>=0?Math.floor(v/2):-Math.floor(-v/2);
+function centerDoubled(unit){ // ShapeLibrary.B + Center
+  const d=unit.map(b=>[b[0]*2,b[1]*2,b[2]*2]);
+  const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
+  d.forEach(b=>{for(let i=0;i<3;i++){mn[i]=Math.min(mn[i],b[i]);mx[i]=Math.max(mx[i],b[i])}});
+  const off=[-half(mn[0]+mx[0]),-half(mn[1]+mx[1]),-half(mn[2]+mx[2])];
+  return d.map(b=>add(b,off));
+}
+function buildTopology(unitBlocks){
+  const blocks=centerDoubled(unitBlocks);
+  const solid=new Set(),list=[];
+  blocks.forEach(b=>{const k=key(b);if(!solid.has(k)){solid.add(k);list.push(b)}});
+  list.sort((a,b)=>key(a)-key(b));
+  const map=new Map(),cells=[];
+  list.forEach(c=>{for(let f=0;f<6;f++){const n=NORMALS[f];if(solid.has(key(add(c,mul(n,2)))))continue;
+    const u=uFor(n),v=cross(n,u),p=add(c,n);map.set(key(p)+"|"+faceOf(n),cells.length);
+    cells.push({ports:4,P:p,N:n,U:u,V:v,dirs:[u,v,neg(u),neg(v)],face:f})}});
+  const links=cells.map((cell,i)=>{const c=sub(cell.P,cell.N);return cell.dirs.map(d=>{let np,nn,back;
+    if(solid.has(key(add(add(c,mul(d,2)),mul(cell.N,2))))){np=add(add(cell.P,d),cell.N);nn=neg(d);back=neg(cell.N)}
+    else if(solid.has(key(add(c,mul(d,2))))){np=add(cell.P,mul(d,2));nn=cell.N;back=neg(d)}
+    else{np=sub(add(cell.P,d),cell.N);nn=d;back=cell.N}
+    const j=map.get(key(np)+"|"+faceOf(nn));const bk=cells[j].dirs.findIndex(x=>eq(x,back));return {cell:j,back:bk}})});
+  return {cells,links,blocks:list,count:cells.length};
+}
+const portsAt=(topo,i)=>topo.cells[i].ports||4;
+/* POLY-BEGIN */
+// PolyShapes.cs + PolyTopology, step for step, so tile order, corner order and links match the game exactly.
+// Shapes: tetra-n, octa-n, dodeca-2 (Kilominx), dodeca-3 (Megaminx), geo-1 (soccer ball), geo-2..4 (Goldberg GP(f,0)).
+// Units: board units (a square tile is 2 wide). A cell: {ports, C, N, A, verts, face, shape, poly:true}.
+const POLY=(()=>{
+  const PHI=(1+Math.sqrt(5))/2,TRI_SIDE=2.6,TILE_INR=1.08,MEGA_CENTRE=0.42;
+  const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],mul=(a,s)=>[a[0]*s,a[1]*s,a[2]*s];
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+  const len=a=>Math.sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]),withLen=(a,l)=>mul(a,l/len(a)),lerp=(a,b,t)=>add(a,mul(sub(b,a),t));
+  const centre=p=>{let c=[0,0,0];p.forEach(v=>c=add(c,v));return mul(c,1/p.length)};
+  const inradius=p=>{const c=centre(p);let best=Infinity;for(let k=0;k<p.length;k++)best=Math.min(best,len(sub(mul(add(p[k],p[(k+1)%p.length]),0.5),c)));return best};
+  function Builder(){
+    const polys=[],faces=[],shapes=[];
+    return {polys,
+      add(poly,face,shape){const c=centre(poly);let n=[0,0,0];for(let i=0;i<poly.length;i++)n=add(n,cross(poly[i],poly[(i+1)%poly.length]));
+        if(dot(n,c)<0)poly.reverse();polys.push(poly);faces.push(face);shapes.push(shape)},
+      scaleTo(t){let sum=0;polys.forEach(p=>sum+=inradius(p));const s=t/(sum/polys.length);for(const p of polys)for(let k=0;k<p.length;k++)p[k]=mul(p[k],s)},
+      build(){return topology(polys,faces,shapes)}};
+  }
+  function topology(polys,faces,shapes){
+    const cells=[],links=[],owner=new Map();let r=0;
+    const ek=(a,b)=>{const m=mul(add(a,b),0.5);return Math.round(m[0]*64)+","+Math.round(m[1]*64)+","+Math.round(m[2]*64)};
+    polys.forEach((P,i)=>{const k=P.length;let c=[0,0,0];P.forEach(v=>{c=add(c,v);r=Math.max(r,len(v))});c=mul(c,1/k);
+      let n=[0,0,0];for(let p=0;p<k;p++)n=add(n,cross(P[p],P[(p+1)%k]));n=mul(n,1/len(n));
+      const m0=sub(mul(add(P[0],P[1]),0.5),c),ax=sub(m0,mul(n,dot(m0,n))),A=mul(ax,1/len(ax));
+      cells.push({ports:k,C:c,N:n,A,verts:P,face:faces[i],shape:shapes[i],poly:true});links.push(P.map(()=>({cell:-1,back:-1})))});
+    polys.forEach((P,i)=>P.forEach((v,p)=>{const key=ek(v,P[(p+1)%P.length]),o=owner.get(key);
+      if(o){links[i][p]={cell:o[0],back:o[1]};links[o[0]][o[1]]={cell:i,back:p}}else owner.set(key,[i,p])}));
+    return {cells,links,blocks:[],count:cells.length,poly:true,radius:r};
+  }
+  function icosa(){
+    const v=[];for(const a of [-1,1])for(const b of [-1,1])v.push([0,a,b*PHI],[a,b*PHI,0],[b*PHI,0,a]);
+    const faces=[],edge=(i,j)=>Math.abs(len(sub(v[i],v[j]))-2)<1e-6;
+    for(let i=0;i<12;i++)for(let j=i+1;j<12;j++)for(let k=j+1;k<12;k++)if(edge(i,j)&&edge(j,k)&&edge(i,k))faces.push([i,j,k]);
+    return {v,faces};
+  }
+  function around(pts,axis){
+    const a=mul(axis,1/len(axis)),r=Math.abs(a[1])<0.9?[0,1,0]:[1,0,0];let u=cross(r,a);u=mul(u,1/len(u));const w=cross(a,u);
+    return pts.map(p=>({p,k:Math.atan2(dot(p,w),dot(p,u))})).sort((x,y)=>x.k-y.k).map(x=>x.p);
+  }
+  function dodecaFaces(){
+    const {v,faces}=icosa(),cen=faces.map(f=>mul(add(add(v[f[0]],v[f[1]]),v[f[2]]),1/3));
+    return v.map((vert,i)=>{const pts=[];faces.forEach((f,k)=>{if(f.includes(i))pts.push(cen[k])});return around(pts,vert)});
+  }
+  function triangles(faces,n){
+    const b=Builder();
+    faces.forEach((F,f)=>{let [p0,p1,p2]=F;if(dot(cross(sub(p1,p0),sub(p2,p0)),add(add(p0,p1),p2))<0){const t=p1;p1=p2;p2=t}
+      const e1=mul(sub(p1,p0),1/n),e2=mul(sub(p2,p0),1/n),G=(i,j)=>add(add(p0,mul(e1,i)),mul(e2,j));
+      for(let i=0;i<n;i++)for(let j=0;i+j<n;j++){b.add([G(i,j),G(i+1,j),G(i,j+1)],f,"Triangle");if(i+j<n-1)b.add([G(i+1,j),G(i+1,j+1),G(i,j+1)],f,"Triangle")}});
+    return b.build();
+  }
+  function tetra(n){const s=n*TRI_SIDE/(2*Math.sqrt(2)),A=[s,s,s],B=[s,-s,-s],C=[-s,s,-s],D=[-s,-s,s];return triangles([[A,B,C],[A,D,B],[A,C,D],[B,D,C]],n)}
+  function octa(n){const d=n*TRI_SIDE/Math.sqrt(2),f=[];for(const x of [1,-1])for(const y of [1,-1])for(const z of [1,-1])f.push([[x*d,0,0],[0,y*d,0],[0,0,z*d]]);return triangles(f,n)}
+  function kilominx(){const b=Builder();dodecaFaces().forEach((p,f)=>{const c=centre(p);for(let k=0;k<5;k++){const cur=p[k],next=p[(k+1)%5],prev=p[(k+4)%5];
+    b.add([cur,lerp(cur,next,0.5),c,lerp(cur,prev,0.5)],f,"Kite")}});b.scaleTo(TILE_INR);return b.build()}
+  function megaminx(){const b=Builder();dodecaFaces().forEach((p,f)=>{const c=centre(p),inner=p.map(q=>lerp(c,q,MEGA_CENTRE));b.add(inner.slice(),f,"Pentagon");
+    for(let k=0;k<5;k++){const cur=p[k],next=p[(k+1)%5],prev=p[(k+4)%5],a=lerp(cur,next,1/3),bb=lerp(cur,next,2/3),bp=lerp(prev,cur,2/3);
+      b.add([a,bb,inner[(k+1)%5],inner[k]],f,"MegaEdge");b.add([cur,a,inner[k],bp],f,"MegaCorner")}});b.scaleTo(TILE_INR);return b.build()}
+  function soccer(){const {v,faces}=icosa(),b=Builder();let id=0;
+    v.forEach((vi,i)=>{const pts=[];v.forEach((vj,j)=>{if(i!==j&&Math.abs(len(sub(vi,vj))-2)<1e-6)pts.push(lerp(vi,vj,1/3))});b.add(around(pts,vi),id++,"Pentagon")});
+    faces.forEach(f=>{const A=v[f[0]],B=v[f[1]],C=v[f[2]];
+      b.add(around([lerp(A,B,1/3),lerp(A,B,2/3),lerp(B,C,1/3),lerp(B,C,2/3),lerp(C,A,1/3),lerp(C,A,2/3)],add(add(A,B),C)),id++,"Hexagon")});
+    b.scaleTo(TILE_INR);return b.build()}
+  function goldberg(f){
+    if(f<2)return soccer();const {v,faces}=icosa(),R=len(v[0]),corners=new Map(),order=[];
+    const key=q=>Math.round(q[0]*1e4)+","+Math.round(q[1]*1e4)+","+Math.round(q[2]*1e4);
+    for(const t of faces){const A=v[t[0]],B=v[t[1]],C=v[t[2]];
+      const P=(i,j)=>withLen(add(add(A,mul(sub(B,A),i/f)),mul(sub(C,A),j/f)),R);
+      const tri=(a,b,c)=>{const cen=withLen(mul(add(add(a,b),c),1/3),R);for(const q of [a,b,c]){const k=key(q);let e=corners.get(k);if(!e){e={p:q,around:[]};corners.set(k,e);order.push(k)}e.around.push(cen)}};
+      for(let i=0;i<f;i++)for(let j=0;i+j<f;j++){tri(P(i,j),P(i+1,j),P(i,j+1));if(i+j<f-1)tri(P(i+1,j),P(i+1,j+1),P(i,j+1))}}
+    const b=Builder();let id=0;for(const k of order){const e=corners.get(k);b.add(around(e.around,e.p),id++,e.around.length===5?"Pentagon":"Hexagon")}
+    b.scaleTo(TILE_INR);return b.build();
+  }
+  function build(type,n){
+    if(type==="tetra")return tetra(n);if(type==="octa")return octa(n);
+    if(type==="dodeca")return n===3?megaminx():kilominx();if(type==="geo")return goldberg(n);return null;
+  }
+  return {build,tetra,octa,kilominx,megaminx,soccer,goldberg};
+})();
+/* POLY-END */
+const POLY_TYPES=["tetra","octa","dodeca","geo"],isPolyType=t=>POLY_TYPES.includes(t);
+function topoOf(shape,blocks){return shape&&isPolyType(shape.type)?POLY.build(shape.type,shape.params.n):buildTopology(blocks)}
+function components(topo,B,useSol){
+  const n=topo.count,comp=new Array(n).fill(-1),sets=[];
+  for(let c=0;c<n;c++){if(comp[c]>=0)continue;const id=sets.length;let set=0;comp[c]=id;const st=[c];
+    while(st.length){const x=st.pop();if(B.kind[x]===1)set|=B.color[x];const px=portsAt(topo,x),mx=useSol?B.sol[x]:rotN(B.sol[x],B.start[x],px);
+      for(let k=0;k<px;k++){if(!((mx>>k)&1))continue;const L=topo.links[x][k],j=L.cell;if(comp[j]>=0)continue;
+        const mj=useSol?B.sol[j]:rotN(B.sol[j],B.start[j],portsAt(topo,j));if(!((mj>>L.back)&1))continue;comp[j]=id;st.push(j)}}
+    sets.push(set)}
+  return {comp,sets};
+}
+function isSolved(topo,B,useSol){const {comp,sets}=components(topo,B,useSol);let lamps=0;
+  for(let i=0;i<topo.count;i++)if(B.kind[i]===2){lamps++;if(sets[comp[i]]!==B.color[i])return false}return lamps>0}
+// CubeGenerator.TryGenerate, step for step
+function tryGenerate(topo,groups,seed,minPar,scramble){
+  const R=Rng(seed),n=topo.count,G=groups.length,maxLeaves=6+Math.floor((n+3*G-1)/(3*G));
+  const hasFree=(owner,c)=>topo.links[c].some(L=>owner[L.cell]<0);
+  for(let attempt=0;attempt<4000;attempt++){
+    const owner=new Array(n).fill(-1),mask=new Array(n).fill(0),members=[],last=[];let ok=true;
+    for(let g=0;g<G;g++){members.push([]);let c,t=0;do{c=R.range(n);t++}while(owner[c]>=0&&t<200);
+      if(owner[c]>=0){ok=false;break}owner[c]=g;members[g].push(c);last[g]=c}
+    if(!ok)continue;
+    while(true){const active=[];for(let g=0;g<G;g++){for(const c of members[g])if(hasFree(owner,c)){active.push(g);break}}
+      if(!active.length)break;const gi=active[R.range(active.length)];let from=last[gi];
+      if(!(R.next()<0.6&&hasFree(owner,from))){const cand=members[gi].filter(c=>hasFree(owner,c));from=cand[R.range(cand.length)]}
+      const free=[];topo.links[from].forEach((L,k)=>{if(owner[L.cell]<0)free.push(k)});
+      const dir=free[R.range(free.length)],L=topo.links[from][dir];owner[L.cell]=gi;mask[from]|=1<<dir;mask[L.cell]|=1<<L.back;members[gi].push(L.cell);last[gi]=L.cell}
+    if(owner.some(o=>o<0))continue;
+    const kind=new Array(n).fill(0),color=new Array(n).fill(0);
+    for(let g=0;g<G&&ok;g++){const set=groups[g];const leaves=members[g].filter(c=>bits(mask[c])===1);const need=pop3(set);
+      if(leaves.length<need+1||leaves.length>need+maxLeaves){ok=false;break}
+      R.shuffle(leaves);const bs=[1,2,4].filter(b=>set&b);
+      leaves.forEach((c,i)=>{if(i<need){kind[c]=1;color[c]=bs[i]}else{kind[c]=2;color[c]=set}})}
+    if(!ok)continue;
+    const B={sol:mask,kind,color,start:new Array(n).fill(0),locked:[]};
+    if(!isSolved(topo,B,true))continue;
+    for(let s=0;s<60;s++){let par=0;for(let i=0;i<n;i++){const P=portsAt(topo,i);B.start[i]=R.next()<scramble?1+R.range(P-1):0;par+=taps(B.sol[i],B.start[i],P)}
+      if(par>=minPar&&!isSolved(topo,B,false))return {board:B,par}}
+  }
+  return null;
+}
+function generate(topo,groups,seed,minPar,scramble){
+  for(let t=0;t<6;t++){const r=tryGenerate(topo,groups,(seed+t*101)>>>0,minPar,scramble);if(r)return {...r,groups:groups.slice(),usedSeed:seed}}
+  return null;
+}
+// ShapeLibrary presets in unit coords (before B() and Center)
+const PRESETS={
+  cube:{params:[["n","Edge",3,1,8]],build:p=>{const o=[];for(let x=0;x<p.n;x++)for(let y=0;y<p.n;y++)for(let z=0;z<p.n;z++)o.push([x,y,z]);return o},id:p=>"cube-"+p.n},
+  cross:{params:[["arm","Arm",1,1,4],["thick","Thick",1,1,3]],build:p=>{const s=new Set(),o=[];const A=(x,y,z)=>{const k=x+","+y+","+z;if(!s.has(k)){s.add(k);o.push([x,y,z])}};
+    for(let a=-p.arm;a<p.arm+p.thick;a++)for(let b=0;b<p.thick;b++)for(let c=0;c<p.thick;c++){A(a,b,c);A(b,a,c);A(b,c,a)}return o},id:p=>"cross-"+p.arm+p.thick},
+  tower:{params:[["w","Wide",2,1,5],["h","Height",4,2,8]],build:p=>{const o=[];for(let x=0;x<p.w+2;x++)for(let z=0;z<p.w+2;z++)o.push([x,0,z]);
+    for(let y=1;y<p.h;y++)for(let x=1;x<=p.w;x++)for(let z=1;z<=p.w;z++)o.push([x,y,z]);return o},id:p=>"tower-"+p.w+p.h},
+  ell:{params:[["len","Long",4,2,8],["thick","Thick",2,1,3]],build:p=>{const s=new Set(),o=[];const A=(x,y,z)=>{const k=x+","+y+","+z;if(!s.has(k)){s.add(k);o.push([x,y,z])}};
+    for(let a=0;a<p.len;a++)for(let b=0;b<p.thick;b++)for(let c=0;c<p.thick;c++){A(a,b,c);A(b,a,c)}return o},id:p=>"ell-"+p.len+p.thick},
+  pyramid:{params:[["base","Base",5,1,9]],build:p=>{const o=[];for(let h=0,s=p.base;s>=1;h++,s-=2)for(let x=0;x<s;x++)for(let z=0;z<s;z++)o.push([x+h,h,z+h]);return o},id:p=>"pyramid-"+p.base},
+  ball:{params:[["r","Radius",2,1,4,0.5]],build:p=>{const o=[],R=Math.floor(p.r)+1;for(let x=-R;x<=R;x++)for(let y=-R;y<=R;y++)for(let z=-R;z<=R;z++)if(x*x+y*y+z*z<=p.r*p.r)o.push([x,y,z]);return o},id:p=>"ball-"+Math.round(p.r*10)},
+  bar:{params:[["len","Long",4,2,10]],build:p=>{const o=[];for(let i=0;i<p.len;i++)o.push([i,0,0]);return o},id:p=>"bar-"+p.len},
+  slab:{params:[["w","Wide",3,1,8],["d","Deep",3,1,8]],build:p=>{const o=[];for(let x=0;x<p.w;x++)for(let z=0;z<p.d;z++)o.push([x,0,z]);return o},id:p=>"slab-"+p.w+p.d},
+  tetra:{params:[["n","Triangles per edge",3,2,8]],build:()=>[],id:p=>"tetra-"+p.n,poly:true},
+  octa:{params:[["n","Triangles per edge",3,2,6]],build:()=>[],id:p=>"octa-"+p.n,poly:true},
+  dodeca:{params:[["n","2 Kilominx (60) · 3 Megaminx (132)",2,2,3]],build:()=>[],id:p=>"dodeca-"+p.n,poly:true},
+  geo:{params:[["n","1 soccer (32) · 2-4 Goldberg (42/92/162)",2,1,4]],build:()=>[],id:p=>"geo-"+p.n,poly:true}
+};
+// ---- one string, 3 characters per tile: [wire mask base64][kind+colour][rotation] (base64's first 32 = old base32) ----
+const B32="0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_",SRC_CH={1:"r",2:"b",4:"y"},SRC_VAL={r:1,b:2,y:4};
+function encodeTiles(B){let s="";for(let i=0;i<B.sol.length;i++){s+=B32[B.sol[i]]+(B.kind[i]===1?SRC_CH[B.color[i]]:B.kind[i]===2?String(B.color[i]):".")+String(B.start[i])}return s}
+function decodeTiles(str){const n=str.length/3,B={sol:[],kind:[],color:[],start:[],locked:[]};
+  for(let i=0;i<n;i++){const a=str[3*i],b=str[3*i+1],c=str[3*i+2];B.sol.push(B32.indexOf(a));
+    if(SRC_VAL[b]){B.kind.push(1);B.color.push(SRC_VAL[b])}else if(b>="1"&&b<="7"){B.kind.push(2);B.color.push(+b)}else{B.kind.push(0);B.color.push(0)}
+    B.start.push(+c)}return B}
+const diffOf=(par,tiles,g)=>tiles?+Math.min(1,0.75*par/(tiles*1.2)+0.08*Math.max(0,g-1)).toFixed(2):0;
+function parseShapeId(id){const m=/^([a-z]+)-(\d+)$/.exec(String(id).trim());if(!m||!PRESETS[m[1]])return null;const t=m[1],d=m[2],p={};
+  const two=()=>d.length>=2?[+d.slice(0,-1),+d.slice(-1)]:null;
+  if(t==="cube"||isPolyType(t))p.n=+d;else if(t==="pyramid")p.base=+d;else if(t==="bar")p.len=+d;else if(t==="ball")p.r=+d/10;
+  else{const x=two();if(!x)return null;if(t==="cross"){p.arm=x[0];p.thick=x[1]}else if(t==="tower"){p.w=x[0];p.h=x[1]}else if(t==="ell"){p.len=x[0];p.thick=x[1]}else if(t==="slab"){p.w=x[0];p.d=x[1]}}
+  return {id:PRESETS[t].id(p),type:t,params:p,blocks:PRESETS[t].build(p)}}
+const COLOR_CSS={1:"#FF4D6D",2:"#3DA9FF",4:"#FFE14D",3:"#C77DFF",5:"#E8661A",6:"#3DFFA2",7:"#F4F7FF"};
+const COLOR_NAME={1:"Red",2:"Blue",4:"Yellow",3:"Purple",5:"Orange",6:"Green",7:"White"};
+const DIFF_NAME=["","Very easy","Very easy","Easy","Easy","Medium","Medium","Hard","Hard","Very hard","Very hard"];
+function diffParams(d,topo){
+  const t=(Math.max(1,Math.min(10,d))-1)/9,n=topo?topo.count:0,P=topo&&n?topo.cells.reduce((a,c)=>a+(c.ports||4),0)/n:4;
+  const colors=Math.max(1,Math.min(3,1+Math.round(t*2.2)+(n<30&&t>0.5?-1:0)));
+  const scramble=+((0.3+0.5*t)*(P>4?4/P:1)).toFixed(2);   // fewer turned tiles where each takes up to 5 taps back
+  // pentagons and hexagons take more taps per tile, but a level should not grow past ~150 taps for that alone
+  const minPar=Math.max(3,Math.round(n*scramble*(Math.min(P,4)/2)*(0.4+0.3*t)));
+  return {colors,scramble,minPar};
+}
+function colorsFor(c,R){const s=[1,2,4],mx=[3,5,6];R.shuffle(s);R.shuffle(mx);const mixes=c>=2?1+R.range(Math.min(2,c-1)):0;return mx.slice(0,mixes).concat(s.slice(0,c-mixes))}
+let DB=null,MANIFEST=null,GROUPS={},canWrite=true;
+const CHUNK=100;
+const DEFAULT_RULES={windowBack:10,windowAhead:10,hintsPerLevel:3,hintPenalty:1,undosPerLevel:5,adsOn:1,adsTesters:"",updateBelow:0,minScore:3,parScore:6,overParScore:5,wasteAllowed:3,expertSlackPercent:15,expertSlackMin:0};
+// wasted moves a win may have and still count as par (the game's LevelScore.WasteAllowed): the group's own number, else the rule's.
+// expertSlackPercent / expertSlackMin are the old par slack: kept in the data for app versions before this rule, no longer edited.
+const wasteOf=(r,g)=>Math.max(0,g&&g.wasteAllowed!=null&&g.wasteAllowed>=0?g.wasteAllowed:(r.wasteAllowed??3));
+// moves that still count as par (the game's LevelScore.ExpertLimit): the fewest taps to the finished board + wasted moves allowed
+const expertLimit=(minTaps,r,g)=>minTaps+wasteOf(r,g);
+const DEFAULT_MANIFEST={schema:3,minApp:"0.1.0",shapesVersion:1,rules:DEFAULT_RULES,groups:[{id:"cube",unlock:null}]};
+const groupDetail=(id,name)=>({id,name:name||id,blurb:"",icon:id,endless:false,enable:false,levelCount:0,chunkSize:CHUNK,chunks:[],nextSerial:1});
+const idOf=(g,n)=>g+"-"+pad4(n);
+function setStatus(t){$("#dbStatus").innerHTML=t}
+function groups(){return (MANIFEST&&MANIFEST.groups||[]).map((e,i)=>Object.assign({sort:i+1},GROUPS[e.id]||{id:e.id,name:e.id},{id:e.id,unlock:e.unlock}))}
+function nestBlocks(b){if(!Array.isArray(b))return[];if(b.length&&Array.isArray(b[0]))return b.map(v=>v.slice());const o=[];for(let i=0;i+2<b.length;i+=3)o.push([+b[i],+b[i+1],+b[i+2]]);return o}
+function flatBlocks(b){const o=[];nestBlocks(b).forEach(v=>o.push(v[0],v[1],v[2]));return o}
+function shapeDocFrom(sh){const d={id:sh.id,type:sh.type};if(sh.type==="voxel")d.blocks=flatBlocks(sh.blocks);else Object.assign(d,sh.params);return d}
+/* ---- which shapes belong to a group ---- */
+// Each group lists the shapes its levels use (Groups & rules → "Shapes"); Auto fill picks from them in order and
+// saving warns when a level's shape is not one of them. "megamix" = a random block shape per level.
+const DEFAULT_SHAPES={cube:"cube-2 cube-3 cube-4 cube-5",tetra:"tetra-3 tetra-4 tetra-5 tetra-6",octa:"octa-2 octa-3 octa-4",
+  sphere:"geo-1 geo-2 geo-3 geo-4",dodeca:"dodeca-2 dodeca-3",megamix:"megamix cross-11 cross-21 tower-24 ell-42 cross-31 tower-34 cross-22"};
+// a token is a shape id, optionally with how many Auto fill levels it gets: "cube-3", "cube-3*4", "megamix*10"
+function groupShapeTokens(g){const d=(GROUPS[g]&&GROUPS[g].shapes)||DEFAULT_SHAPES[g]||"";return d.split(/[\s,]+/).filter(Boolean)}
+const tokenId=t=>String(t).split("*")[0],tokenCount=t=>{const m=/\*(\d+)$/.exec(t);return m?+m[1]:0};
+function groupShapeList(g){return groupShapeTokens(g).map(tokenId)}
+function shapeTokenType(t){t=tokenId(t);if(t==="megamix")return "voxel";const p=parseShapeId(t);return p?p.type:null}
+function groupAllows(g,shapeType){const types=groupShapeList(g).map(shapeTokenType).filter(Boolean);return !types.length||types.includes(shapeType)}
+const lerp=(a,b,t)=>a+(b-a)*t;
+const SHAPE_LABEL={cube:"Cube",cross:"Cross",tower:"Tower",ell:"Ell (L shape)",pyramid:"Stepped pyramid",ball:"Ball of blocks",bar:"Bar",slab:"Slab",
+  tetra:"Tetra (triangles)",octa:"Octa (triangles)",dodeca:"Dodeca (Kilominx / Megaminx)",geo:"Sphere (pentagons + hexagons)"};
+const TILE_LABEL={Triangle:"triangles",Square:"squares",Pentagon:"pentagons",Hexagon:"hexagons",Kite:"kites",MegaCorner:"corner pieces",MegaEdge:"edge pieces"};
+function megamixBlocks(R){const parts=["cube","pyramid","ball","bar","slab"];let blocks=PRESETS.cube.build({n:2+R.range(2)});
+  const cnt=1+R.range(3);for(let i=0;i<cnt;i++){const t=parts[R.range(parts.length)],pr=PRESETS[t];const prm={};pr.params.forEach(([k,,v,mn,mx])=>prm[k]=Math.min(mx,Math.max(mn,mn+R.range(Math.min(3,mx-mn+1)))));
+    if(t==="ball")prm.r=1.5;const part=pr.build(prm);const a=blocks[R.range(blocks.length)],n=NORMALS[R.range(6)];const off=add(add(a,n),neg(part[R.range(part.length)]));blocks=blocks.concat(part.map(b=>add(b,off)))}
+  const s=new Set(),o=[];blocks.forEach(b=>{const k=b.join(",");if(!s.has(k)){s.add(k);o.push(b)}});return o}
+function voxelOf(blocks){const sorted=blocks.map(b=>b.join(",")).sort().join(";");return {id:"voxel-"+fnv(sorted).toString(16).padStart(8,"0").slice(0,6),type:"voxel",params:{},blocks}}
+const topoCache={};
+function topoFor(sh){if(sh.type==="voxel")return topoOf(sh,sh.blocks);return topoCache[sh.id]||(topoCache[sh.id]=topoOf(sh,sh.blocks))}
+function genOne(sh,d){
+  const topo=topoFor(sh),p=diffParams(d,topo),seed=(Math.random()*2**31)>>>0,R=Rng(seed^0x51ed270b),colors=colorsFor(p.colors,R);
+  const r=generate(topo,colors,seed,p.minPar,p.scramble)||generate(topo,colors,seed+7,Math.round(p.minPar*0.6),p.scramble);
+  if(!r)return null;return {sel:true,shape:sh,topo,board:r.board,par:r.par,tiles:topo.count,d,gen:{ver:1,seed:r.usedSeed,colors,scramble:p.scramble,minPar:p.minPar},diff:diffOf(r.par,topo.count,colors.length)};
+}
+function shapeFromToken(t,R){if(t==="megamix")return voxelOf(megamixBlocks(R));const p=parseShapeId(t);return p?{id:p.id,type:p.type,params:p.params,blocks:p.blocks}:null}
+/* ================= groups & rules ================= */
+const ICONS=["cube","tetra","octa","sphere","cross","dodeca","megamix"];
+const RULE_INFO={windowBack:["Keep behind","Levels already played kept on the device (X − n)."],windowAhead:["Download ahead","Levels ahead downloaded for offline play (X + n)."],
+  hintsPerLevel:["Hints per level","Free hints in one level."],hintPenalty:["Points per hint","Points taken off for each hint."],
+  undosPerLevel:["Undos per level","Undos one level allows; each plays a rewarded ad first."],adsOn:["Rewarded ads","1 = a hint or an undo plays an ad first; 0 = free for everyone (closed test); 2 = ads only on the devices listed under Ad testers."],updateBelow:["Force update below","Players on an app version code below this get the full-screen Google Play update when the game opens. 0 = never forced (a newer version is only offered, once a day)."],
+  minScore:["Minimum points","A win always gives at least this."],parScore:["Points at par","Wasted moves within the allowance (3 stars; Expert with no hints or undos)."],overParScore:["Points over par","More wasted moves than allowed."],
+  wasteAllowed:["Wasted moves allowed","Moves past the fewest taps to the player's own finished board that still give 3 stars and Expert. Same on every board size; a group can set its own. 0 = none."]};
+let gDraft=null,rDraft=null;
+const jeq=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+function gDirty(){return !!gDraft&&(!jeq(gDraft.manifest,MANIFEST)||!jeq(gDraft.groups,GROUPS))}
+function parLine(g){const r=Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}),n=wasteOf(r,g);return `Expert with up to ${n} wasted move${n===1?"":"s"}${g&&g.wasteAllowed!=null&&g.wasteAllowed>=0?" (this group)":" (rule)"}`}
+// 1.4.2+: stars = total stars on every group; the level rule stays as a second way in (and is all that older apps read)
+function unlockText(u){if(!u||(!u.group&&!(u.stars>0)))return "Open from the start.";const lv=u.group&&u.cleared>0?`${u.cleared} levels of group ${u.group}`:"";
+  return u.stars>0?`Opens at ${u.stars} stars in total${u.groupStars>0?` (${u.groupStars} of them in ${u.group})`:""}${lv?` or after ${lv}`:""} (apps before 1.4.2: ${lv||"open"}).`:`Opens after ${lv||"0 levels of group "+u.group}.`}
+function cfgOnData(){if(!gDirty())gDraft=null;rDraft=null;if(!$("#viewGroups").hidden)cfgRender()}
+function cfgRender(){
+  if(!MANIFEST){$("#cGroupCards").innerHTML='<div class="empty">No data yet.</div>';return}
+  if(!gDraft)gDraft={manifest:JSON.parse(JSON.stringify(MANIFEST)),groups:JSON.parse(JSON.stringify(GROUPS))};
+  const m=gDraft.manifest,ids=m.groups.map(x=>x.id);
+  $("#cGroupCards").innerHTML=m.groups.map((ref,i)=>{
+    const g=gDraft.groups[ref.id]||groupDetail(ref.id),u=ref.unlock;
+    const opts=['<option value="">Open from the start</option>'].concat(ids.filter(x=>x!==ref.id).map(x=>`<option value="${esc(x)}"${u&&u.group===x?" selected":""}>After group ${esc(x)}</option>`)).join("");
+    return `<div class="c-card${g.enable?"":" off"}" data-gid="${esc(ref.id)}">
+      <div class="c-ord"><button type="button" data-act="up" ${i?"":"disabled"} aria-label="Up">▲</button><b>${i+1}</b><button type="button" data-act="down" ${i<ids.length-1?"":"disabled"} aria-label="Down">▼</button></div>
+      <div class="c-fields">
+        <div class="c-title"><span class="gid">${esc(ref.id)}</span><span class="c-pill ${g.enable?"ok":""}">${g.enable?"enabled":"hidden"}</span>${g.endless?'<span class="c-pill">endless</span>':""}
+          <span class="c-pill">${g.levelCount||0} levels · ${(g.chunks||[]).length} chunks</span><span class="note c-ul" style="margin:0">${esc(unlockText(u))}</span></div>
+        <label class="f" for="cgn-${i}">Name<input id="cgn-${i}" type="text" data-f="name" value="${esc(g.name||"")}"></label>
+        <label class="f" for="cgi-${i}">Icon<select id="cgi-${i}" data-f="icon">${ICONS.map(x=>`<option${g.icon===x?" selected":""}>${x}</option>`).join("")}${ICONS.includes(g.icon)?"":`<option selected>${esc(g.icon||"")}</option>`}</select></label>
+        <label class="f" for="cgu-${i}">Unlock<select id="cgu-${i}" data-u="group">${opts}</select></label>
+        <label class="f" for="cgc-${i}">Levels to clear<input id="cgc-${i}" type="number" min="0" data-u="cleared" value="${u&&u.group?u.cleared:0}" ${u&&u.group?"":"disabled"}></label>
+        <label class="f" for="cgs-${i}">Stars to unlock (total, 0 = levels only)<input id="cgs-${i}" type="number" min="0" data-u="stars" value="${u&&u.stars||0}" ${u&&u.group?"":"disabled"}></label>
+        <label class="f" for="cgp-${i}">Of them in that group<input id="cgp-${i}" type="number" min="0" data-u="groupStars" value="${u&&u.groupStars||0}" ${u&&u.group?"":"disabled"}></label>
+        <label class="f" for="cgw-${i}">Wasted moves allowed (empty = rule)<input id="cgw-${i}" type="number" min="0" data-f="wasteAllowed" data-n="1" value="${g.wasteAllowed!=null&&g.wasteAllowed>=0?g.wasteAllowed:""}" placeholder="${MANIFEST.rules?.wasteAllowed??3}"></label>
+        <span class="note c-par" style="margin:0;align-self:end">${parLine(g)}</span>
+        <label class="f wide" for="cgb-${i}">Description<input id="cgb-${i}" type="text" data-f="blurb" value="${esc(g.blurb||"")}"></label>
+        <div class="row wide"><label class="chk"><input type="checkbox" data-f="enable" ${g.enable?"checked":""}> Enabled in the game</label>
+          <label class="chk"><input type="checkbox" data-f="endless" ${g.endless?"checked":""}> Endless (after the data runs out, play continues with generated levels)</label></div>
+      </div></div>`}).join("");
+  $("#cGroupsDirty").hidden=!gDirty();
+  if(!rDraft)rDraft={rules:Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}),minApp:MANIFEST.minApp||"0.1.0"};
+  $("#cRulesForm").innerHTML=Object.keys(RULE_INFO).map(k=>`<label for="cr-${k}">${RULE_INFO[k][0]}</label><input id="cr-${k}" type="number" min="0" data-k="${k}" value="${rDraft.rules[k]}"><span class="c-help">${RULE_INFO[k][1]}</span>`).join("")+
+    `<label for="cr-adsTesters">Ad testers</label><input id="cr-adsTesters" type="text" value="${esc(rDraft.rules.adsTesters||"")}" placeholder="K7QM-2XRD, ..."><span class="c-help">Device codes that see ads while Rewarded ads is 2, commas between. A device shows its code in the game's settings: tap the version line seven times.</span>`+
+    `<label for="cr-minApp">minApp</label><input id="cr-minApp" type="text" value="${esc(rDraft.minApp)}"><span class="c-help">Lowest app version that can read this data. schema ${MANIFEST.schema||3} · shapesVersion ${MANIFEST.shapesVersion||1}.</span>`;
+  document.querySelectorAll("#cRulesForm input[data-k]").forEach(el=>el.oninput=()=>{rDraft.rules[el.dataset.k]=Math.max(0,parseInt(el.value)||0);rulesChanged()});
+  $("#cr-adsTesters").oninput=e=>{rDraft.rules.adsTesters=e.target.value.trim();rulesChanged()};
+  $("#cr-minApp").oninput=e=>{rDraft.minApp=e.target.value.trim();rulesChanged()};
+  rulesChanged();
+}
+function rulesChanged(){
+  const r=rDraft.rules;$("#cRulesSave").disabled=jeq(r,Object.assign({},DEFAULT_RULES,MANIFEST.rules||{}))&&rDraft.minApp===(MANIFEST.minApp||"0.1.0");
+  const hs=Array.from({length:Math.min(6,r.hintsPerLevel)+1},(_,i)=>i),pts=(mv,h)=>Math.max(r.minScore,(mv<=5?r.parScore:r.overParScore)-h*r.hintPenalty);
+  $("#cScore").innerHTML=`<thead><tr><th></th>${hs.map(h=>`<th>${h} hints</th>`).join("")}</tr></thead><tbody>`+[["Within the allowance",5],["More wasted moves",9]].map(([l,mv])=>`<tr><td>${l}</td>${hs.map(h=>{const p=pts(mv,h);return `<td><span class="c-pts${mv===5&&h===0?" top":""}">${p}</span> <span class="note">${p<=0?0:Math.max(1,Math.floor(p/2))}★</span></td>`}).join("")}</tr>`).join("")+"</tbody>"+`<tfoot><tr><td colspan="${hs.length+1}" class="note" style="text-align:left">Fewest taps 20 → up to ${expertLimit(20,r)} moves still give Expert (${wasteOf(r)} wasted move${wasteOf(r)===1?"":"s"} allowed).</td></tr></tfoot>`;
+}
+$("#cGroupCards").addEventListener("input",e=>{
+  const card=e.target.closest(".c-card");if(!card)return;const id=card.dataset.gid,ref=gDraft.manifest.groups.find(x=>x.id===id);
+  const g=gDraft.groups[id]||(gDraft.groups[id]=groupDetail(id));const f=e.target.dataset.f,u=e.target.dataset.u;
+  if(f&&e.target.dataset.n){const v=e.target.value.trim();if(v==="")delete g[f];else g[f]=Math.max(0,parseInt(v)||0);card.querySelector(".c-par").textContent=parLine(g)}
+  else if(f)g[f]=e.target.type==="checkbox"?e.target.checked:e.target.value;
+  if(u==="group"){ref.unlock=e.target.value?{group:e.target.value,cleared:(ref.unlock&&ref.unlock.cleared)||10,stars:(ref.unlock&&ref.unlock.stars)||0}:null;cfgRender();return}
+  if(u==="stars"&&ref.unlock)ref.unlock.stars=Math.max(0,parseInt(e.target.value)||0);
+  if(u==="groupStars"&&ref.unlock)ref.unlock.groupStars=Math.max(0,parseInt(e.target.value)||0);
+  if(u==="cleared"&&ref.unlock)ref.unlock.cleared=Math.max(0,parseInt(e.target.value)||0);
+  if(e.target.type==="checkbox")cfgRender();else{$("#cGroupsDirty").hidden=!gDirty();card.querySelector(".c-ul").textContent=unlockText(ref.unlock)}
+});
+$("#cGroupCards").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-act]");if(!b)return;const arr=gDraft.manifest.groups,i=arr.findIndex(x=>x.id===b.closest(".c-card").dataset.gid),j=b.dataset.act==="up"?i-1:i+1;
+  if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];cfgRender();
+});
+$("#cGroupsRevert").onclick=()=>{gDraft=null;cfgRender()};
+$("#cGroupsSave").onclick=async()=>{
+  if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");
+  const btn=$("#cGroupsSave");btn.disabled=true;
+  try{for(const id in gDraft.groups)if(!jeq(gDraft.groups[id],GROUPS[id]))await DB.doc("groups/"+id).set(gDraft.groups[id]);
+    if(!jeq(gDraft.manifest,MANIFEST))await DB.doc("meta/manifest").set(gDraft.manifest);gDraft=null;autoPublish("Groups saved")}
+  catch(e){toast("Save failed: "+(e.message||e.code))}finally{btn.disabled=false}
+};
+$("#cRulesSave").onclick=async()=>{if(!DB||!canWrite)return toast("Not saved: no write permission.");const m=JSON.parse(JSON.stringify(MANIFEST));m.rules=rDraft.rules;m.minApp=rDraft.minApp||"0.1.0";
+  // the group draft holds a copy of the manifest: carry the new rules into it, so it does not look edited (or put the old rules back)
+  const clean=!gDirty();
+  try{await DB.doc("meta/manifest").set(m);rDraft=null;if(clean)gDraft=null;else{gDraft.manifest.rules=m.rules;gDraft.manifest.minApp=m.minApp}autoPublish("Rules saved")}catch(e){toast("Save failed: "+(e.message||e.code))}};
+$("#cAddGroup").onclick=async()=>{
+  if(!DB||!canWrite)return toast("Not saved: no write permission.");const id=$("#cNgId").value.trim().toLowerCase(),name=$("#cNgName").value.trim()||id;
+  if(!/^[a-z][a-z0-9_]{1,23}$/.test(id))return toast("A group id uses lowercase letters, digits or _, 2–24 characters, starting with a letter.");if(groups().some(g=>g.id===id))return toast("Group already exists: "+id+".");
+  const m=JSON.parse(JSON.stringify(MANIFEST||DEFAULT_MANIFEST)),last=m.groups.slice(-1)[0];m.groups.push({id,unlock:last?{group:last.id,cleared:10}:null});
+  try{await DB.doc("groups/"+id).set(groupDetail(id,name));await DB.doc("meta/manifest").set(m);$("#cNgId").value="";$("#cNgName").value="";gDraft=null;autoPublish(`Added group ${id} (hidden)`)}catch(e){toast("Could not add: "+(e.message||e.code))}
+};
+
+/* ================= auto levels: what the monthly task generates ================= */
+// Stored in autofill/config (never sent to the game). The monthly task's fill.js reads it:
+//   {perMonth, dStart, dStep, dCap, hardEvery, adapt, tLo, tHi, topShare, topCount, groups:{<id>:{on, perMonth, shapes}}}
+// adapt/tLo/tHi: with player data (Firebase in BigQuery) each group's difficulty follows its players' clear rate on
+// its newest levels. topShare/topCount: the weekly run adds levels when that share of players is at the last ones.
+// shapes is a list of shape ids from small to big ("cube-3 cube-4 cube-5"): the month's levels use the biggest,
+// the weekly challenge's easy / medium / hard levels use the last three (megamix: random blocks and the last two).
+const MAX_TILES=200;
+const AUTO_DEFAULT={perMonth:30,dStart:3,dStep:0.3,dCap:8,hardEvery:5,adapt:true,tLo:70,tHi:85,topShare:25,topCount:10,groups:{}};
+const AUTO_INFO={perMonth:["Levels per month","New levels each enabled group gets every month (a group can set its own). They are spread over the month's Thursdays.",1,100,1],
+  dStart:["Start difficulty","Difficulty (1-10) of a group's first monthly batch.",1,10,0.1],
+  dStep:["Rise per month","How much harder each new month's batch gets.",0,2,0.1],
+  dCap:["Highest difficulty","The batch difficulty stops rising here (milestone levels go up to 1.5 above it).",1,10,0.1],
+  hardEvery:["Hard level every","Every n-th level is a hard one; the level after it is a short breather.",2,20,1],
+  tLo:["Target clear rate, lowest (%)","With player data: when fewer players than this finish a group's newest levels, its next batch gets easier.",30,99,1],
+  tHi:["Target clear rate, highest (%)","When more than this finish them, the next batch gets harder.",30,100,1],
+  topShare:["Top up at (%)","When this share of a group's active players is at its last released levels, Thursday releases twice as many and adds levels if the queue runs low.",1,100,1],
+  topCount:["Top-up size","Extra levels a top-up makes (at most twice a month).",1,50,1]};
+let AUTO=null,QUEUE=null,aDraft=null;
+const AUTO_TYPES=Object.keys(PRESETS).concat(["megamix"]);
+function autoNow(){const c=JSON.parse(JSON.stringify(Object.assign({},AUTO_DEFAULT,AUTO||{})));c.groups=c.groups||{};
+  for(const g of groups()){const o=c.groups[g.id]||(c.groups[g.id]={});if(o.on==null)o.on=true;if(!o.shapes)o.shapes=(GROUPS[g.id]&&GROUPS[g.id].shapes||DEFAULT_SHAPES[g.id]||"").split(/[\s,]+/).filter(Boolean).map(tokenId).join(" ")}
+  return c}
+function aDirty(){return !!aDraft&&!jeq(aDraft,autoNow())}
+function planItemId(x){if(x.v==="megamix")return "megamix";const pr=PRESETS[x.v],prm={};pr.params.forEach(([k,,v,mn,mx])=>{const y=x.params[k];prm[k]=Math.min(mx,Math.max(mn,isFinite(y)?+y:v))});return pr.id(prm)}
+function rowsOf(str){return String(str||"").split(/[\s,]+/).filter(Boolean).map(t=>{t=tokenId(t);if(t==="megamix")return {v:"megamix",params:{}};const p=parseShapeId(t);return p?{v:p.type,params:Object.assign({},p.params)}:null}).filter(Boolean)}
+const tilesCache={};
+function tilesOf(id){if(id==="megamix")return null;if(id in tilesCache)return tilesCache[id];let n=0;try{const sh=shapeFromToken(id);n=sh?topoFor(sh).count:0}catch(_){n=0}return tilesCache[id]=n}
+const MONTH=()=>new Date().toISOString().slice(0,7);
+// the difficulty the next monthly batch of group g starts at, as fill.js works it out
+function nextRun(g,c){const Q=QUEUE&&QUEUE.groups&&QUEUE.groups[g]||{},run=(Q.runs||0)+1;
+  const d0=Math.max(1,Math.min(c.dCap,c.dStart+c.dStep*(run-1)+(Q.adj||0)));return {run,adj:Q.adj||0,d0:Math.round(d0*10)/10,d1:Math.round(Math.min(c.dCap+1,d0+1)*10)/10,done:Q.lastMonth===MONTH()}}
+function autoRender(){
+  if(!MANIFEST){$("#aGroupCards").innerHTML='<div class="empty">No data yet.</div>';return}
+  if(!aDraft)aDraft=autoNow();const c=aDraft;
+  $("#aForm").innerHTML=Object.keys(AUTO_INFO).map(k=>{const [l,h,mn,mx,st]=AUTO_INFO[k];return `<label for="ac-${k}">${l}</label><input id="ac-${k}" type="number" min="${mn}" max="${mx}" step="${st}" data-k="${k}" value="${c[k]}"><span class="c-help">${h}</span>`}).join("")+
+    `<label for="ac-adapt">Follow the players</label><input id="ac-adapt" type="checkbox" ${c.adapt!==false?"checked":""}><span class="c-help">Adjust each group's difficulty to its players' clear rate (needs player data; without it the curve above is used as is).</span>`;
+  $("#ac-adapt").onchange=e=>{c.adapt=e.target.checked;aChanged()};
+  document.querySelectorAll("#aForm input[data-k]").forEach(el=>el.oninput=()=>{const [,,mn,mx]=AUTO_INFO[el.dataset.k];const v=parseFloat(el.value);if(isFinite(v))c[el.dataset.k]=Math.min(mx,Math.max(mn,v));aChanged()});
+  $("#aGroupCards").innerHTML=groups().map(g=>{const o=c.groups[g.id],rows=rowsOf(o.shapes),nr=nextRun(g.id,c),big=rows.length?planItemId(rows[rows.length-1]):"";
+    const tl=tilesOf(big),dp=tl?diffParams(nr.d0,topoFor(shapeFromToken(big))):null,per=o.perMonth!=null?o.perMonth:c.perMonth;
+    const live=g.enable&&o.on;
+    return `<div class="c-card${live?"":" off"}" data-gid="${esc(g.id)}"><div></div><div class="c-fields">
+      <div class="c-title"><span class="gid">${esc(g.id)}</span><span class="note" style="margin:0">${esc(g.name||"")}</span>
+        <span class="c-pill ${live?"ok":""}">${live?"auto on":!g.enable?"group hidden":"auto off"}</span><span class="c-pill">${g.levelCount||0} levels released</span></div>
+      <label class="chk wide"><input type="checkbox" data-a="on" ${o.on?"checked":""}> Make new levels and weekly challenges for this group every month</label>
+      <label class="f" for="ap-${esc(g.id)}">Levels per month (empty = ${c.perMonth})<input id="ap-${esc(g.id)}" type="number" min="1" max="100" data-a="perMonth" value="${o.perMonth!=null?o.perMonth:""}" placeholder="${c.perMonth}"></label>
+      <span class="note" style="margin:0;align-self:end">${nr.done?"This month's batch is made. ":""}Next batch: difficulty ${nr.d0}–${nr.d1}${nr.adj?` (players: ${nr.adj>0?"+":""}${nr.adj})`:""}${dp?` · ${dp.colors} colour${dp.colors>1?"s":""} · par ≥ ${dp.minPar}`:""} · ${per} levels</span>
+      <div class="wide"><div class="f">Shapes, small to big (the biggest makes the month's levels; the last 3 make the weekly challenge, easy to hard)</div>
+        <div class="stack" style="gap:6px;margin-top:4px">${rows.map((r,i)=>{const pr=PRESETS[r.v],id=planItemId(r),t=tilesOf(id);
+          return `<div class="bsrow" data-i="${i}"><select data-r="v" aria-label="Shape ${i+1}">${AUTO_TYPES.map(x=>`<option value="${x}"${x===r.v?" selected":""}>${esc(SHAPE_LABEL[x]||(x==="megamix"?"Megamix (random blocks)":x))}</option>`).join("")}</select>
+            <span class="bp">${pr?pr.params.map(([k,l,v,mn,mx,st])=>`<input type="number" data-p="${k}" title="${esc(l)}" aria-label="${esc(l)}" value="${r.params[k]!=null?r.params[k]:v}" min="${mn}" max="${mx}" step="${st||1}">`).join(""):""}
+            <span class="note mono" style="margin:0;align-self:center">${esc(id)}${t!=null?` · ${t} tiles`:""}${t>MAX_TILES?' <b style="color:var(--bad)">too big</b>':""}</span></span>
+            <button type="button" data-rm="${i}" aria-label="Remove shape">×</button></div>`}).join("")||'<div class="empty">No shapes: this group gets no new levels.</div>'}</div>
+        <div class="row" style="margin-top:6px"><button class="btn sm" type="button" data-add="1">+ Add shape</button></div></div>
+      </div></div>`}).join("");
+  renderQueue();renderReport();aChanged();
+}
+function aChanged(){$("#aDirty").hidden=!aDirty()}
+function setRows(id,rows){aDraft.groups[id].shapes=rows.map(planItemId).join(" ")}
+$("#aGroupCards").addEventListener("input",e=>{const card=e.target.closest(".c-card");if(!card)return;const o=aDraft.groups[card.dataset.gid],a=e.target.dataset.a;
+  if(a==="perMonth"){const v=e.target.value.trim();if(v==="")delete o.perMonth;else o.perMonth=Math.min(100,Math.max(1,parseInt(v)||1));aChanged()}});
+// shape rows and the on switch re-render the card, so they apply on change (after typing), not on every key
+$("#aGroupCards").addEventListener("change",e=>{const card=e.target.closest(".c-card");if(!card)return;const id=card.dataset.gid,o=aDraft.groups[id];
+  if(e.target.dataset.a==="on"){o.on=e.target.checked;autoRender();return}
+  const row=e.target.closest(".bsrow");if(!row)return;const rows=rowsOf(o.shapes),r=rows[+row.dataset.i];
+  if(e.target.dataset.r==="v"){r.v=e.target.value;r.params={}}else if(e.target.dataset.p){const x=parseFloat(e.target.value);if(!isFinite(x))return;r.params[e.target.dataset.p]=x}else return;
+  setRows(id,rows);autoRender()});
+$("#aGroupCards").addEventListener("click",e=>{const card=e.target.closest(".c-card");if(!card)return;const id=card.dataset.gid,rows=rowsOf(aDraft.groups[id].shapes);
+  const rm=e.target.closest("[data-rm]");if(rm){rows.splice(+rm.dataset.rm,1);setRows(id,rows);autoRender();return}
+  if(e.target.closest("[data-add]")){const last=rows[rows.length-1];rows.push(last?JSON.parse(JSON.stringify(last)):{v:"cube",params:{n:3}});setRows(id,rows);autoRender()}});
+$("#aRevert").onclick=()=>{aDraft=null;autoRender()};
+$("#aSave").onclick=async()=>{
+  if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");
+  for(const id in aDraft.groups){const o=aDraft.groups[id];if(!o.on)continue;const ids=rowsOf(o.shapes).map(planItemId);
+    if(!ids.length)return toast(`Group ${id}: add at least one shape, or turn auto off.`);
+    const big=ids.find(x=>tilesOf(x)>MAX_TILES);if(big)return toast(`Group ${id}: ${big} has ${tilesOf(big)} tiles; the game allows at most ${MAX_TILES}.`)}
+  if(aDraft.tHi<aDraft.tLo)return toast("Target clear rate: the highest must not be below the lowest.");
+  const btn=$("#aSave");btn.disabled=true;
+  try{await DB.doc("autofill/config").set(Object.assign({},aDraft,{updatedAt:new Date().toISOString()}));aDraft=null;toast("Auto-level settings saved. The next monthly batch uses them.")}
+  catch(e){toast("Save failed: "+(e.message||e.code))}finally{btn.disabled=false}};
+function thursdaysLeft(){const now=new Date(Date.now()+7*3600e3),y=now.getUTCFullYear(),m=now.getUTCMonth(),last=new Date(Date.UTC(y,m+1,0)).getUTCDate();let n=0;
+  for(let k=now.getUTCDate();k<=last;k++)if(new Date(Date.UTC(y,m,k)).getUTCDay()===4)n++;return Math.max(1,n)}
+// the monthly task's report (autofill/report): its Vietnamese summary plus what needs attention per group
+let REPORT=null;
+function renderReport(){const R=REPORT,el=$("#aReport");if(!R||!el)return;
+  const att=(R.data&&R.data.groups||[]).filter(g=>g.attention&&g.attention.length);
+  el.innerHTML=`<p class="note" style="margin-top:0">${esc(R.month||"")} · ${esc(ago(R.createdAt))}${R.data&&R.data.playerData?"":" · no player data yet"}</p>
+    <div style="white-space:pre-wrap;font-size:13.5px">${esc(R.vi||"")}</div>
+    ${att.length?`<p class="note"><b>Needs attention:</b> ${att.map(g=>`${esc(g.group)}: ${g.attention.map(esc).join("; ")}`).join(" · ")}</p>`:""}`}
+function renderQueue(){
+  const Qg=QUEUE&&QUEUE.groups||{},th=thursdaysLeft(),ch=MANIFEST&&MANIFEST.challenge;
+  const rows=groups().map(g=>{const Q=Qg[g.id]||{},p=(Q.pending||[]).length;return `<tr><td class="mono">${esc(g.id)}</td><td>${p}</td><td>${p?Math.ceil(p/th):0}</td><td>${esc(Q.lastMonth||"—")}</td><td>${Q.lastDifficulty?Q.lastDifficulty.map(x=>Math.round(x*10)/10).join("–"):"—"}</td></tr>`}).join("");
+  const weeks=Object.keys(QUEUE&&QUEUE.challenge||{}).sort();
+  $("#aQueue").innerHTML=`<div class="btwrap" style="max-height:none;margin-top:0"><table class="bt"><thead><tr><th>Group</th><th>Queued</th><th>Next Thursday</th><th>Last batch</th><th>Difficulty</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="note">Open challenge: ${ch&&ch.id?`<b>${esc(ch.id)}</b> from ${esc(String(ch.start||"").slice(0,10))}, ${esc(ch.days||7)} days`:"none"}. Challenge weeks made: ${weeks.length?weeks.map(esc).join(", "):"none yet"}.</p>
+    <p class="note">Monthly batch: day 1, 08:56 · Release and publish: every Thursday, 07:06 (Vietnam time), right after the weekly leaderboards reset. To release more often, raise Levels per month.</p>`;
+}
+
+/* ================= publish to the game ================= */
+// "Publish to game" starts the scheduled task "Circuit Cube: publish Level Lab levels" through the Claude Code Remote
+// connector. That run reads this database, writes content/ in the GitHub repo (Tools/LevelLab/publish.py checks every
+// level first), pins the commit in the manifest and reports back in meta/publish. The game reads content/manifest.json
+// from GitHub on start and downloads new or edited levels from that commit on jsDelivr.
+const PUBLISH_TASK="trig_0127qMBCKjep5zwUofXnjp8e",REPO_URL="https://github.com/tuankun-279/CircuitCube";
+let PUB=null,pubBusy=false;
+function ago(iso){if(!iso)return "";const s=(Date.now()-Date.parse(iso))/1000;return s<90?"just now":s<5400?Math.round(s/60)+" min ago":s<129600?Math.round(s/3600)+" h ago":new Date(iso).toLocaleDateString()}
+function renderPublish(){
+  const el=$("#pubStatus"),p=PUB;let h="";
+  if(!p)h="Not published from Level Lab yet.";
+  else if(p.state==="requested")h=`Publish requested ${ago(p.requestedAt)}: waiting for the task to start (about a minute).`;
+  else if(p.state==="running")h=`Publishing… started ${ago(p.startedAt)}.`;
+  else if(p.state==="done")h=`Published <b>v${esc(p.version)}</b> ${ago(p.finishedAt)} · ${esc(p.levels)} levels · <a href="${REPO_URL}/commit/${esc(p.commit)}" target="_blank" rel="noopener">commit ${esc(String(p.commit||"").slice(0,7))}</a>. ${p.liveAfter!=null?`Live for players ${esc(p.liveAfter)} s after the push.`:"Players get it on their next start."}`;
+  else if(p.state==="no-change")h=`Up to date${p.version?` with <b>v${esc(p.version)}</b>`:""}: nothing new to publish (checked ${ago(p.finishedAt)}).`;
+  else if(p.state==="failed")h=`<span style="color:var(--bad)">Publish failed ${ago(p.finishedAt)}${p.step?` at <b>${esc(stepName(p.step))}</b>`:""}:</span> ${(p.problems||[]).slice(0,4).map(esc).join(" · ")}${(p.problems||[]).length>4?` · and ${p.problems.length-4} more <button class="btn sm" type="button" id="pubMore">Details</button>`:""}`;
+  const st=stalled(p);if(st)h=`<span style="color:var(--warn)">${esc(st)}</span>`;
+  if(retryable(p))h=`<span style="color:var(--warn)">The last publish ${p.state==="failed"?"failed":"stalled"}; trying again once…</span>`;
+  el.innerHTML=h;const more=document.getElementById("pubMore");if(more)more.onclick=()=>showPubAlert(p,true);
+  $("#btnPublish").disabled=pubBusy||(p&&(p.state==="requested"||p.state==="running")&&!st);
+  checkPubAlert();pubFollowUp();
+}
+/* ---- alert when a publish finishes (success or failure, with the failing step) ---- */
+const STEP_NAMES={start:"starting the task",status:"1 · status",repo:"2 · GitHub repo (clone / pull)",dump:"3 · reading the Level Lab data",
+  build:"4 · building content (level check)",commit:"6 · commit",push:"6 · push to GitHub",report:"7 · report"};
+const stepName=s=>STEP_NAMES[s]||s;
+const FINAL=["done","failed","no-change"];
+function stalled(p){if(!p)return "";const now=Date.now();
+  if(p.state==="requested"&&now-Date.parse(p.requestedAt)>10*60e3)return `Publish requested ${ago(p.requestedAt)} but the task never started. Press Publish to try again.`;
+  if(p.state==="running"&&now-Date.parse(p.startedAt)>25*60e3)return `Publish started ${ago(p.startedAt)} and has not reported back: it probably stopped part way. Press Publish to try again.`;
+  return ""}
+let pubWatching=false,pubStallShown="";
+const SEEN_KEY="levellab.pubSeen";
+function seen(){try{return localStorage.getItem(SEEN_KEY)||""}catch(_){return ""}}
+function markSeen(v){try{localStorage.setItem(SEEN_KEY,v)}catch(_){}}
+function checkPubAlert(){const p=PUB;if(!p||retryable(p))return;
+  if(p.state==="requested"||p.state==="running"){pubWatching=true;const st=stalled(p);
+    if(st&&pubStallShown!==(p.requestedAt||p.startedAt)){pubStallShown=p.requestedAt||p.startedAt;showPubAlert({state:"failed",step:p.state==="requested"?"start":"",problems:[st],finishedAt:new Date().toISOString()},true)}return}
+  if(!FINAL.includes(p.state))return;const id=p.state+"|"+(p.finishedAt||"");
+  // show it when this page watched the run end, or when it ended in the last day and this browser has not seen it yet
+  if(pubWatching||(seen()!==id&&Date.now()-Date.parse(p.finishedAt||0)<24*3600e3)){pubWatching=false;markSeen(id);showPubAlert(p)}
+}
+function showPubAlert(p,keep){const t=$("#pubAlertTitle"),b=$("#pubAlertBody");let title,body;
+  if(p.state==="done"){title="✓ Publish succeeded";t.style.color="var(--ok)";
+    body=`<p style="margin:0 0 6px">Level content <b>v${esc(p.version)}</b> is live: ${esc(p.levels)} levels.</p><p class="note" style="margin:0">Commit <a href="${REPO_URL}/commit/${esc(p.commit)}" target="_blank" rel="noopener">${esc(String(p.commit||"").slice(0,7))}</a> · finished ${ago(p.finishedAt)}. Players get it on their next start.</p>`}
+  else if(p.state==="no-change"){title="Nothing to publish";t.style.color="var(--fg)";
+    body=`<p style="margin:0">The game already has every released level${p.version?` (v${esc(p.version)})`:""}. Nothing was committed.</p>`}
+  else{title="✕ Publish failed";t.style.color="var(--bad)";const pr=p.problems||[];
+    body=`<p style="margin:0 0 6px">Failed at: <b>${esc(p.step?stepName(p.step):"unknown step")}</b>${p.finishedAt?` · ${ago(p.finishedAt)}`:""}. Nothing was changed in the game.</p>`+
+      (pr.length?`<pre style="white-space:pre-wrap;max-height:300px">${pr.map(x=>"• "+esc(x)).join("\n")}</pre>`:`<p class="note">No error text was reported.</p>`)+
+      (p.step==="build"?`<p class="note">The publish check stopped on these levels; nothing reached players. Tell Claude in the project so it can fix them.</p>`:`<p class="note">Press Publish to try again; if it fails the same way, the error above says what to fix.</p>`)}
+  t.textContent=title;b.innerHTML=body;$("#pubAlert").hidden=false;$("#pubAlertOk").focus();
+}
+$("#pubAlertOk").onclick=()=>{$("#pubAlert").hidden=true};
+$("#pubAlert").onclick=e=>{if(e.target.id==="pubAlert")$("#pubAlert").hidden=true};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#pubAlert").hidden)$("#pubAlert").hidden=true});
+// Saving rules or groups publishes by itself: autoPublish starts the task, or, while one is still running, starts
+// another as soon as it ends, so the game always gets the last save. Starting the task is retried once.
+let pubAgain=false;
+const TRANSIENT=["server_unavailable","upstream_error","timeout","network_error"];
+async function fireTask(mcp){
+  try{return await mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:PUBLISH_TASK,text:"Requested from Level Lab."})}
+  catch(e){if(!TRANSIENT.includes(e&&e.code))throw e;await new Promise(r=>setTimeout(r,5000));
+    return await mcp.callTool("Claude Code Remote","fire_trigger",{trigger_id:PUBLISH_TASK,text:"Requested from Level Lab (retry)."})}
+}
+function pubBusyNow(){const p=PUB;return pubBusy||!!(p&&(p.state==="requested"||p.state==="running")&&!stalled(p))}
+function autoPublish(what){
+  if(pubBusyNow()){pubAgain=true;toast(what+". It goes to the game right after the publish that is running.");return}
+  toast(what+". Publishing to the game…");startPublish(true);
+}
+async function startPublish(auto,retry){
+  if(!DB)return toast("Not connected to data.");if(!canWrite)return toast("You can only view.");
+  if(gDirty&&gDirty())return toast("Save or discard the group changes first.");
+  const mcp=await claude.use("mcp").catch(()=>null);
+  if(!mcp)return toast("Publishing runs through your Claude Code connector: open Level Lab on claude.ai, signed in as its owner.");
+  pubBusy=true;pubWatching=true;renderPublish();
+  try{
+    await DB.doc("meta/publish").set({state:"requested",requestedAt:new Date().toISOString(),auto:!!auto,retry:!!retry});
+    await fireTask(mcp);
+    if(!auto)toast("Publishing started. The status line updates when it is done (usually 2-4 minutes).");
+  }catch(e){
+    const c=e&&e.code;
+    const msg=c==="server_not_connected"?"The Claude Code connector is not connected to your account.":
+      c==="needs_reauth"?"The Claude Code connector needs you to sign in again (claude.ai settings, Connectors).":
+      c==="approval_required"||c==="not_granted"||c==="consent_required"?"Publishing needs your approval to use the Claude Code connector; press Publish again and allow it.":
+      c==="blocked_by_policy"?"Your organization does not allow this page to use the Claude Code connector.":
+      c==="tool_error"?"The publish task could not start: "+((e.message||"").slice(0,160)):
+      "The publish request may or may not have started ("+(c||"error")+"). Watch the status line before pressing again.";
+    toast(msg);if(!TRANSIENT.includes(c))try{await DB.doc("meta/publish").set(Object.assign({},PUB||{},{state:"failed",step:"start",finishedAt:new Date().toISOString(),problems:[msg]}))}catch(_){}
+  }finally{pubBusy=false;renderPublish()}
+}
+// A run that stalled, or failed anywhere but the level check (which fails the same way again), is retried once by
+// itself before Tuan is told; a save that came in while a run was going is published right after it.
+// (the publish task keeps the retry mark in meta/publish; pubLastRetry also stops a second retry within 30 minutes)
+let pubLastRetry=0;
+function retryable(p){return !!p&&!p.retry&&canWrite&&Date.now()-pubLastRetry>30*60e3&&(stalled(p)||(p.state==="failed"&&p.step!=="build"&&p.step!=="start"))}
+function pubFollowUp(){const p=PUB;if(!p||pubBusy)return;
+  if(retryable(p)&&!pubRetrying){pubRetrying=true;pubLastRetry=Date.now();startPublish(true,true).finally(()=>pubRetrying=false);return}
+  if(FINAL.includes(p.state)&&pubAgain){pubAgain=false;startPublish(true)}
+}
+let pubRetrying=false;
+$("#btnPublish").onclick=()=>startPublish(false);
+setInterval(renderPublish,30000);
+
+/* ================= views ================= */
+const VIEWS=["groups","auto"];
+function showView(v){if(!VIEWS.includes(v))v="groups";
+  $("#viewGroups").hidden=v!=="groups";$("#viewAuto").hidden=v!=="auto";
+  document.querySelectorAll(".top .seg button").forEach(b=>b.classList.toggle("on",b.dataset.view===v));
+  if(v==="groups")cfgRender();if(v==="auto")autoRender()}
+document.querySelectorAll(".top .seg button").forEach(b=>b.onclick=()=>{location.hash=b.dataset.view});
+addEventListener("hashchange",()=>showView(location.hash.slice(1)));
+function onData(){cfgOnData();if(!aDirty())aDraft=null;if(!$("#viewAuto").hidden)autoRender()}
+
+async function connect(){
+  let db=null;try{db=window.claude?await claude.use("db"):null}catch(_){}
+  if(!db){setStatus("No data store in this view: <b>nothing can be saved</b>.");return}
+  DB=db;let got=false;const timer=setTimeout(()=>{if(!got)setStatus("Data not loaded yet, retrying…")},10000);
+  try{const u=await claude.use("user");if(u&&u.can){const c=await u.can("data.write");if(c===false)canWrite=false}}catch(_){}
+  const status=()=>{if(MANIFEST)setStatus(`Data v${MANIFEST.schema||1}: <b>${groups().length}</b> groups · content published from here${canWrite?"":" · view only"}`)};
+  db.doc("meta/publish").onSnapshot(s=>{PUB=s.exists?s.data():null;renderPublish()},()=>{});
+  db.collection("groups").onSnapshot(q=>{GROUPS={};q.docs.forEach(d=>GROUPS[d.id]=d.data());status();onData()},()=>{});
+  db.doc("autofill/config").onSnapshot(s=>{AUTO=s.exists?s.data():null;onData()},()=>{});
+  db.doc("autofill/report").onSnapshot(s=>{REPORT=s.exists?s.data():null;renderReport()},()=>{});
+  db.doc("autofill/queue").onSnapshot(s=>{QUEUE=s.exists?s.data():null;if(!$("#viewAuto").hidden)renderQueue()},()=>{});
+  db.doc("meta/manifest").onSnapshot(s=>{got=true;clearTimeout(timer);
+    if(!s.exists){MANIFEST=null;setStatus("The data store is empty.");return}
+    MANIFEST=s.data();status();onData()},e=>setStatus("Lost the data connection ("+e.code+")."));
+}
+
+/* ================= boot ================= */
+showView(location.hash.slice(1));
+connect();
+})();
+</script>

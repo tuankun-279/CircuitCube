@@ -1,5 +1,5 @@
 App name (max 30):
-Circuit Cube
+Circuit Cube: Puzzle
 
 Short description (max 80):
 Turn tiles on a glowing 3D puzzle until every lamp lights up in its colour.
